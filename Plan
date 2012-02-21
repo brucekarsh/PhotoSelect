@@ -1,0 +1,23 @@
+This is the plan for a new version of photoselect
+
+Goals
+
+1. Multithreaded decoding, image processing.
+2. Clipping included.
+3. Multiple views.
+4. Comparison views.
+5. Labeling
+6. Grouping by date, time, camera, gps
+7. Understands continuous shutter
+8. Captions
+9. Quick selection via thumbnails
+10. Understands multiple screen displays
+
+Non-goals
+
+1. Editing beyond clipping
+2. Storage
+3. Upload
+4. Webpage generation
+
+

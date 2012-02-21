@@ -1,0 +1,1 @@
+A ConversionEngine keeps track of a list of files containing photos and the current position in the list. It attempts to keep the photo at the current position and photos near the current position in the PhotoCache.

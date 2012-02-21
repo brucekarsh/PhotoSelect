@@ -1,0 +1,17 @@
+use PhotoSelect;
+
+CREATE TABLE file (
+  fileId INT AUTO_INCREMENT PRIMARY KEY,
+  filePath varchar(250) CHARACTER SET utf8 UNIQUE KEY
+);
+
+CREATE TABLE checksum (
+  checksumId INT AUTO_INCREMENT PRIMARY KEY,
+  checksumValue char(32) UNIQUE KEY
+);
+
+CREATE TABLE project (
+  projectId INT AUTO_INCREMENT PRIMARY KEY,
+  projectName varchar(250) CHARACTER SET utf8 UNIQUE KEY
+);
+
