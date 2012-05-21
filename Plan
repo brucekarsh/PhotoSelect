@@ -3,7 +3,7 @@ This is the plan for a new version of photoselect
 Goals
 
 1. Multithreaded decoding, image processing.
-2. Clipping included.
+2. Cropping included.
 3. Multiple views.
 4. Comparison views.
 5. Labeling
@@ -15,7 +15,7 @@ Goals
 
 Non-goals
 
-1. Editing beyond clipping
+1. Editing beyond cropping
 2. Storage
 3. Upload
 4. Webpage generation
