@@ -5,6 +5,8 @@
 #include <cairo-xlib.h>
 #include "PhotoSelectWindow.h"
 
+using namespace std;
+
 main(int argc, char **argv)
 {
   gtk_init(&argc, &argv);

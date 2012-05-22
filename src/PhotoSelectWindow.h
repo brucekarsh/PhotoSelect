@@ -1,13 +1,14 @@
 #ifndef PHOTOSELECTWINOW_H__
 #define PHOTOSELECTWINOW_H__
+
+#include "WindowRegistry.h"
 #include <list>
 #include <stdio.h>
 #include "ConversionEngine.h"
 #include "QueryWindow.h"
+#include "PreferencesWindow.h"
 #include <gtk/gtk.h>
 #include <cairo-xlib.h>
-
-using namespace std;
 
 class PhotoSelectWindow {
   public:
@@ -16,13 +17,12 @@ class PhotoSelectWindow {
   GtkWidget *window;
   GtkWidget *drawingarea1;
   GtkWidget *ofN;
-  list<string> photoFilenameList;
-  static map<GtkWindow*, PhotoSelectWindow*> windowMap;
+  std::list<std::string> photoFilenameList;
 
   PhotoSelectWindow() : rotation(0), window(0), drawingarea1(0)  {
   }
 
-  void setup(list<string> photoFilenameList_) {
+  void setup(std::list<std::string> photoFilenameList_) {
     photoFilenameList = photoFilenameList_;
     // Set up a conversion engine.
     conversionEngine.setPhotoFileList(&photoFilenameList);
@@ -30,16 +30,18 @@ class PhotoSelectWindow {
     /* Load UI from file. If error occurs, report it and quit application. */
     GError *error = NULL;
     GtkBuilder* builder = gtk_builder_new();
-    if( ! gtk_builder_add_from_file( builder, "/home/bruce/GladeTestProject1.glade", &error ) ) {
-        g_warning( "%s", error->message );
-        g_free( error );
+    if( ! gtk_builder_add_from_file( builder,
+        "/home/bruce/PROJECTS/NEWPHOTOSELECT/src/GladeTestProject1.glade", &error ) ) {
+      g_warning( "%s", error->message );
+      g_free( error );
     }
 
-    // Get the window, save it in the windowMap so we can find the object (the PhotoSelect Window)
+    // Get the window, save it in the WindowRegistry so we can find the object (the PhotoSelect Window)
     // when we see the window in a callback.
 
     window = GTK_WIDGET( gtk_builder_get_object( builder, "PhotoSelectWindow" ));
-    windowMap.insert(pair<GtkWindow*, PhotoSelectWindow*>(GTK_WINDOW(gtk_widget_get_toplevel(window)), this));
+    WindowRegistry::setPhotoSelectWindow(window, this);
+
     drawingarea1 = GTK_WIDGET( gtk_builder_get_object(builder, "drawingarea1"));
     ofN = GTK_WIDGET( gtk_builder_get_object(builder, "OfN"));
     char ofstring[20];
@@ -172,6 +174,12 @@ class PhotoSelectWindow {
     printf("PhotoSelectWindow::query\n");
     QueryWindow queryWindow(this);
     queryWindow.run();
+  }
+
+  void preferences() {
+    printf("PhotoSelectWindow::preferences\n");
+    PreferencesWindow *preferencesWindow = new PreferencesWindow(this);
+    preferencesWindow -> run();
   }
 };
 #endif  // PHOTOSELECTWINOW_H__

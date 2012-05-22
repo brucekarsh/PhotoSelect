@@ -1,0 +1,7 @@
+#include "WindowRegistry.h"
+#include <map>
+
+using namespace std;
+
+map<GtkWindow*, PhotoSelectWindow*> WindowRegistry::photoSelectWindowMap;
+map<GtkWindow*, PreferencesWindow*> WindowRegistry::preferencesWindowMap;

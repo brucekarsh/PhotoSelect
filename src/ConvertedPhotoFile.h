@@ -11,8 +11,6 @@ extern "C" {
 #include "setjmp.h"
 #include "ScaledImage.h"
 
-using namespace std;
-
 class ConvertedPhotoFile;
 
 class ConvertedPhotoFile {
@@ -44,12 +42,12 @@ class ConvertedPhotoFile {
 
   public:
 
-  string photoFilePath;
+  std::string photoFilePath;
   int width;
   int height;
   unsigned char *pixels;
   
-  ConvertedPhotoFile(string &photoFilePath) {
+  ConvertedPhotoFile(std::string &photoFilePath) {
     unsigned char *pixels_tmp;
     int width_tmp, height_tmp;
 

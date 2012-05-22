@@ -1,8 +1,6 @@
 #ifndef SCALED_IMAGE_H__
 #define SCALED_IMAGE_H__
 
-using namespace std;
-
 class ScaledImage {
 
   public:

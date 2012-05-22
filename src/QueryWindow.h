@@ -6,8 +6,6 @@
 #include <gtk/gtk.h>
 #include <cairo-xlib.h>
 
-using namespace std;
-
 class PhotoSelectWindow;
 
 class QueryWindow {
@@ -26,9 +24,10 @@ class QueryWindow {
     /* Load UI from file. If error occurs, report it and quit application. */
     GError *error = NULL;
     GtkBuilder* builder = gtk_builder_new();
-    if( ! gtk_builder_add_from_file( builder, "/home/bruce/GladeTestProject1.glade", &error ) ) {
-        g_warning( "%s", error->message );
-        g_free( error );
+    if( ! gtk_builder_add_from_file( builder,
+        "/home/bruce/PROJECTS/NEWPHOTOSELECT/src/GladeTestProject1.glade", &error ) ) {
+      g_warning( "%s", error->message );
+      g_free( error );
     }
     window = GTK_WIDGET( gtk_builder_get_object( builder, "QueryWindow" ));
     gtk_builder_connect_signals(builder, NULL);

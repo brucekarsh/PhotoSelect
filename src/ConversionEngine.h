@@ -7,8 +7,6 @@
 #include "ConvertedPhotoFile.h"
 #include "PhotoFileCache.h"
 
-using namespace std;
-
 //! Maintains a speculative cache of ConvertedPhotoFiles. It has a list of PhotoFiles and a current 
 //! position in the list.  It tries to cache a few ConvertedPhotoFiles before and after the
 //! current position
@@ -16,7 +14,7 @@ using namespace std;
 class ConversionEngine {
   public:
   PhotoFileCache photoFileCache;
-  vector<string> photoFilenameVector;
+  std::vector<std::string> photoFilenameVector;
   int photoFilenameVectorPosition;
 
 
@@ -29,7 +27,7 @@ class ConversionEngine {
   /// \return A convertedPhotoFile (which could still be converting)
   ///         or an UnknownCovertedPhotoFile if it cannot convert the file.
   ConvertedPhotoFile * getConvertedPhotoFile() {
-    string photoFilename = photoFilenameVector[photoFilenameVectorPosition];
+    std::string photoFilename = photoFilenameVector[photoFilenameVectorPosition];
     ConvertedPhotoFile * convertedPhotoFile = photoFileCache.get(photoFilename);
     if (0 == convertedPhotoFile) {
       convertedPhotoFile = photoFileCache.add(photoFilename);
@@ -37,10 +35,10 @@ class ConversionEngine {
     return convertedPhotoFile;
   }
 
-  void setPhotoFileList(list<string> *photoFileNameList) {
+  void setPhotoFileList(std::list<std::string> *photoFileNameList) {
     // XXX WRITEME
     int i;
-    list<string>::iterator photoFileNameListIterator = photoFileNameList->begin();
+    std::list<std::string>::iterator photoFileNameListIterator = photoFileNameList->begin();
     for (i=0; i<photoFileNameList->size(); i++) {
       printf("%d %s\n", i, photoFileNameListIterator->c_str());
       photoFilenameVector.push_back(photoFileNameListIterator->c_str());
