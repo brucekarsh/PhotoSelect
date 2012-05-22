@@ -2,6 +2,7 @@
 #define PHOTOSELECTWINOW_H__
 
 #include "WindowRegistry.h"
+#include "Preferences.h"
 #include <list>
 #include <stdio.h>
 #include "ConversionEngine.h"
@@ -12,17 +13,19 @@
 
 class PhotoSelectWindow {
   public:
-  int rotation;
-  ConversionEngine conversionEngine;
-  GtkWidget *window;
-  GtkWidget *drawingarea1;
-  GtkWidget *ofN;
-  std::list<std::string> photoFilenameList;
+    Preferences *thePreferences;
+    int rotation;
+    ConversionEngine conversionEngine;
+    GtkWidget *window;
+    GtkWidget *drawingarea1;
+    GtkWidget *ofN;
+    std::list<std::string> photoFilenameList;
 
-  PhotoSelectWindow() : rotation(0), window(0), drawingarea1(0)  {
+  PhotoSelectWindow() : rotation(0), window(0), drawingarea1(0), thePreferences((Preferences*)0) {
   }
 
-  void setup(std::list<std::string> photoFilenameList_) {
+  void setup(std::list<std::string> photoFilenameList_, Preferences *thePreferences) {
+    this -> thePreferences = thePreferences;
     photoFilenameList = photoFilenameList_;
     // Set up a conversion engine.
     conversionEngine.setPhotoFileList(&photoFilenameList);
@@ -53,6 +56,10 @@ class PhotoSelectWindow {
     g_object_unref( G_OBJECT( builder ) );
     gtk_widget_show( window );
   } 
+
+  void quit() {
+    printf("PhotoSelectWindow::quit() entered\n");
+  }
 
   void redraw_image() {
     double rotated_aspectratio;
@@ -178,7 +185,7 @@ class PhotoSelectWindow {
 
   void preferences() {
     printf("PhotoSelectWindow::preferences\n");
-    PreferencesWindow *preferencesWindow = new PreferencesWindow(this);
+    PreferencesWindow *preferencesWindow = new PreferencesWindow(thePreferences);
     preferencesWindow -> run();
   }
 };

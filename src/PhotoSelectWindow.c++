@@ -40,6 +40,16 @@ class PhotoSelectWindow;
   }
 
   G_MODULE_EXPORT void
+  quit(GtkWidget *widget, gpointer data) {
+    printf("Quit_activated_cb\n");
+    PhotoSelectWindow *photoSelectWindow = WindowRegistry::getPhotoSelectWindow(widget);
+    if (0 != photoSelectWindow) {
+      photoSelectWindow -> quit();
+      gtk_main_quit();
+    }
+  }
+
+  G_MODULE_EXPORT void
   preferences_Close_clicked_cb(GtkWidget *widget, gpointer data) {
     printf("Closed clicked in Preferences window\n");
     PreferencesWindow *preferencesWindow = WindowRegistry::getPreferencesWindow(widget);

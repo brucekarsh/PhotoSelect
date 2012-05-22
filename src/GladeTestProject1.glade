@@ -8,6 +8,7 @@
     <property name="role">PhotoSelectView</property>
     <property name="default_width">440</property>
     <property name="default_height">250</property>
+    <signal name="destroy" handler="quit" swapped="no"/>
     <child>
       <object class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
@@ -83,6 +84,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
+                        <signal name="activate" handler="quit" swapped="no"/>
                       </object>
                     </child>
                   </object>
@@ -440,6 +442,7 @@
   <object class="GtkWindow" id="PreferencesWindow">
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">Preferences</property>
+    <signal name="destroy" handler="preferences_Close_clicked_cb" swapped="no"/>
     <child>
       <object class="GtkVBox" id="vbox2">
         <property name="visible">True</property>

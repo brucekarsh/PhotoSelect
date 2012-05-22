@@ -11,7 +11,7 @@ class PhotoSelectWindow;
 
 class PreferencesWindow {
   public:
-  PhotoSelectWindow* photoSelectWindow;
+  Preferences *thePreferences;
   GtkWidget *window;
   GtkEntry *dbhost;    // GtkEntry for the Db Host
   GtkEntry *user;      // GtkEntry for the Db User
@@ -19,8 +19,8 @@ class PreferencesWindow {
   GtkEntry *database;  // GtkEntry for the DB database name
 
 
-  PreferencesWindow(PhotoSelectWindow* photoSelectWindow) {
-    this->photoSelectWindow = photoSelectWindow;
+  PreferencesWindow(Preferences* thePreferences) {
+    this->thePreferences = thePreferences;
   }
 
   void run() {
@@ -37,33 +37,32 @@ class PreferencesWindow {
     window = GTK_WIDGET( gtk_builder_get_object( builder, "PreferencesWindow" ));
     dbhost = GTK_ENTRY( gtk_builder_get_object( builder, "preferencesDbHost" ));
     user = GTK_ENTRY( gtk_builder_get_object( builder, "preferencesUser" ));
-printf("this 0x%lx\n", (long) this);
-printf("dbhost 0x%lx\n", (long) dbhost);
-printf("user 0x%lx\n", (long) user);
-printf("dbhost %s\n", G_OBJECT_TYPE_NAME(dbhost));
-printf("user %s\n", G_OBJECT_TYPE_NAME(user));
     password = GTK_ENTRY( gtk_builder_get_object( builder, "preferencesPassword" ));
     database = GTK_ENTRY( gtk_builder_get_object( builder, "preferencesDatabase" ));
+
+    gtk_entry_set_text(dbhost, thePreferences -> get_dbhost().c_str());
+    gtk_entry_set_text(user, thePreferences -> get_user().c_str());
+    gtk_entry_set_text(password, thePreferences -> get_password().c_str());
+    gtk_entry_set_text(database, thePreferences -> get_database().c_str());
     WindowRegistry::setPreferencesWindow(window, this);
 
     gtk_builder_connect_signals(builder, NULL);
     //g_object_unref( G_OBJECT( builder ) );
     gtk_widget_show(window);
-printf("calling close_clicked()");
-close_clicked();
   }
 
   void close_clicked() {
     printf("PreferencesWindow::close_clicked called\n");
-printf("this 0x%lx\n", (long) this);
-printf("dbhost 0x%lx\n", (long) dbhost);
-printf("user 0x%lx\n", (long) user);
-printf("dbhost %s\n", G_OBJECT_TYPE_NAME(dbhost));
-printf("user %s\n", G_OBJECT_TYPE_NAME(user));
     printf("dbhost: %s\n", gtk_entry_get_text(dbhost));
     printf("user: %s\n", gtk_entry_get_text(user));
-    //printf("password: %s\n", gtk_entry_get_text(password));
-    //printf("database: %s\n", gtk_entry_get_text(database));
+    printf("password: %s\n", gtk_entry_get_text(password));
+    printf("database: %s\n", gtk_entry_get_text(database));
+    thePreferences -> set_dbhost(gtk_entry_get_text(dbhost));
+    thePreferences -> set_user(gtk_entry_get_text(user));
+    thePreferences -> set_password(gtk_entry_get_text(password));
+    thePreferences -> set_database(gtk_entry_get_text(database));
+    thePreferences -> writeback();
+    gtk_widget_destroy(window);
   }
 };
 #endif  // PREFERENCESWINDOW_H__

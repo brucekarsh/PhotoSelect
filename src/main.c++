@@ -9,6 +9,8 @@ using namespace std;
 
 main(int argc, char **argv)
 {
+  Preferences preferences;
+
   gtk_init(&argc, &argv);
 
   list<string> photoFilenameList1;
@@ -16,7 +18,7 @@ main(int argc, char **argv)
   photoFilenameList1.push_back("/home/bruce/Tanzania2012/AW100/DSCN0551.JPG");
   photoFilenameList1.push_back("/home/bruce/Tanzania2012/D7000-6/DSC_8557.JPG");
   PhotoSelectWindow photoSelectWindow1;
-  photoSelectWindow1.setup(photoFilenameList1);
+  photoSelectWindow1.setup(photoFilenameList1, &preferences);
 
   //list<string> photoFilenameList2;
   //photoFilenameList2.push_back("/home/bruce/Tanzania2012/AW100/DSCN0351.JPG");
