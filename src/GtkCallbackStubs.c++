@@ -5,8 +5,6 @@
 #include <gtk/gtk.h>
 #include <cairo-xlib.h>
 
-GtkWidget *get_toplevel_widget (GtkWidget *widget);
-
 class PhotoSelectWindow;
  extern "C" {
 
