@@ -47,7 +47,7 @@ class PreferencesWindow {
     WindowRegistry::setPreferencesWindow(window, this);
 
     gtk_builder_connect_signals(builder, NULL);
-    //g_object_unref( G_OBJECT( builder ) );
+    g_object_unref( G_OBJECT( builder ) );
     gtk_widget_show(window);
   }
 

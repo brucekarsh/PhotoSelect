@@ -8,6 +8,7 @@
 #include "ConversionEngine.h"
 #include "QueryWindow.h"
 #include "PreferencesWindow.h"
+#include "ImportWindow.h"
 #include <gtk/gtk.h>
 #include <cairo-xlib.h>
 
@@ -187,6 +188,12 @@ class PhotoSelectWindow {
     printf("PhotoSelectWindow::preferences\n");
     PreferencesWindow *preferencesWindow = new PreferencesWindow(thePreferences);
     preferencesWindow -> run();
+  }
+
+  void import() {
+    printf("PhotoSelectWindow::import\n");
+    ImportWindow *importWindow = new ImportWindow(thePreferences);
+    importWindow -> run();
   }
 };
 #endif  // PHOTOSELECTWINOW_H__

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "ConversionEngine.h"
 #include "PhotoSelectWindow.h"
+#include "ImportWindow.h"
 #include <gtk/gtk.h>
 #include <cairo-xlib.h>
 
@@ -95,14 +96,31 @@ class PhotoSelectWindow;
 
   G_MODULE_EXPORT void
   view_query_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    PhotoSelectWindow *photoSelectWindow = WindowRegistry::getPhotoSelectWindow(GTK_WIDGET(GTK_MENU_ITEM(menuItem)));
+    PhotoSelectWindow *photoSelectWindow = WindowRegistry::getPhotoSelectWindow(
+        GTK_WIDGET(GTK_MENU_ITEM(menuItem)));
     photoSelectWindow->query();
   }
 
   G_MODULE_EXPORT void
   edit_preferences_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    PhotoSelectWindow *photoSelectWindow = WindowRegistry::getPhotoSelectWindow(GTK_WIDGET(GTK_MENU_ITEM(menuItem)));
+    PhotoSelectWindow *photoSelectWindow = WindowRegistry::getPhotoSelectWindow(
+        GTK_WIDGET(GTK_MENU_ITEM(menuItem)));
     photoSelectWindow->preferences();
+  }
+
+  G_MODULE_EXPORT void
+  file_import_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
+    PhotoSelectWindow *photoSelectWindow = WindowRegistry::getPhotoSelectWindow(
+        GTK_WIDGET(GTK_MENU_ITEM(menuItem)));
+    photoSelectWindow->import();
+  }
+
+  G_MODULE_EXPORT void
+  import_response_cb(GtkWidget *widget, gint response_id, gpointer user_data) {
+    printf("import_response_activate_cb\n");
+    printf("response_id = %d\n", response_id);
+    ImportWindow *importWindow = WindowRegistry::getImportWindow(widget);
+    importWindow->import_response_cb(response_id);
   }
 
 }

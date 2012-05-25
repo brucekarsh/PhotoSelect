@@ -25,5 +25,7 @@ main(int argc, char **argv)
   //photoFilenameList2.push_back("/home/bruce/Tanzania2012/AW100/DSCN0451.JPG");
   //PhotoSelectWindow photoSelectWindow2;
   //photoSelectWindow2.setup(photoFilenameList2);
+  //GtkSettings *default_settings = gtk_settings_get_default();
+  //g_object_set(default_settings, "gtk-button-images", TRUE, NULL);
   gtk_main();
 }
