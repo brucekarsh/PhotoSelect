@@ -45,6 +45,10 @@ class ImportWindow {
     gtk_widget_show(window);
   }
 
+  bool is_cancel_requested() {
+    return cancel_requested;
+  }
+
   void import_response_cb(gint response_id) {
     printf("ImportWindow::import_response_cb called, response_id=%d\n", response_id);
     if (1 == response_id) {
@@ -127,10 +131,8 @@ class ImportWindow {
     }
     g_slist_free_full(file_list, g_free);
     photoDbImporter.set_dirs_to_process(dirs_to_process);
-    std::cout << "go_through_files() called" << std::endl;
     gtk_widget_show(progressBar);
     photoDbImporter.go_through_files(this);    
-    std::cout << "go_through_files() returns" << std::endl;
     processing_imports = false;
     gtk_widget_destroy(window);
     delete this;

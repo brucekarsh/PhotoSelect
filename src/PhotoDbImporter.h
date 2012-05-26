@@ -117,10 +117,13 @@ class PhotoDbImporter {
   int process_files(ImportWindow* importWindow, int file_count);
 
 
-  int
+  void
   go_through_files(ImportWindow *importWindow)
   {
     int nfiles = count_files_to_process(importWindow);
+    if (importWindow -> is_cancel_requested()) {
+      return;
+    }
     process_files(importWindow, nfiles);
   }
 
@@ -470,6 +473,9 @@ class PhotoDbImporter {
 	    process_count = 0;
             importWindow -> pulseProgressBar();
             importWindow -> runUI();
+            if (importWindow -> is_cancel_requested()) {
+	      return 0;
+            }
           }
         }
       }
@@ -498,6 +504,9 @@ class PhotoDbImporter {
           process_photo_file(std::string(ftsentp->fts_path));
           process_count++;
           total_process_count++;
+          if (importWindow -> is_cancel_requested()) {
+            return 0;
+          }
           if (process_count >= process_rate) {
             insert_into_database();
             process_count = 0;
