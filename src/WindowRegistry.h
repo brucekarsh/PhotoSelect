@@ -33,8 +33,7 @@ class WindowRegistry {
     }
 
     static void setPhotoSelectWindow(GtkWidget *widget, PhotoSelectWindow *photoSelectWindow) {
-      photoSelectWindowMap.insert(std::pair<GtkWindow*, PhotoSelectWindow*>(
-          GTK_WINDOW(gtk_widget_get_toplevel(widget)), photoSelectWindow));
+      photoSelectWindowMap[GTK_WINDOW(gtk_widget_get_toplevel(widget))] = photoSelectWindow;
     }
 
     static void forgetPhotoSelectWindow(GtkWidget *widget) {
@@ -56,8 +55,7 @@ class WindowRegistry {
     }
 
     static void setPreferencesWindow(GtkWidget *widget, PreferencesWindow *preferencesWindow) {
-      preferencesWindowMap.insert(std::pair<GtkWindow*, PreferencesWindow*>(
-          GTK_WINDOW(gtk_widget_get_toplevel(widget)), preferencesWindow));
+      preferencesWindowMap[GTK_WINDOW(gtk_widget_get_toplevel(widget))] = preferencesWindow;
     }
 
     static void forgetPreferencesWindow(GtkWidget *widget) {
@@ -79,8 +77,7 @@ class WindowRegistry {
     }
 
     static void setImportWindow(GtkWidget *widget, ImportWindow *importWindow) {
-      importWindowMap.insert(std::pair<GtkWindow*, ImportWindow*>(
-          GTK_WINDOW(gtk_widget_get_toplevel(widget)), importWindow));
+      importWindowMap[GTK_WINDOW(gtk_widget_get_toplevel(widget))] = importWindow;
     }
 
     static void forgetImportWindow(GtkWidget *widget) {
