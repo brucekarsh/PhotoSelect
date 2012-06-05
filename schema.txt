@@ -1,17 +1,104 @@
-use PhotoSelect;
+mysql -p -D PhotoSelect -e 'SELECT DISTINCT    ExifTagName.name,ExifTagValue.value  FROM    ExifTag, ExifTagName, ExifTagValue  where ExifTag.exifTagNameId=ExifTagName.id and ExifTag.exifTagValueId=ExifTagValue.id order by ExifTagName.name'
 
-CREATE TABLE file (
-  fileId INT AUTO_INCREMENT PRIMARY KEY,
-  filePath varchar(250) CHARACTER SET utf8 UNIQUE KEY
-);
+select count(filePath) from PhotoFile, Checksum, ExifBlob where PhotoFile.checksumId=Checksum.id and ExifBlob.checksumId=Checksum.id and ExtractValue(ExifBlob.value, "count(/exif/t[@name='Exif.Image.Make' and @value='Canon'])") = 1;
 
-CREATE TABLE checksum (
-  checksumId INT AUTO_INCREMENT PRIMARY KEY,
-  checksumValue char(32) UNIQUE KEY
-);
 
-CREATE TABLE project (
-  projectId INT AUTO_INCREMENT PRIMARY KEY,
-  projectName varchar(250) CHARACTER SET utf8 UNIQUE KEY
-);
+i->key()
+i->tag()<< " "
+(tn ? tn : "Unknown")
+i->count()
+i->value()
+
+
+Tables:
+  TagName
+    int id	        (autoincrement)
+    string name         i->key
+    string tagnum short i->tag
+
+  TagValue
+    int id
+    int tagNameId
+    string typename     i->typeName   
+    int count           i->count
+    string value	i->value
+    
+
+Exif.Photo.PixelYDimension                   0xa003 Short       1  3264
+Exif.Photo.InteroperabilityTag               0xa005 Long        1  37414
+Exif.Iop.InteroperabilityIndex               0x0001 Ascii       4  R98
+
+CREATE DATABASE PhotoSelect;
+
+USE PhotoSelect;
+ 
+CREATE TABLE ExifTagName (
+  id   INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(766) UNIQUE KEY NOT NULL,
+  nUpdates	INT NOT NULL
+) ENGINE=innodb;
+
+CREATE TABLE ExifTagValue (
+  id            INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  typename      MEDIUMBLOB,
+  count         INT,
+  value         BLOB,
+  sha		CHAR(40) UNIQUE KEY NOT NULL,
+  nUpdates	INT NOT NULL
+) ENGINE=innodb;
+
+CREATE TABLE Checksum (
+  id       INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  checksum CHAR(40) UNIQUE KEY NOT NULL
+) ENGINE=innodb;
+
+CREATE TABLE ExifBlob (
+  id             INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  checksumId	 INT NOT NULL UNIQUE KEY,
+  value		 LONGBLOB,
+  FOREIGN KEY(checksumId) REFERENCES Checksum(id)
+) ENGINE=innodb;
+
+# Join table for joining ExifTagName and ExifTagValue
+CREATE TABLE ExifTag (
+  id             INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  exifTagNameId  INT NOT NULL,
+  exifTagValueId INT NOT NULL,
+  checksumId	 INT NOT NULL,
+  FOREIGN KEY(exifTagNameId) REFERENCES ExifTagName(id),
+  FOREIGN KEY(exifTagValueId) REFERENCES ExifTagValue(id),
+  FOREIGN KEY(checksumId) REFERENCES Checksum(id)
+) ENGINE=innodb;
+
+CREATE TABLE PhotoFile (
+  id         INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  filePath   VARCHAR(766) UNIQUE KEY NOT NULL,
+  checksumId INT          NOT NULL,
+  FOREIGN KEY(checksumId) REFERENCES Checksum(id)
+) ENGINE=innodb;
+
+Create Table Project (
+  id   INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(766) UNIQUE KEY NOT NULL
+) Engine=innodb;
+
+Create Table ProjectChecksum (
+  id          INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  checksumId  INT,
+  projectId   INT,
+  FOREIGN KEY(checksumId) REFERENCES Checksum(id),
+  FOREIGN KEY(projectId) REFERENCES Project(id),
+  UNIQUE KEY (checksumId, projectId)
+) Engine=innodb;
+
+
+DROP Table ExifBlob;
+DROP Table ExifTag;
+DROP Table ExifTagName;
+DROP Table ExifTagValue;
+DROP Table PhotoFile;
+DROP TABLE ProjectChecksum;
+DROP Table Checksum;
+DROP TABLE Project;
+DROP DATABASE PhotoSelect;
 

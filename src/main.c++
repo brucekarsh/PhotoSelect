@@ -4,6 +4,8 @@
 #include <gtk/gtk.h>
 #include <cairo-xlib.h>
 #include "PhotoSelectWindow.h"
+#include <xercesc/util/PlatformUtils.hpp>
+
 
 using namespace std;
 
@@ -12,6 +14,18 @@ main(int argc, char **argv)
   Preferences preferences;
 
   gtk_init(&argc, &argv);
+
+  // Initialize the XML4C2 system.
+  try {
+    XMLPlatformUtils::Initialize();
+  } catch(const XMLException& toCatch) {
+    char *pMsg = XMLString::transcode(toCatch.getMessage());
+    std::cerr << "Error during Xerces-c Initialization.\n"
+        << "  Exception message:"
+        << pMsg;
+    XMLString::release(&pMsg);
+    exit(1);
+  }
 
   list<string> photoFilenameList1;
   photoFilenameList1.push_back("/home/bruce/Tanzania2012/AW100/DSCN0651.JPG");

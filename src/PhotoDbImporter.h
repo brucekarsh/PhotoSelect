@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <string>
 #include <queue>
+#include <sstream>
 
 #include <boost/foreach.hpp>
 #include <boost/regex.hpp>
@@ -28,6 +29,16 @@
 #include <resultset_metadata.h>
 #include <exception.h>
 #include <warning.h>
+
+#include <xercesc/util/PlatformUtils.hpp>
+#include <xercesc/util/XMLString.hpp>
+#include <xercesc/dom/DOM.hpp>
+#include <xercesc/framework/MemBufFormatTarget.hpp>
+#include <iostream>
+
+#include "XStr.h"
+
+XERCES_CPP_NAMESPACE_USE
 
 class ImportWindow;
 
@@ -57,32 +68,24 @@ class PhotoDbImporter {
   // PreparedStatements - a subclass that holds all the prepared statements used by PhotoDbImporter
   class PreparedStatements {
     public:
-    sql::PreparedStatement *insert_into_ExifTag;
-    sql::PreparedStatement *get_id_from_ExifTag;
-    sql::PreparedStatement *insert_into_ExifTagValue;
-    sql::PreparedStatement *insert_into_ExifTagName;
+
     sql::PreparedStatement *insert_into_Checksum;
     sql::PreparedStatement *get_id_from_Checksum;
     sql::PreparedStatement *insert_into_PhotoFile;
     sql::PreparedStatement *get_id_from_PhotoFile;
-    sql::PreparedStatement *selectLastInsertId;
+    sql::PreparedStatement *insert_into_ExifBlob;
+
     void initialize(sql::Connection *connection) {
-        insert_into_ExifTag = connection -> prepareStatement( "INSERT INTO ExifTag(ExifTagNameId,exifTagValueId,checksumId) Values (?,?,?)");
-        get_id_from_ExifTag = connection -> prepareStatement( "SELECT id FROM ExifTag where ExifTagNameId = ? and ExifTagValueId = ? and checksumId = ?");
-
-        insert_into_ExifTagValue = connection -> prepareStatement(
-            "INSERT INTO ExifTagValue(typename, count, value, sha, nUpdates) " 
-            "Values (?,?,?, sha(CONCAT_WS('/', sha(typename), sha(count), sha(value))),0) " 
-            "ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), nUpdates=nUpdates+1");
-
-        insert_into_ExifTagName = connection -> prepareStatement( 
-            "INSERT INTO ExifTagName(name, nUpdates) Values (?,0) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), nUpdates = nUpdates+1");
-
-        insert_into_Checksum = connection -> prepareStatement( "INSERT IGNORE INTO Checksum(checksum) Values (?)");
-        get_id_from_Checksum = connection -> prepareStatement("SELECT id FROM Checksum where checksum = ?");
-        insert_into_PhotoFile = connection -> prepareStatement( "REPLACE INTO PhotoFile(filePath, checksumId) Values (?,?)");
-        get_id_from_PhotoFile = connection -> prepareStatement( "SELECT id FROM PhotoFile where filePath = ? and checksumId = ?");
-        selectLastInsertId = connection -> prepareStatement("Select LAST_INSERT_ID()");
+      insert_into_Checksum = connection -> prepareStatement(
+          "INSERT IGNORE INTO Checksum(checksum) Values (?)");
+      get_id_from_Checksum = connection -> prepareStatement(
+          "SELECT id FROM Checksum where checksum = ?");
+      insert_into_PhotoFile = connection -> prepareStatement(
+          "REPLACE INTO PhotoFile(filePath, checksumId) Values (?,?)");
+      get_id_from_PhotoFile = connection -> prepareStatement(
+          "SELECT id FROM PhotoFile where filePath = ? and checksumId = ?");
+      insert_into_ExifBlob = connection -> prepareStatement(
+          "INSERT IGNORE INTO ExifBlob(checksumId, value) Values (?,?)");
     }
   } preparedStatements;
 
@@ -155,98 +158,63 @@ class PhotoDbImporter {
     return 0;
   }
 
+#define X(str) XStr(str).unicodeForm()
   void
-  insert_into_exif_tables(const std::list<ExifEntry> &exifEntries, int64_t checksum_key)
-  {
+  insert_into_exif_tables(const std::list<ExifEntry> &exifEntries, int64_t checksum_key) {
+
     std::cout << "insert_into_exif_tables entered, " << exifEntries.size() << " entries" << std::endl;
+
+    std::string xmlString = makeExifXmlString(exifEntries);
+    preparedStatements.insert_into_ExifBlob -> setInt64(1, checksum_key);
+    preparedStatements.insert_into_ExifBlob -> setString(2, xmlString.c_str());
+    int updateCount = preparedStatements.insert_into_ExifBlob -> executeUpdate();
+  }
+
+  /** make a string containing an xml representation of the ExifEntries */
+  std::string
+  makeExifXmlString(const std::list<ExifEntry> &exifEntries) {
+    DOMImplementation* impl =  DOMImplementationRegistry::getDOMImplementation(X("Core"));
+
+    // First make a DOM tree of the elements.
+    DOMDocument* doc = impl->createDocument(
+        0,                    // root element namespace URI.
+        X("exif"),            // root element name
+        0);                   // document type object (DTD).
+
+    DOMElement* rootElem = doc->getDocumentElement();
+
     BOOST_FOREACH(ExifEntry exifEntry, exifEntries) {
-      int64_t exifTagName_key = insert_into_ExifTagName(exifEntry.name);
-      int64_t exifTagValue_key =
-          insert_into_ExifTagValue(exifEntry.type_name, exifEntry.count, exifEntry.value);
-      insert_into_ExifTag(exifTagName_key, exifTagValue_key, checksum_key);
-    }
-  }
+      std::ostringstream convert;
+      convert << exifEntry.count;
 
-  void insert_into_ExifTag(int64_t exifTagName_key, int64_t exifTagValue_key, int64_t checksum_key)
-  {
-    // If it's already in the database, just return its id
-    int64_t exifTag_key =
-        get_id_from_ExifTag(exifTagName_key, exifTagValue_key, checksum_key);
-    if (exifTag_key != -1) {
-      return;
-    }
-    // It's not already in the database, so add it, find its id, and return it
-    preparedStatements.insert_into_ExifTag -> setInt64(1, exifTagName_key);
-    preparedStatements.insert_into_ExifTag -> setInt64(2, exifTagValue_key);
-    preparedStatements.insert_into_ExifTag -> setInt64(3, checksum_key);
-    int updateCount = preparedStatements.insert_into_ExifTag -> executeUpdate();
+      DOMElement *elem = doc->createElement(X("t"));
+      elem->setAttribute(X("name"), X(exifEntry.name.c_str()));
+      elem->setAttribute(X("type"), X(exifEntry.type_name.c_str()));
+      elem->setAttribute(X("count"), X(convert.str().c_str()));
+      elem->setAttribute(X("value"), X(exifEntry.value.c_str())); 
 
-    exifTag_key =
-        get_id_from_ExifTag(exifTagName_key, exifTagValue_key, checksum_key);
-    if (exifTag_key == -1) {
-      printf("insert failed in insert_into_Tag\n");
-      exit(1);
-    }
-  }
-
-  int64_t get_id_from_ExifTag(int64_t exifTagName_key, int64_t exifTagValue_key,
-      int64_t checksum_key)
-  {
-    preparedStatements.get_id_from_ExifTag -> setInt64(1, exifTagName_key);
-    preparedStatements.get_id_from_ExifTag -> setInt64(2, exifTagValue_key);
-    preparedStatements.get_id_from_ExifTag -> setInt64(3, checksum_key);
-    sql::ResultSet *rs  = preparedStatements.get_id_from_ExifTag -> executeQuery();
-    bool has_first = rs -> first();
-    if (has_first) {
-      bool is_first = rs->isFirst();
-      bool is_last = rs->isLast();
-      if (!is_first || ! is_last) {
-        printf("More than one key found in results in get_id_from_ExifTag\n");
-        std::cout << "isFirst(): " << rs->isFirst() << std::endl;
-        std::cout << "isLast(): " << rs->isLast() << std::endl;
-        exit(1);
-      }
-      int64_t exifTag_key = rs->getInt64("id");
-      return exifTag_key;
-    } else {
-      return -1;
-    }
-  }
-
-
-  int64_t insert_into_ExifTagValue(const std::string &type_name, int count, const std::string &value) {
-    preparedStatements.insert_into_ExifTagValue -> setString(1, type_name.c_str());
-    preparedStatements.insert_into_ExifTagValue -> setInt64(2, count);
-    preparedStatements.insert_into_ExifTagValue -> setString(3, value.c_str());
-    int updateCount = preparedStatements.insert_into_ExifTagValue -> executeUpdate();
-    return selectLastInsertId();
-  }
-
-  int64_t selectLastInsertId() {
-    sql::ResultSet *rs = preparedStatements.selectLastInsertId -> executeQuery();
-    bool has_first = rs -> first();
-    if (has_first) {
-      bool is_first = rs->isFirst();
-      bool is_last = rs->isLast();
-      if (!is_first || ! is_last) {
-        printf("More than one key found in results in selectLastInsertId after insert_into_ExifTagValue\n");
-        std::cout << "isFirst(): " << rs->isFirst() << std::endl;
-        std::cout << "isLast(): " << rs->isLast() << std::endl;
-        exit(1);
-      }
-      sql::ResultSetMetaData *rsmd = rs->getMetaData();
-      int64_t exifTagValue_key = rs->getInt64(1);
-      return exifTagValue_key;
-    } else {
-      return -1;
+      rootElem->appendChild(elem);
     }
 
-  }
+    // Then make an XML serializer
+    DOMLSSerializer* serializer = ((DOMImplementationLS*)impl)->createLSSerializer();
+    if (serializer->getDomConfig()->canSetParameter(XMLUni::fgDOMWRTDiscardDefaultContent, true)) {
+        serializer->getDomConfig()->setParameter(XMLUni::fgDOMWRTDiscardDefaultContent, true);
+    }
+    if (serializer->getDomConfig()->canSetParameter(XMLUni::fgDOMWRTFormatPrettyPrint, false)){
+        serializer->getDomConfig()->setParameter(XMLUni::fgDOMWRTFormatPrettyPrint, false);
+    }
 
-  int64_t insert_into_ExifTagName(const std::string &name) {
-    preparedStatements.insert_into_ExifTagName -> setString(1, name.c_str());
-    int updateCount = preparedStatements.insert_into_ExifTagName -> executeUpdate();
-    return selectLastInsertId();
+    // Then serialize the DOM tree into an xml string
+    XMLFormatTarget *xMLFormatTarget = new MemBufFormatTarget();
+    DOMLSOutput* theOutput = ((DOMImplementationLS*)impl)->createLSOutput();
+    theOutput->setByteStream(xMLFormatTarget);
+    serializer->write(rootElem, theOutput);
+    char* theXMLString_Encoded = (char*) ((MemBufFormatTarget*)xMLFormatTarget)->getRawBuffer();
+    std::string result = std::string(theXMLString_Encoded);
+    doc->release();
+
+    return result;
   }
 
   int64_t insert_into_Checksum(const std::string &checksum) {

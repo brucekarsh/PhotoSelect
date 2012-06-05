@@ -6,7 +6,7 @@
 #include <malloc.h>
 #include <sys/time.h>
 extern "C" {
-#include "jpeglib.h"
+#include <jpeglib.h>
 };
 #include "setjmp.h"
 #include "ScaledImage.h"
@@ -164,7 +164,9 @@ class ConvertedPhotoFile {
   unsigned char *scale_pixmap(int output_width, int output_height)
   {
       unsigned char *newbuf;
-      newbuf = (unsigned char *)malloc(output_width*output_height*3);
+      const int IN_BYTES_PER_PIXEL = 3;
+      const int OUT_BYTES_PER_PIXEL = 4;
+      newbuf = (unsigned char *)malloc(output_width*output_height*OUT_BYTES_PER_PIXEL);
   
       unsigned char *inbufrowp, *inbufcolp;
       unsigned char *outbufp;
@@ -180,19 +182,20 @@ class ConvertedPhotoFile {
       for(y=0;y<output_height;y++) {
           inbufcolp = inbufrowp;
           for(x=0;x<output_width;x++) {
-              outbufp[0] = inbufcolp[0];
+              outbufp[0] = inbufcolp[2];
               outbufp[1] = inbufcolp[1];
-              outbufp[2] = inbufcolp[2];
+              outbufp[2] = inbufcolp[0];
+              outbufp[3] = inbufcolp[3];
               int tmp1 = colincrement.increment();
   //printf("Col increment %d\n",tmp1);
-              inbufcolp += 3*tmp1;
-              outbufp+=3;
+              inbufcolp += IN_BYTES_PER_PIXEL*tmp1;
+              outbufp+=OUT_BYTES_PER_PIXEL;
           }
           colincrement.reset();
           int tmp2;
           tmp2 = rowincrement.increment();
   //printf("Row increment %d\n",tmp2);
-          inbufrowp += 3*width*tmp2;
+          inbufrowp += IN_BYTES_PER_PIXEL*width*tmp2;
       }
   
       gettimeofday(&tv1,0);

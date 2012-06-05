@@ -71,8 +71,8 @@ class PhotoSelectWindow {
     ConvertedPhotoFile *convertedPhotoFile = conversionEngine.getConvertedPhotoFile(); 
     printf("%d %d\n", convertedPhotoFile->width, convertedPhotoFile->height);
 
-    cairo_t *cr = gdk_cairo_create(drawingarea1->window);
-    cairo_set_source_rgb(cr, 0.5,  0.5, 0.5);
+    cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(drawingarea1));
+    cairo_set_source_rgb(cr, 0.2,  0.5, 0.2);
     cairo_paint(cr);
 
     // Figure out the width and height of the rotated (but not scaled) image.
@@ -101,16 +101,16 @@ class PhotoSelectWindow {
     // widget->allocation.height
     // XXX if this fp-safe?
 
-    cairo_surface_t * surface = cairo_get_target(cr);
-    printf("surface = 0x%lx\n", (long)surface);
-    if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS) {
-      printf("Nil surface\n");
+    cairo_surface_t * dest_surface = cairo_get_target(cr);
+    printf("dest_surface = 0x%lx\n", (long)dest_surface);
+    if (cairo_surface_status(dest_surface) != CAIRO_STATUS_SUCCESS) {
+      printf("Nil dest_surface\n");
     } else {
-      printf("Non-Nil surface\n");
+      printf("Non-Nil dest_surface\n");
     }
-    printf("cairo_surface_get_type %d\n", cairo_surface_get_type(surface));
-    int surface_width = cairo_xlib_surface_get_width(surface);
-    int surface_height = cairo_xlib_surface_get_height(surface);
+    printf("cairo_surface_get_type %d\n", cairo_surface_get_type(dest_surface));
+    gint surface_width = gtk_widget_get_allocated_width(drawingarea1);
+    gint surface_height = gtk_widget_get_allocated_height(drawingarea1);
     printf("surface width %d height %d\n", surface_width, surface_height);
 
     rotated_aspectratio = ((double)rotated_image_width)/((double)rotated_image_height);
@@ -157,15 +157,12 @@ class PhotoSelectWindow {
     }
 
     printf("drawing %dx%d 0x%lx\n",scaled_image_width, scaled_image_height, (long)scaled_image->getPixels());
-    gdk_draw_rgb_image(drawingarea1->window,
-                    drawingarea1->style->fg_gc[GTK_WIDGET_STATE (drawingarea1)],
-                    (drawingarea1->allocation.width-scaled_image_width)/2,
-                    (drawingarea1->allocation.height-scaled_image_height)/2,
-                    scaled_image_width,
-                    scaled_image_height,
-                    GDK_RGB_DITHER_MAX,
-                    scaled_image->getPixels(),
-                    scaled_image_width*3);
+    int stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, scaled_image_width);
+    cairo_surface_t *source_surface = cairo_image_surface_create_for_data(scaled_image->getPixels(),
+        CAIRO_FORMAT_RGB24, scaled_image_width, scaled_image_height, stride);
+    cairo_set_source_surface(cr, source_surface, 0, 0);
+    cairo_paint(cr);
+    cairo_surface_destroy(source_surface);
 
     delete scaled_image;
   }

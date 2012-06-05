@@ -8,7 +8,9 @@
 #include <cairo-xlib.h>
 #include <stdlib.h>
 
+#ifdef GTK2
 #include <vte-0.0/vte/vte.h>
+#endif
 
 class ImportWindow {
   public:
@@ -101,7 +103,11 @@ class ImportWindow {
   void start_importing();
 
   void display_on_UI(std::string text) {
-    vte_terminal_feed(VTE_TERMINAL(importTerminal), (std::string("\r\n") + text).c_str(), -1);
+    if (importTerminal) {
+#ifdef  GTK2
+      vte_terminal_feed(VTE_TERMINAL(importTerminal), (std::string("\r\n") + text).c_str(), -1);
+#endif // GTK2
+    }
   }
 };
 
