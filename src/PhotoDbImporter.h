@@ -131,29 +131,15 @@ class PhotoDbImporter {
   }
 
   int
-  insert_into_database()
-  {
-   const int insert_rate = 100;
-   int insert_count = 0;
+  insert_into_database() {
     BOOST_FOREACH(PhotoDbEntry photoDbEntry, photoDbEntries) {
-
       int64_t checksum_key = insert_into_Checksum(photoDbEntry.checksum);
-
-
-      int64_t photoFile_key =
-          insert_into_PhotoFile(photoDbEntry.filePath, checksum_key);
+      int64_t photoFile_key = insert_into_PhotoFile(photoDbEntry.filePath, checksum_key);
 
       insert_into_exif_tables(photoDbEntry.exifEntries, checksum_key);
       photoDbEntry.exifEntries.clear();
-      insert_count ++;
-      if (insert_count >= insert_rate) {
-          std::cout << "Committing " << insert_count << std::endl;
-          connection -> commit();
-          insert_count = 0;
-      }
     }
     photoDbEntries.clear();
-    std::cout << "Committing last " << insert_count << std::endl;
     connection -> commit();
     return 0;
   }
@@ -161,9 +147,6 @@ class PhotoDbImporter {
 #define X(str) XStr(str).unicodeForm()
   void
   insert_into_exif_tables(const std::list<ExifEntry> &exifEntries, int64_t checksum_key) {
-
-    std::cout << "insert_into_exif_tables entered, " << exifEntries.size() << " entries" << std::endl;
-
     std::string xmlString = makeExifXmlString(exifEntries);
     preparedStatements.insert_into_ExifBlob -> setInt64(1, checksum_key);
     preparedStatements.insert_into_ExifBlob -> setString(2, xmlString.c_str());
@@ -292,12 +275,10 @@ class PhotoDbImporter {
     compute_picture_file_hash(filename, hashHexOutput);
     photoDbEntries.push_back(PhotoDbEntry(filename, hashHexOutput));
     try {
-      std::cout << "calling process_exif(filename)" << std::endl;
       process_exif(filename);
     } catch(...) {
       std::cout << "Caught exception in process_photo_file, file was: " << filename << std::endl;
     }
-    std::cout << "no exception" << std::endl;
   }
   
   void
@@ -313,24 +294,6 @@ class PhotoDbImporter {
         const char* tn = i->typeName();
         if (i->value().size() > 40) continue;
   
-        if(0) {
-          std::cout << std::setw(44) << std::setfill(' ') << std::left
-              << i->key() << " "
-              << "0x" << std::setw(4) << std::setfill('0') << std::right
-              << std::hex << i->tag() << " "
-              << std::setw(9) << std::setfill(' ') << std::left
-              << (tn ? tn : "Unknown") << " "
-              << std::dec << std::setw(3)
-              << std::setfill(' ') << std::right
-              << i->count() << "  "
-              << std::dec << i->value()
-              << "\n";
-          std::cout << "Add to table ExifTagName: name=" << i->key() << " tagnum=" << std::hex << i->tag()
-              << std::endl;
-          std::cout << "Add to table ExifTagValue: typename=" << i->typeName() << " count=" << i->count()
-              << " value=" << i->value() << std::endl;
-          std::cout << "Add to table Tag" << std::endl;
-        }
         photoDbEntries.back().exifEntries.push_back(ExifEntry(
             i->key(), std::string(tn), i->count(), i->value().toString()));
       }
@@ -389,7 +352,6 @@ class PhotoDbImporter {
   open_database(std::string dbhost, std::string user, std::string password, std::string database) {
 
     /* initiate url, user, password and database variables */
-    std::cout << "Url " << url << " User " << user << " Password " << password << " Database " << database << std::endl;
 
     driver = get_driver_instance();
     if (0 == driver) {
