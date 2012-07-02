@@ -7,6 +7,7 @@
 class PhotoSelectWindow;
 class PreferencesWindow;
 class ImportWindow;
+class QueryWindow;
 
 /** Remembers a mapping from top-level windows to our objects so we can get find
 **  our objects given a top-level window.
@@ -16,6 +17,7 @@ class WindowRegistry {
     static std::map<GtkWindow*, PhotoSelectWindow*> photoSelectWindowMap;
     static std::map<GtkWindow*, PreferencesWindow*> preferencesWindowMap;
     static std::map<GtkWindow*, ImportWindow*> importWindowMap;
+    static std::map<GtkWindow*, QueryWindow*> queryWindowMap;
   public:
 
     // PhotoSelectWindow registry methods
@@ -83,6 +85,28 @@ class WindowRegistry {
     static void forgetImportWindow(GtkWidget *widget) {
       std::cout << "XXX setImportWindow WRITEME" << std::endl;
     }
+
+    // QueryWindow registry methods
+
+    static QueryWindow* getQueryWindow(GtkWidget *widget) {
+      QueryWindow *queryWindow = 0;
+      std::map<GtkWindow*, QueryWindow*>::iterator it =
+        queryWindowMap.find(GTK_WINDOW(get_toplevel_widget(widget)));
+      if (queryWindowMap.end() == it) {
+        printf("Cannot find query window in the queryWindowMap\n");
+      } else {
+        queryWindow = it -> second;
+      }
+      return queryWindow;
+    }
+
+    static void setQueryWindow(GtkWidget *widget, QueryWindow *queryWindow) {
+      queryWindowMap[GTK_WINDOW(gtk_widget_get_toplevel(widget))] = queryWindow;
+    }
+
+    static void forgetQueryWindow(GtkWidget *widget) {
+      std::cout << "XXX forgetQueryWindow WRITEME" << std::endl;
+    };
     
     // Other registry methods
 
@@ -109,3 +133,4 @@ class WindowRegistry {
     }
 };
 #endif // WINDOW_REGISTRY_H__
+

@@ -5,6 +5,8 @@
 #include <fcntl.h>
 #include <fts.h>
 #include <sys/stat.h>
+#include <time.h>
+#include <sys/timeb.h>
 
 #include <crypto++/cryptlib.h>
 #include <crypto++/hex.h>
@@ -49,19 +51,19 @@ class PhotoDbImporter {
   private:
   class ExifEntry {
     public:
-    std::string name;
     std::string type_name;
     int count;
     std::string value;    
-    ExifEntry(std::string name, std::string type_name, int count, std::string value)
-        : name(name), type_name(type_name), count(count), value(value) {}
+    ExifEntry(std::string type_name, int count, std::string value)
+        : type_name(type_name), count(count), value(value) {}
   };
   class PhotoDbEntry {
     public:
     std::string filePath;
     std::string checksum;
-    std::list<ExifEntry> exifEntries;
-    PhotoDbEntry(std::string filePath, std::string checksum) : filePath(filePath), checksum(checksum) {}
+    std::map<std::string, ExifEntry> exifEntries;
+    PhotoDbEntry(std::string filePath, std::string checksum) : filePath(filePath),
+        checksum(checksum) {}
 
   };
 
@@ -74,18 +76,30 @@ class PhotoDbImporter {
     sql::PreparedStatement *insert_into_PhotoFile;
     sql::PreparedStatement *get_id_from_PhotoFile;
     sql::PreparedStatement *insert_into_ExifBlob;
+    sql::PreparedStatement *insert_into_Time;
 
     void initialize(sql::Connection *connection) {
+std::cout << "A" << std::endl;
       insert_into_Checksum = connection -> prepareStatement(
           "INSERT IGNORE INTO Checksum(checksum) Values (?)");
+std::cout << "B" << std::endl;
       get_id_from_Checksum = connection -> prepareStatement(
           "SELECT id FROM Checksum where checksum = ?");
+std::cout << "C" << std::endl;
       insert_into_PhotoFile = connection -> prepareStatement(
           "REPLACE INTO PhotoFile(filePath, checksumId) Values (?,?)");
+std::cout << "D" << std::endl;
       get_id_from_PhotoFile = connection -> prepareStatement(
           "SELECT id FROM PhotoFile where filePath = ? and checksumId = ?");
+std::cout << "E" << std::endl;
       insert_into_ExifBlob = connection -> prepareStatement(
           "INSERT IGNORE INTO ExifBlob(checksumId, value) Values (?,?)");
+std::cout << "F" << std::endl;
+      insert_into_Time = connection -> prepareStatement(
+          "INSERT IGNORE INTO "
+          "Time(checksumId, originalDateTime, adjustedDateTime ) "
+          "Values(?,?,?)");
+std::cout << "G" << std::endl;
     }
   } preparedStatements;
 
@@ -98,19 +112,38 @@ class PhotoDbImporter {
   public:
   std::list<PhotoDbEntry> photoDbEntries;
   std::list<std::string> errors;
-  sql::Driver *driver;
-  sql::Connection *connection;
-  std::string url;
   std::string user;
   std::string password;
   std::string database;
+  std::string import_time;
+  std::string import_timezone;
+  sql::Connection *connection;
 
   static std::string DEFAULT_DBHOST()   { return "localhost";};
   static std::string DEFAULT_USER()     { return "";};
   static std::string DEFAULT_PASSWORD() { return "";};
   static std::string DEFAULT_DATABASE() { return "PhotoSelect";};
 
-  PhotoDbImporter() : connection(0)  {
+  PhotoDbImporter(sql::Connection *connection_) : connection(connection_)  {
+    struct timeb now_timeb;
+    ftime(&now_timeb); 
+    time_t now_time_t = now_timeb.time;
+    struct tm now_tm;
+    localtime_r(&now_time_t, &now_tm);
+    char buf[20];
+    snprintf(buf, 20, "%04d-%02d-%02d %02d:%02d:%02d",
+        1900+now_tm.tm_year,
+        now_tm.tm_mon,
+        now_tm.tm_mday,
+        now_tm.tm_hour,
+        now_tm.tm_min,
+        now_tm.tm_sec,
+        now_tm.tm_isdst);
+    import_time = buf;
+    import_timezone = tzname[now_tm.tm_isdst];
+    std::cout << "import_time " << import_time << std::endl;
+    std::cout << "import_timezone " << import_timezone << std::endl;
+    preparedStatements.initialize(connection);
   };
 
   void set_dirs_to_process(std::queue<std::string> dirs_to_process) {
@@ -144,18 +177,59 @@ class PhotoDbImporter {
     return 0;
   }
 
+
 #define X(str) XStr(str).unicodeForm()
   void
-  insert_into_exif_tables(const std::list<ExifEntry> &exifEntries, int64_t checksum_key) {
-    std::string xmlString = makeExifXmlString(exifEntries);
+  insert_into_exif_tables(const std::map<std::string, ExifEntry> &exifEntries,
+      int64_t checksum_key) {
+    // insert into ExifBlob
+    std::string xmlString = make_exif_xml_string(exifEntries);
     preparedStatements.insert_into_ExifBlob -> setInt64(1, checksum_key);
     preparedStatements.insert_into_ExifBlob -> setString(2, xmlString.c_str());
     int updateCount = preparedStatements.insert_into_ExifBlob -> executeUpdate();
+    // find a time from the exif data
+    std::list<std::string> fields;
+    fields.push_back(std::string("Exif.Image.DateTime"));
+    fields.push_back(std::string("Exif.Photo.DateTimeOriginal"));
+    fields.push_back(std::string("Exif.Photo.DateTimeDigitized"));
+ 
+    std::string camera_time = "";
+
+    BOOST_FOREACH(std::string field, fields) {
+      std::cout << field << std::endl;
+      if (exifEntries.count(field)) {
+        std::string exif_datetime = exifEntries.find(field)->second.value;
+	std::string mysql_datetime = exif_datetime_to_mysql_datetime(exif_datetime);
+        std::cout << "exif_datetime " << exif_datetime << " mysql_datetime " <<
+            mysql_datetime << std::endl;
+	break;
+      }
+    }
+
+    // If we didn't find a time in the exif use import_time.
+
+    if (camera_time == "") {
+      camera_time = import_time;
+    }
+
+    preparedStatements.insert_into_Time -> setInt64(1, checksum_key);
+    preparedStatements.insert_into_Time -> setString(2, camera_time);
+    preparedStatements.insert_into_Time -> setString(3, camera_time);
+    updateCount = preparedStatements.insert_into_Time -> executeUpdate();
   }
+
+std::string
+exif_datetime_to_mysql_datetime(const std::string exif_datetime)
+{
+  std::string mysql_datetime = exif_datetime;
+  mysql_datetime[4] = '-';
+  mysql_datetime[7] = '-';
+  return mysql_datetime;
+}
 
   /** make a string containing an xml representation of the ExifEntries */
   std::string
-  makeExifXmlString(const std::list<ExifEntry> &exifEntries) {
+  make_exif_xml_string(const std::map<std::string, ExifEntry> &exifEntries) {
     DOMImplementation* impl =  DOMImplementationRegistry::getDOMImplementation(X("Core"));
 
     // First make a DOM tree of the elements.
@@ -166,15 +240,16 @@ class PhotoDbImporter {
 
     DOMElement* rootElem = doc->getDocumentElement();
 
-    BOOST_FOREACH(ExifEntry exifEntry, exifEntries) {
+    typedef std::map<std::string, ExifEntry> map_t;
+    BOOST_FOREACH(const map_t::value_type &exifEntry, exifEntries) {
       std::ostringstream convert;
-      convert << exifEntry.count;
+      convert << exifEntry.second.count;
 
       DOMElement *elem = doc->createElement(X("t"));
-      elem->setAttribute(X("name"), X(exifEntry.name.c_str()));
-      elem->setAttribute(X("type"), X(exifEntry.type_name.c_str()));
+      elem->setAttribute(X("name"), X(exifEntry.first.c_str()));
+      elem->setAttribute(X("type"), X(exifEntry.second.type_name.c_str()));
       elem->setAttribute(X("count"), X(convert.str().c_str()));
-      elem->setAttribute(X("value"), X(exifEntry.value.c_str())); 
+      elem->setAttribute(X("value"), X(exifEntry.second.value.c_str())); 
 
       rootElem->appendChild(elem);
     }
@@ -294,8 +369,9 @@ class PhotoDbImporter {
         const char* tn = i->typeName();
         if (i->value().size() > 40) continue;
   
-        photoDbEntries.back().exifEntries.push_back(ExifEntry(
-            i->key(), std::string(tn), i->count(), i->value().toString()));
+        photoDbEntries.back().exifEntries.insert(
+            std::map<std::string, ExifEntry>::value_type(
+            i->key(), ExifEntry(std::string(tn), i->count(), i->value().toString())));
       }
     } else {
       // TODO what to do if exiv2Image.get fails?
@@ -347,33 +423,6 @@ class PhotoDbImporter {
   {
     return regex_match(filename, re_for_jpg_suffix());
   }
-  
-  int
-  open_database(std::string dbhost, std::string user, std::string password, std::string database) {
-
-    /* initiate url, user, password and database variables */
-
-    driver = get_driver_instance();
-    if (0 == driver) {
-      fprintf(stderr, "get_driver_instance() failed.\n");
-      exit(1);
-    }
-
-    connection = driver -> connect(url, user, password);
-    if (NULL == connection) {
-      printf("driver -> connect() failed\n");
-      exit(1);
-      // TODO handle db open failure.
-    }
-
-    connection -> setAutoCommit(0);
-    connection -> setSchema(database); 
-
-    preparedStatements.initialize(connection);
-
-    return 0;
-  }
-  
 };
 
 

@@ -21,8 +21,10 @@ class PhotoSelectWindow {
     GtkWidget *drawingarea1;
     GtkWidget *ofN;
     std::list<std::string> photoFilenameList;
+    sql::Connection *connection;
 
-  PhotoSelectWindow() : rotation(0), window(0), drawingarea1(0), thePreferences((Preferences*)0) {
+  PhotoSelectWindow(sql::Connection *connection_) :
+      rotation(0), window(0), drawingarea1(0), thePreferences((Preferences*)0), connection(connection_) {
   }
 
   void setup(std::list<std::string> photoFilenameList_, Preferences *thePreferences) {
@@ -177,7 +179,7 @@ class PhotoSelectWindow {
 
   void query() {
     printf("PhotoSelectWindow::query\n");
-    QueryWindow queryWindow(this);
+    QueryWindow queryWindow(connection);
     queryWindow.run();
   }
 
@@ -189,7 +191,7 @@ class PhotoSelectWindow {
 
   void import() {
     printf("PhotoSelectWindow::import\n");
-    ImportWindow *importWindow = new ImportWindow(thePreferences);
+    ImportWindow *importWindow = new ImportWindow(thePreferences, connection);
     importWindow -> run();
   }
 };

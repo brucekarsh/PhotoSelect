@@ -6,6 +6,8 @@
 #include "PhotoSelectWindow.h"
 #include <xercesc/util/PlatformUtils.hpp>
 
+sql::Connection *
+open_database(std::string dbhost, std::string user, std::string password, std::string database);
 
 using namespace std;
 
@@ -31,7 +33,12 @@ main(int argc, char **argv)
   photoFilenameList1.push_back("/home/bruce/Tanzania2012/AW100/DSCN0651.JPG");
   photoFilenameList1.push_back("/home/bruce/Tanzania2012/AW100/DSCN0551.JPG");
   photoFilenameList1.push_back("/home/bruce/Tanzania2012/D7000-6/DSC_8557.JPG");
-  PhotoSelectWindow photoSelectWindow1;
+  std::string dbhost = preferences.get_dbhost();
+  std::string user = preferences.get_user();
+  std::string password = preferences.get_password();
+  std::string database = preferences.get_database();
+  sql::Connection *connection = open_database(dbhost, user, password, database);
+  PhotoSelectWindow photoSelectWindow1(connection);
   photoSelectWindow1.setup(photoFilenameList1, &preferences);
 
   //list<string> photoFilenameList2;
@@ -42,4 +49,28 @@ main(int argc, char **argv)
   //GtkSettings *default_settings = gtk_settings_get_default();
   //g_object_set(default_settings, "gtk-button-images", TRUE, NULL);
   gtk_main();
+}
+
+sql::Connection *
+open_database(std::string dbhost, std::string user, std::string password, std::string database) {
+
+  /* initiate url, user, password and database variables */
+  sql::Driver *driver = get_driver_instance();
+  if (0 == driver) {
+    fprintf(stderr, "get_driver_instance() failed.\n");
+    exit(1);
+  }
+
+  std::string url;
+  sql::Connection *connection = driver -> connect(url, user, password);
+  if (NULL == connection) {
+    printf("driver -> connect() failed\n");
+    exit(1);
+    // TODO handle db open failure.
+  }
+
+  connection -> setAutoCommit(0);
+  connection -> setSchema(database);
+
+  return connection;
 }

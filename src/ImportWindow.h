@@ -20,9 +20,10 @@ class ImportWindow {
   GtkWidget *importTerminal;
   bool cancel_requested;
   bool processing_imports;
+  sql::Connection *connection;
 
-  ImportWindow(Preferences* thePreferences) : cancel_requested(false), processing_imports(false) {
-    this->thePreferences = thePreferences;
+  ImportWindow(Preferences* thePreferences_, sql::Connection *connection_) :
+      thePreferences( thePreferences_), cancel_requested(false), processing_imports(false), connection(connection_) {
   }
 
   void run() {
@@ -115,13 +116,12 @@ class ImportWindow {
 
   void inline
   ImportWindow::start_importing() {
-    PhotoDbImporter photoDbImporter;
+    PhotoDbImporter photoDbImporter(connection);
     processing_imports = true;
     std::string dbhost = thePreferences -> get_dbhost();
     std::string user = thePreferences -> get_user();
     std::string password = thePreferences -> get_password();
     std::string database = thePreferences -> get_database();
-    photoDbImporter.open_database(dbhost, user, password, database);
     GSList *file_list = gtk_file_chooser_get_filenames(GTK_FILE_CHOOSER(window));
     GSList *p;
     std::queue<std::string> dirs_to_process;

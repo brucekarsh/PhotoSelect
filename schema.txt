@@ -91,7 +91,16 @@ Create Table ProjectChecksum (
   UNIQUE KEY (checksumId, projectId)
 ) Engine=innodb;
 
+Create Table Time (
+  id	      INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  checksumId  INT NOT NULL,
+  originalDateTime DATETIME NOT NULL,
+  adjustedDateTime DATETIME NOT NULL,
+  KEY(checksumId),
+  FOREIGN KEY(checksumId) REFERENCES Checksum(id)
+) Engine=innodb;
 
+Drop Table Time;
 DROP Table ExifBlob;
 DROP Table ExifTag;
 DROP Table ExifTagName;
