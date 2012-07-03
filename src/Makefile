@@ -2,7 +2,7 @@ CSRC =
 COBJ = $(CSRC:%.c=%.o)
 CDEP = $(COBJ:%.c:%.d)
 
-CXXSRC = main.cc GtkCallbackStubs.cc WindowRegistry.cc
+CXXSRC = main.cc GtkCallbackStubs.cc WindowRegistry.cc BaseWindow.cc
 CXXOBJ = $(CXXSRC:%.cc=%.o)
 CXXDEP = $(CXXSRC:%.cc=%.d)
 
@@ -16,7 +16,7 @@ main:	$(COBJ) $(CXXOBJ)
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 clean:
-	-rm -f $(COBJ) $(CDEP) $(CXXOBJ) $(CXXDEP) main
+	-rm -f $(COBJ) $(CDEP) $(CXXOBJ) $(CXXDEP) main *.gch
 
 show:
 	@/bin/echo CSRC is $(CSRC)

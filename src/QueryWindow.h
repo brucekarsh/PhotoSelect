@@ -5,6 +5,7 @@
 #include <fstream>
 #include <vector>
 #include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
 #include <json_spirit.h>
 
 #include "WindowRegistry.h"
@@ -39,6 +40,8 @@ class QueryWindow {
   GtkWidget *verticalBox;
   GtkWidget *scrollTextView;
   GtkWidget *scrollWindow;
+  GtkWidget *scrollBox;
+  GtkWidget *status_label;
   sql::Connection *connection;
 
   QueryWindow(sql::Connection *connection_) : connection(connection_) {
@@ -137,23 +140,42 @@ class QueryWindow {
     std::string sql_statement = first_part + last_part;
 
     std::cout << "queryJSONToQuery statement: " << sql_statement << std::endl;
-    gtk_widget_show(scrollWindow);
+    gtk_widget_show(scrollBox);
     sql::PreparedStatement *queryPreparedStatement = connection->prepareStatement( sql_statement);
     for (int i=0; i<value_vector.size(); i++) {
       queryPreparedStatement->setString(i+1,value_vector[i]);
     }
     GtkTextBuffer *scrollTextBuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(scrollTextView));
-    std::string txt = "Issuing query...\n";
+    std::string txt = "\nIssuing query...\n\n";
     gtk_text_buffer_set_text(scrollTextBuffer, txt.c_str(), txt.size());
-    gtk_main_iteration_do(FALSE);
+    gtk_label_set_text(GTK_LABEL(status_label), "status: Query started.");
+    runUI();
     sql::ResultSet *rs = queryPreparedStatement->executeQuery();
     gtk_text_buffer_set_text(scrollTextBuffer, "", 0);
+    runUI();
+    int count = 0;
+    int total_count = 0;
+   std::string label;
     while (rs->next()) {
       std::string filePath = rs->getString(1);
       gtk_text_buffer_insert_at_cursor(scrollTextBuffer, filePath.c_str(), filePath.size());
       gtk_text_buffer_insert_at_cursor(scrollTextBuffer, "\n", 1);
-      std::cout << filePath << std::endl;
+      count++;
+      total_count++;
+      if(count >= 300) {
+        count = 0;
+        label  = "status: Query in progress. ";
+        label +=  boost::lexical_cast<std::string>(total_count);
+        label += " image files so far";
+        gtk_label_set_text(GTK_LABEL(status_label), label.c_str());
+        runUI();
+      }
     }
+    label  = "status: Query finished. ";
+    label +=  boost::lexical_cast<std::string>(total_count);
+    label += " image files found";
+    gtk_label_set_text(GTK_LABEL(status_label), label.c_str());
+    runUI();
 
     std::cout << "queryJSONToQuery done: " << sql_statement << std::endl;
     return first_part + last_part;
@@ -281,6 +303,13 @@ class QueryWindow {
   }
 
   void
+  runUI() {
+    while (gtk_events_pending ()) {
+      gtk_main_iteration ();
+    }
+  }
+
+  void
   run() {
     GtkWidget *window;
     GtkWidget *submitButton;
@@ -288,7 +317,7 @@ class QueryWindow {
     GtkWidget *buttonHBox;
     GtkWidget *empty_row_hbox;
     GtkWidget *empty_row_add_button;
-    GtkWidget *scrollBox;
+    GtkWidget *status_row;
 
     // Make a window with a vertical box (windowBox) in it.
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -330,11 +359,21 @@ class QueryWindow {
 
     // Add a box for the scrollable text (scrollBox) to windowBox
     scrollBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_show(scrollBox);
     gtk_box_pack_start(GTK_BOX(windowBox), scrollBox, TRUE, TRUE, 0);
+
+    // Add a box for status information (status_row) to scrollBox
+    status_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_show(status_row);
+    gtk_box_pack_start(GTK_BOX(scrollBox), status_row, FALSE, FALSE, 0);
+
+    // Add a label for status to status_row
+    status_label = gtk_label_new("This is the status label");
+    gtk_widget_show(status_label);
+    gtk_box_pack_start(GTK_BOX(status_row), status_label, FALSE, FALSE, 0);
 
     // Add a scrollable window (scrollWindow) to scrollBox
     scrollWindow = gtk_scrolled_window_new(NULL, NULL);
+    gtk_widget_show(scrollWindow);
     gtk_widget_set_size_request(scrollWindow, 0, 400);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrollWindow),
         GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
@@ -353,7 +392,6 @@ class QueryWindow {
     g_signal_connect(submitButton, "clicked", G_CALLBACK(querySubmitButtonCallback), NULL);
 
     gtk_widget_show(window);
-    gtk_main();
   }
 }; // end class QueryWindow
 #endif // QUERYWINDOW_H__

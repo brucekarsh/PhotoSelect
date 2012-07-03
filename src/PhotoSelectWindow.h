@@ -179,8 +179,9 @@ class PhotoSelectWindow {
 
   void query() {
     printf("PhotoSelectWindow::query\n");
-    QueryWindow queryWindow(connection);
-    queryWindow.run();
+    QueryWindow *queryWindow = new QueryWindow(connection);
+    // TODO make sure that queryWindow eventually gets destroyed.
+    queryWindow->run();
   }
 
   void preferences() {

@@ -3,7 +3,6 @@
 #include <list>
 #include <stdio.h>
 #include "ConversionEngine.h"
-#include "PhotoSelectWindow.h"
 #include <gtk/gtk.h>
 #include <cairo-xlib.h>
 #include <stdlib.h>
