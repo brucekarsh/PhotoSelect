@@ -39,29 +39,6 @@ class PhotoSelectPage;
     printf("editing_done_cb\n");
   }
 
-#ifdef NEVER
-  G_MODULE_EXPORT void
-  view_query_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(
-        GTK_WIDGET(GTK_MENU_ITEM(menuItem)));
-    photoSelectPage->query();
-  }
-
-  G_MODULE_EXPORT void
-  edit_preferences_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(
-        GTK_WIDGET(GTK_MENU_ITEM(menuItem)));
-    photoSelectPage->preferences();
-  }
-
-  G_MODULE_EXPORT void
-  file_import_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(
-        GTK_WIDGET(GTK_MENU_ITEM(menuItem)));
-    photoSelectPage->import();
-  }
-#endif // NEVER
-
   G_MODULE_EXPORT void
   import_response_cb(GtkWidget *widget, gint response_id, gpointer user_data) {
     printf("import_response_activate_cb\n");
