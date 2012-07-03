@@ -170,7 +170,6 @@
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">_Import...</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="file_import_activate_cb" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -557,7 +556,6 @@
   <object class="GtkWindow" id="PreferencesWindow">
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">Preferences</property>
-    <signal name="destroy" handler="preferences_Close_clicked_cb" swapped="no"/>
     <child>
       <object class="GtkVBox" id="vbox2">
         <property name="visible">True</property>
@@ -742,14 +740,13 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="button2">
+              <object class="GtkButton" id="preferences_close_button">
                 <property name="label" translatable="yes">Close</property>
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_action_appearance">False</property>
-                <signal name="clicked" handler="preferences_Close_clicked_cb" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
