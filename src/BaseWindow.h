@@ -45,6 +45,7 @@ class BaseWindow {
     gtk_window_set_title(GTK_WINDOW(top_level_window), "PhotoSelect");
     gtk_window_set_resizable(GTK_WINDOW(top_level_window), TRUE);
     gtk_widget_show(top_level_window);
+    g_signal_connect(top_level_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
     // Put a GtkBox (top_level_vbox) in top_level_window
     top_level_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
