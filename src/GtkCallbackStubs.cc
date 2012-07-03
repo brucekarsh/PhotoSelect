@@ -9,34 +9,6 @@
 class PhotoSelectPage;
  extern "C" {
 
-  G_MODULE_EXPORT void
-  drawingarea1_expose_event_cb(GtkWidget *widget, GdkEventExpose *event, gpointer data) {
-    printf("drawingarea1_expose_event_cb\n");
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
-    if (0 != photoSelectPage) {
-      photoSelectPage -> redraw_image();
-    }
-  }
-
-  G_MODULE_EXPORT void
-  Keep_clicked_cb(GtkWidget *widget, gpointer data) {
-    printf("Keep_clicked_cb\n");
-  }
-
-  G_MODULE_EXPORT void
-  Drop_clicked_cb(GtkWidget *widget, gpointer data) {
-    printf("Drop_clicked_cb\n");
-  }
-
-  G_MODULE_EXPORT void
-  Next_clicked_cb(GtkWidget *widget, gpointer data) {
-    printf("Next_clicked_cb\n");
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
-    if (0 != photoSelectPage) {
-      photoSelectPage -> next();
-      photoSelectPage -> redraw_image();
-    }
-  }
 
   G_MODULE_EXPORT void
   quit(GtkWidget *widget, gpointer data) {
@@ -55,33 +27,6 @@ class PhotoSelectPage;
     if (0 != preferencesWindow) {
       preferencesWindow->close_clicked();
     }
-  }
-
-
-  G_MODULE_EXPORT void
-  Back_clicked_cb(GtkWidget *widget, gpointer data) {
-    printf("Back_clicked_cb\n");
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
-    if (0 != photoSelectPage) {
-      photoSelectPage -> back();
-      photoSelectPage -> redraw_image();
-    }
-  }
-
-  G_MODULE_EXPORT void
-  Rotate_clicked_cb(GtkWidget *widget, gpointer data) {
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
-    if (0 != photoSelectPage) {
-      printf("Rotate_clicked_cb\n");
-      photoSelectPage -> rotation += 1;
-      if (photoSelectPage -> rotation >= 4) photoSelectPage -> rotation = 0;
-      photoSelectPage -> redraw_image();
-    }
-  }
-
-  G_MODULE_EXPORT void
-  Gimp_clicked_cb(GtkWidget *widget, gpointer data) {
-    printf("Gimp_clicked_cb\n");
   }
 
   G_MODULE_EXPORT void
