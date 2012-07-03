@@ -67,5 +67,5 @@ class PhotoSelectPage;
     ImportWindow *importWindow = WindowRegistry::getImportWindow(widget);
     importWindow->import_response_cb(response_id);
   }
-
+// TODO get rid of excessive redraws.
 }

@@ -254,16 +254,22 @@ class PhotoSelectPage {
 
   void next() {
     printf("PhotoSelectPage::next\n");
+    rotation = 0;
     conversionEngine.next();   
   }
 
   void back() {
     printf("PhotoSelectPage::back\n");
+    rotation = 0;
     conversionEngine.back();   
   }
 
   void rotate() {
     printf("PhotoSelectPage::rotate\n");
+    rotation += 1;
+    if (rotation == 4) {
+      rotation = 0;
+    }
   }
 
   void gimp() {
