@@ -60,6 +60,7 @@ class PhotoSelectPage {
     drawing_area = gtk_drawing_area_new();
     gtk_widget_show(drawing_area);
     gtk_box_pack_start(GTK_BOX(page_vbox), drawing_area, TRUE, TRUE, 0);
+    g_signal_connect(drawing_area, "draw", G_CALLBACK(drawing_area_draw_cb), 0);
 
     // make an hbox (button_hbox) to hold the buttons, etc and add it to page_vbox
     button_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -345,5 +346,15 @@ class PhotoSelectPage {
       photoSelectPage -> redraw_image();
     }
   }
+
+  static void
+  drawing_area_draw_cb(GtkWidget *widget, gpointer data) {
+    printf("drawing_area_draw_cb\n");
+    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage -> redraw_image();
+    }
+  }
+
 };
 #endif  // PHOTOSELECTWINOW_H__
