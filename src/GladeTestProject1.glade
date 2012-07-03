@@ -279,7 +279,6 @@
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">Preferences</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="edit_preferences_activate_cb" swapped="no"/>
                       </object>
                     </child>
                   </object>
@@ -305,7 +304,6 @@
                         <property name="events">GDK_POINTER_MOTION_HINT_MASK</property>
                         <property name="label" translatable="yes">Query</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="view_query_activate_cb" swapped="no"/>
                       </object>
                     </child>
                   </object>
@@ -402,7 +400,6 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_action_appearance">False</property>
-                <signal name="clicked" handler="Keep_clicked_cb" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -418,7 +415,6 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_action_appearance">False</property>
-                <signal name="clicked" handler="Drop_clicked_cb" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -434,7 +430,6 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_action_appearance">False</property>
-                <signal name="clicked" handler="Next_clicked_cb" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -450,7 +445,6 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_action_appearance">False</property>
-                <signal name="clicked" handler="Back_clicked_cb" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -466,7 +460,6 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_action_appearance">False</property>
-                <signal name="clicked" handler="Rotate_clicked_cb" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -484,7 +477,6 @@
                 <property name="has_tooltip">True</property>
                 <property name="tooltip_text" translatable="yes">Run the Gimp photo editor program on this photo.</property>
                 <property name="use_action_appearance">False</property>
-                <signal name="clicked" handler="Gimp_clicked_cb" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
