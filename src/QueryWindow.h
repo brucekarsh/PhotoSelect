@@ -36,6 +36,7 @@ class QueryWindow {
   };
 
   std::map<GtkWidget *, QueryWindowRow*> queryWindowRows; // map from hbox to QueryWindowRow
+  GtkWidget *window;
   GtkWidget *windowBox;
   GtkWidget *verticalBox;
   GtkWidget *scrollTextView;
@@ -189,6 +190,11 @@ class QueryWindow {
     return first_part + last_part;
   }
 
+  void
+  quit() {
+    gtk_widget_destroy(GTK_WIDGET(window));
+  }
+
   QueryWindowRow *
   make_row()
   {
@@ -297,6 +303,13 @@ class QueryWindow {
     std::cout << "query_remove_button_clicked_cb done " << std::endl;
   }
 
+  static void
+  quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
+    std::cout << "QueryWindow quit_button_clicked_cb entered" << std::endl;
+    QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
+    queryWindow->quit();
+  }
+
   void
   print_child_properties(QueryWindowRow *qwr)  {
     guint n_properties;
@@ -326,7 +339,6 @@ class QueryWindow {
 
   void
   run() {
-    GtkWidget *window;
     GtkWidget *submitButton;
     GtkWidget *quitButton;
     GtkWidget *buttonHBox;
@@ -408,8 +420,8 @@ class QueryWindow {
     gtk_widget_show(scrollTextView);
     gtk_container_add(GTK_CONTAINER(scrollWindow), scrollTextView);
 
-    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-    g_signal_connect(quitButton, "clicked", G_CALLBACK(gtk_main_quit), NULL);
+    g_signal_connect(window, "destroy", G_CALLBACK(quit_button_clicked_cb), NULL);
+    g_signal_connect(quitButton, "clicked", G_CALLBACK(quit_button_clicked_cb), NULL);
     g_signal_connect(submitButton, "clicked", G_CALLBACK(query_submit_button_clicked_cb), NULL);
     g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
 
