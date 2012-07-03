@@ -21,25 +21,6 @@ class PhotoSelectPage;
   }
 
   G_MODULE_EXPORT void
-  preferences_Close_clicked_cb(GtkWidget *widget, gpointer data) {
-    printf("Closed clicked in Preferences window\n");
-    PreferencesWindow *preferencesWindow = WindowRegistry::getPreferencesWindow(widget);
-    if (0 != preferencesWindow) {
-      preferencesWindow->close_clicked();
-    }
-  }
-
-  G_MODULE_EXPORT void
-  Position_changed_cb(GtkWidget *widget, gpointer data) {
-    printf("Position_changed_cb\n");
-  }
-
-  G_MODULE_EXPORT void
-  Position_editing_done_cb(GtkWidget *widget, gpointer data) {
-    printf("editing_done_cb\n");
-  }
-
-  G_MODULE_EXPORT void
   import_response_cb(GtkWidget *widget, gint response_id, gpointer user_data) {
     printf("import_response_activate_cb\n");
     printf("response_id = %d\n", response_id);
