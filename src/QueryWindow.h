@@ -42,9 +42,15 @@ class QueryWindow {
   GtkWidget *scrollWindow;
   GtkWidget *scrollBox;
   GtkWidget *status_label;
+  GtkWidget *accept_button;
   sql::Connection *connection;
 
   QueryWindow(sql::Connection *connection_) : connection(connection_) {
+  }
+
+  void
+  accept() {
+    std::cout << "QueryWindow::accept() called" << std::endl;
   }
 
   std::string
@@ -147,6 +153,7 @@ class QueryWindow {
     }
     GtkTextBuffer *scrollTextBuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(scrollTextView));
     std::string txt = "\nIssuing query...\n\n";
+    gtk_widget_set_sensitive(GTK_WIDGET(accept_button), FALSE);
     gtk_text_buffer_set_text(scrollTextBuffer, txt.c_str(), txt.size());
     gtk_label_set_text(GTK_LABEL(status_label), "status: Query started.");
     runUI();
@@ -175,6 +182,7 @@ class QueryWindow {
     label +=  boost::lexical_cast<std::string>(total_count);
     label += " image files found";
     gtk_label_set_text(GTK_LABEL(status_label), label.c_str());
+    gtk_widget_set_sensitive(GTK_WIDGET(accept_button), TRUE);
     runUI();
 
     std::cout << "queryJSONToQuery done: " << sql_statement << std::endl;
@@ -209,8 +217,8 @@ class QueryWindow {
     gtk_box_pack_start(GTK_BOX(qwr->hbox), qwr->textEntryBox, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(qwr->hbox), qwr->addButton, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(qwr->hbox), qwr->removeButton, FALSE, FALSE, 0);
-    g_signal_connect(qwr->addButton, "clicked", G_CALLBACK(queryAddButtonCallback), (gpointer)qwr);
-    g_signal_connect(qwr->removeButton, "clicked", G_CALLBACK(queryRemoveButtonCallback),
+    g_signal_connect(qwr->addButton, "clicked", G_CALLBACK(query_add_button_clicked_cb), (gpointer)qwr);
+    g_signal_connect(qwr->removeButton, "clicked", G_CALLBACK(query_remove_button_clicked_cb),
         (gpointer)qwr);
     gtk_widget_show(qwr->hbox);
     gtk_widget_show(qwr->fieldNameComboBox);
@@ -222,18 +230,25 @@ class QueryWindow {
   }
 
   static void
-  querySubmitButtonCallback(GtkWidget *widget, gpointer callback_data) {
+  accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
+    std::cout << "accept_button_clicked_cb" << std::endl;
+    QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
+    queryWindow->accept();
+  }
+
+  static void
+  query_submit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
     QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
     QueryWindowRow *qwr = (QueryWindowRow*) callback_data;
-    std::cout << "querySubmitButtonCallback" << std::endl;
+    std::cout << "query_submit_button_clicked_cb" << std::endl;
     std::string queryJSON = queryWindow->makeQueryJSON();
     std::cout << queryJSON << std::endl;
     queryWindow->queryJSONToQuery(queryJSON);
   }
 
   static void
-  queryAddButtonCallback(GtkWidget *widget, gpointer callback_data) {
-    std::cout << "queryAddButtonCallback entered" << std::endl;
+  query_add_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
+    std::cout << "query_add_button_clicked_cb entered" << std::endl;
     QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
     QueryWindowRow *qwr = (QueryWindowRow*) callback_data;
     int qwri = queryWindow->get_qwri(qwr);
@@ -243,12 +258,12 @@ class QueryWindow {
     gtk_box_pack_start(GTK_BOX(queryWindow->verticalBox), new_qwr->hbox, FALSE, FALSE, 0);
     std::cout << "reorder to " << qwri+1 << std::endl;
     gtk_box_reorder_child(GTK_BOX(queryWindow->verticalBox), new_qwr->hbox, qwri+1);
-    std::cout << "queryAddButtonCallback done " << qwri << std::endl;
+    std::cout << "query_add_button_clicked_cb done " << qwri << std::endl;
   }
 
   static void
-  emptyRowAddButtonCallback(GtkWidget *widget, gpointer callback_data) {
-    std::cout << "emptyRowAddButtonCallback" << std::endl;
+  empty_row_add_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
+    std::cout << "empty_row_add_button_clicked_cb" << std::endl;
     QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
     QueryWindowRow *new_qwr = queryWindow->make_row();
     queryWindow->queryWindowRows.insert(std::pair<GtkWidget*,
@@ -256,20 +271,20 @@ class QueryWindow {
     gtk_box_pack_start(GTK_BOX(queryWindow->verticalBox), new_qwr->hbox, FALSE, FALSE, 0);
     std::cout << "reorder to " << 1 << std::endl;
     gtk_box_reorder_child(GTK_BOX(queryWindow->verticalBox), new_qwr->hbox, 1);
-    std::cout << "emptyRowAddButtonCallback done " << std::endl;
+    std::cout << "empty_row_add_button_clicked_cb done " << std::endl;
 
   }
 
   static void
-  queryRemoveButtonCallback(GtkWidget *widget, gpointer callback_data) {
-    std::cout << "queryRemoveButtonCallback entered" << std::endl;
+  query_remove_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
+    std::cout << "query_remove_button_clicked_cb entered" << std::endl;
     QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
     QueryWindowRow *qwr = (QueryWindowRow*) callback_data;
       gtk_container_remove(GTK_CONTAINER(queryWindow->verticalBox), qwr->hbox);
-      std::cout << "queryRemoveButtonCallback queryWindowRows #elements =" <<
+      std::cout << "query_remove_button_clicked_cb queryWindowRows #elements =" <<
           queryWindow->queryWindowRows.size() << std::endl;
       queryWindow->queryWindowRows.erase(qwr->hbox);
-      std::cout << "queryRemoveButtonCallback queryWindowRows #elements =" <<
+      std::cout << "query_remove_button_clicked_cb queryWindowRows #elements =" <<
           queryWindow->queryWindowRows.size() << std::endl;
       if (queryWindow->queryWindowRows.empty()) {
         QueryWindowRow *qwr = queryWindow->make_row();
@@ -277,9 +292,9 @@ class QueryWindow {
             QueryWindowRow*>(qwr->hbox, qwr));
         gtk_box_pack_start(GTK_BOX(queryWindow->verticalBox), qwr->hbox, FALSE, FALSE, 0);
     }
-    std::cout << "queryRemoveButtonCallback queryWindowRows #elements ="
+    std::cout << "query_remove_button_clicked_cb queryWindowRows #elements ="
         << queryWindow->queryWindowRows.size() << std::endl;
-    std::cout << "queryRemoveButtonCallback done " << std::endl;
+    std::cout << "query_remove_button_clicked_cb done " << std::endl;
   }
 
   void
@@ -335,7 +350,7 @@ class QueryWindow {
     empty_row_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     empty_row_add_button = gtk_button_new_with_label("Add");
     gtk_box_pack_end(GTK_BOX(empty_row_hbox), empty_row_add_button, FALSE, FALSE, 0);
-    g_signal_connect(empty_row_add_button, "clicked", G_CALLBACK(emptyRowAddButtonCallback),
+    g_signal_connect(empty_row_add_button, "clicked", G_CALLBACK(empty_row_add_button_clicked_cb),
         (gpointer)0);
     gtk_widget_show(empty_row_hbox);
     gtk_widget_show(empty_row_add_button);
@@ -371,6 +386,12 @@ class QueryWindow {
     gtk_widget_show(status_label);
     gtk_box_pack_start(GTK_BOX(status_row), status_label, FALSE, FALSE, 0);
 
+    // Add a button (accept_button) to status_row
+    accept_button = gtk_button_new_with_label("Accept");
+    gtk_widget_set_sensitive(GTK_WIDGET(accept_button), FALSE);
+    gtk_widget_show(accept_button);
+    gtk_box_pack_end(GTK_BOX(status_row), accept_button, FALSE, FALSE, 0);
+
     // Add a scrollable window (scrollWindow) to scrollBox
     scrollWindow = gtk_scrolled_window_new(NULL, NULL);
     gtk_widget_show(scrollWindow);
@@ -389,7 +410,8 @@ class QueryWindow {
 
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
     g_signal_connect(quitButton, "clicked", G_CALLBACK(gtk_main_quit), NULL);
-    g_signal_connect(submitButton, "clicked", G_CALLBACK(querySubmitButtonCallback), NULL);
+    g_signal_connect(submitButton, "clicked", G_CALLBACK(query_submit_button_clicked_cb), NULL);
+    g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
 
     gtk_widget_show(window);
   }

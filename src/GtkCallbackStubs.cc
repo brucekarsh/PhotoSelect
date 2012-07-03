@@ -39,6 +39,7 @@ class PhotoSelectPage;
     printf("editing_done_cb\n");
   }
 
+#ifdef NEVER
   G_MODULE_EXPORT void
   view_query_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(
@@ -59,6 +60,7 @@ class PhotoSelectPage;
         GTK_WIDGET(GTK_MENU_ITEM(menuItem)));
     photoSelectPage->import();
   }
+#endif // NEVER
 
   G_MODULE_EXPORT void
   import_response_cb(GtkWidget *widget, gint response_id, gpointer user_data) {

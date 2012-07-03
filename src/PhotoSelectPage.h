@@ -276,6 +276,7 @@ class PhotoSelectPage {
     printf("PhotoSelectPage::gimp\n");
   }
 
+#ifdef NEVER
   void query() {
     printf("PhotoSelectPage::query\n");
     QueryWindow *queryWindow = new QueryWindow(connection);
@@ -294,6 +295,7 @@ class PhotoSelectPage {
     ImportWindow *importWindow = new ImportWindow(thePreferences, connection);
     importWindow -> run();
   }
+#endif // NEVER
 
   static void keep_button_clicked_cb(GtkWidget *widget, gpointer data) {
     printf("keep_button_clicked_cb\n");
