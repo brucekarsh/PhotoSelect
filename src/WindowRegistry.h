@@ -4,7 +4,7 @@
 #include <iostream>
 #include <gtk/gtk.h>
 #include <map>
-class PhotoSelectWindow;
+class PhotoSelectPage;
 class PreferencesWindow;
 class ImportWindow;
 class QueryWindow;
@@ -14,32 +14,37 @@ class QueryWindow;
 */
 
 class WindowRegistry {
-    static std::map<GtkWindow*, PhotoSelectWindow*> photoSelectWindowMap;
+    static std::map<GtkWidget*, PhotoSelectPage*> photoSelectPageMap;
     static std::map<GtkWindow*, PreferencesWindow*> preferencesWindowMap;
     static std::map<GtkWindow*, ImportWindow*> importWindowMap;
     static std::map<GtkWindow*, QueryWindow*> queryWindowMap;
   public:
 
-    // PhotoSelectWindow registry methods
+    // PhotoSelectPage registry methods
 
-    static PhotoSelectWindow* getPhotoSelectWindow(GtkWidget *widget) {
-      PhotoSelectWindow *photoSelectWindow = 0;
-      std::map<GtkWindow*, PhotoSelectWindow*>::iterator it =
-        photoSelectWindowMap.find(GTK_WINDOW(get_toplevel_widget(widget)));
-      if (photoSelectWindowMap.end() == it) {
-        printf("Cannot find PhotoSelect window in the photoSelectWindowMap\n");
+    static PhotoSelectPage* getPhotoSelectPage(GtkWidget *widget) {
+      std::cout << "getPhotoSelectPage " << (long) widget << std::endl;
+      PhotoSelectPage *photoSelectPage = 0;
+      std::cout << "looking for top_level_page for " << (long) widget << std::endl;
+      GtkWidget* top_level_page = get_toplevel_page(widget);
+      std::cout << "found top_level_page " << (long) top_level_page << std::endl;
+      std::map<GtkWidget*, PhotoSelectPage*>::iterator it =
+        photoSelectPageMap.find(GTK_WIDGET(top_level_page));
+      if (photoSelectPageMap.end() == it) {
+        printf("Cannot find PhotoSelect page in the photoSelectPageMap\n");
       } else {
-        photoSelectWindow = it -> second;
+        photoSelectPage = it -> second;
       }
-      return photoSelectWindow;
+      return photoSelectPage;
     }
 
-    static void setPhotoSelectWindow(GtkWidget *widget, PhotoSelectWindow *photoSelectWindow) {
-      photoSelectWindowMap[GTK_WINDOW(gtk_widget_get_toplevel(widget))] = photoSelectWindow;
+    static void setPhotoSelectPage(GtkWidget *widget, PhotoSelectPage *photoSelectPage) {
+      std::cout << "setPhotoSelectPage " << (long) widget << " " << (long) photoSelectPage << std::endl;
+      photoSelectPageMap[GTK_WIDGET(widget)] = photoSelectPage;
     }
 
-    static void forgetPhotoSelectWindow(GtkWidget *widget) {
-      std::cout << "XXX forgetPhotoSelectWindow WRITEME" << std::endl;
+    static void forgetPhotoSelectPage(GtkWidget *widget) {
+      std::cout << "XXX forgetPhotoSelectPage WRITEME" << std::endl;
     };
 
     // PreferencesWindow registry methods
@@ -131,6 +136,40 @@ class WindowRegistry {
       }
       return (widget);
     }
+
+    static GtkWidget *get_toplevel_page(GtkWidget *widget) {
+      GtkWidget *parent;
+      const int maxLevels = 10000; // Don't try forever
+      int i;
+      std::cout << "get_toplevel_page entered" << std::endl;
+      for (i=0; i<maxLevels; i++) {
+        std::cout << "widget class " << get_class(widget) << " " << (long) widget << std::endl;
+        if (GTK_IS_MENU (widget)) {
+          parent = gtk_menu_get_attach_widget (GTK_MENU (widget));
+        } else {
+          parent = gtk_widget_get_parent(widget);
+        }
+        if (parent == NULL) {
+          std::cout << "parent is null" << std::endl;
+          break;
+        }
+        std::cout << "parent class " << get_class(parent) << " " << (long) parent << std::endl;
+        if (GTK_IS_NOTEBOOK(parent)) {
+	   std::cout << "Got a notebook " << (long) widget << std::endl;
+          std::cout << "get_toplevel_page done" << std::endl;
+	  return widget;
+        }
+        widget = parent;
+      }
+      std::cout << "get_toplevel_page done (failed)" << std::endl;
+      return (NULL);
+    }
+
+  static std::string get_class(GtkWidget *widget) {
+    GType Type = G_TYPE_FROM_INSTANCE(widget);
+    const gchar *Name = g_type_name(Type);
+    return std::string(Name);
+  }
 };
 #endif // WINDOW_REGISTRY_H__
 

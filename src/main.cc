@@ -7,6 +7,7 @@
 #include <connection.h>
 
 #include "BaseWindow.h"
+#include "PhotoSelectPage.h"
 #include "Preferences.h"
 
 sql::Connection *
@@ -40,14 +41,16 @@ main(int argc, char **argv)
 
   BaseWindow baseWindow(connection, &preferences);
   baseWindow.run();
-#ifdef NEVER
+
   list<string> photoFilenameList1;
   photoFilenameList1.push_back("/home/bruce/Tanzania2012/AW100/DSCN0651.JPG");
   photoFilenameList1.push_back("/home/bruce/Tanzania2012/AW100/DSCN0551.JPG");
   photoFilenameList1.push_back("/home/bruce/Tanzania2012/D7000-6/DSC_8557.JPG");
-  PhotoSelectWindow photoSelectWindow1(connection);
-  photoSelectWindow1.setup(photoFilenameList1, &preferences);
-#endif //NEVER
+  PhotoSelectPage photoSelectPage(connection);
+  photoSelectPage.setup(photoFilenameList1, &preferences);
+
+  baseWindow.add_page(photoSelectPage.get_tab_label(), photoSelectPage.get_notebook_page());
+
 
   //list<string> photoFilenameList2;
   //photoFilenameList2.push_back("/home/bruce/Tanzania2012/AW100/DSCN0351.JPG");

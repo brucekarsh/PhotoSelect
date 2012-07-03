@@ -23,6 +23,7 @@ class BaseWindow {
   GtkWidget *file_quit_menu_item;
   GtkWidget *edit_preferences_menu_item;
   GtkWidget *view_query_menu_item;
+  GtkWidget *notebook;
 
   static sql::Connection *connection;
   static Preferences* thePreferences;
@@ -31,6 +32,12 @@ class BaseWindow {
     BaseWindow::connection = connection;
     BaseWindow::thePreferences = thePreferences;
   };
+
+  void
+  add_page(GtkWidget* label, GtkWidget* page) {
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook), page, label);
+  }
+
 
   void run() {
     // Make a GtkWindow (top_level_window)
@@ -103,6 +110,7 @@ class BaseWindow {
     file_quit_menu_item = gtk_menu_item_new_with_label("Quit");
     gtk_container_add(GTK_CONTAINER(file_menu), file_quit_menu_item);
     gtk_widget_show(file_quit_menu_item);
+    g_signal_connect(file_quit_menu_item, "activate", G_CALLBACK(gtk_main_quit), NULL);
 
     // Put a menuitem (edit_preferences_menu_item) into edit_menu
     edit_preferences_menu_item = gtk_menu_item_new_with_label("Preferences");
@@ -115,6 +123,12 @@ class BaseWindow {
     gtk_container_add(GTK_CONTAINER(view_menu), view_query_menu_item);
     gtk_widget_show(view_query_menu_item);
     g_signal_connect(view_query_menu_item, "activate", G_CALLBACK(view_query_activate_cb), NULL);
+
+    // Put a notebook (notebook) into top_level_vbox
+    notebook = gtk_notebook_new();
+    gtk_box_pack_start(GTK_BOX(top_level_vbox), notebook, TRUE, TRUE, 0);
+    gtk_widget_show(notebook);
+    
   }
 
   static void

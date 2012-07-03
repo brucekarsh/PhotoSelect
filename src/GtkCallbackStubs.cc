@@ -1,20 +1,20 @@
 #include <list>
 #include <stdio.h>
 #include "ConversionEngine.h"
-#include "PhotoSelectWindow.h"
+#include "PhotoSelectPage.h"
 #include "ImportWindow.h"
 #include <gtk/gtk.h>
 #include <cairo-xlib.h>
 
-class PhotoSelectWindow;
+class PhotoSelectPage;
  extern "C" {
 
   G_MODULE_EXPORT void
   drawingarea1_expose_event_cb(GtkWidget *widget, GdkEventExpose *event, gpointer data) {
     printf("drawingarea1_expose_event_cb\n");
-    PhotoSelectWindow *photoSelectWindow = WindowRegistry::getPhotoSelectWindow(widget);
-    if (0 != photoSelectWindow) {
-      photoSelectWindow -> redraw_image();
+    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage -> redraw_image();
     }
   }
 
@@ -31,19 +31,19 @@ class PhotoSelectWindow;
   G_MODULE_EXPORT void
   Next_clicked_cb(GtkWidget *widget, gpointer data) {
     printf("Next_clicked_cb\n");
-    PhotoSelectWindow *photoSelectWindow = WindowRegistry::getPhotoSelectWindow(widget);
-    if (0 != photoSelectWindow) {
-      photoSelectWindow -> next();
-      photoSelectWindow -> redraw_image();
+    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage -> next();
+      photoSelectPage -> redraw_image();
     }
   }
 
   G_MODULE_EXPORT void
   quit(GtkWidget *widget, gpointer data) {
     printf("Quit_activated_cb\n");
-    PhotoSelectWindow *photoSelectWindow = WindowRegistry::getPhotoSelectWindow(widget);
-    if (0 != photoSelectWindow) {
-      photoSelectWindow -> quit();
+    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage -> quit();
       gtk_main_quit();
     }
   }
@@ -61,21 +61,21 @@ class PhotoSelectWindow;
   G_MODULE_EXPORT void
   Back_clicked_cb(GtkWidget *widget, gpointer data) {
     printf("Back_clicked_cb\n");
-    PhotoSelectWindow *photoSelectWindow = WindowRegistry::getPhotoSelectWindow(widget);
-    if (0 != photoSelectWindow) {
-      photoSelectWindow -> back();
-      photoSelectWindow -> redraw_image();
+    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage -> back();
+      photoSelectPage -> redraw_image();
     }
   }
 
   G_MODULE_EXPORT void
   Rotate_clicked_cb(GtkWidget *widget, gpointer data) {
-    PhotoSelectWindow *photoSelectWindow = WindowRegistry::getPhotoSelectWindow(widget);
-    if (0 != photoSelectWindow) {
+    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    if (0 != photoSelectPage) {
       printf("Rotate_clicked_cb\n");
-      photoSelectWindow -> rotation += 1;
-      if (photoSelectWindow -> rotation >= 4) photoSelectWindow -> rotation = 0;
-      photoSelectWindow -> redraw_image();
+      photoSelectPage -> rotation += 1;
+      if (photoSelectPage -> rotation >= 4) photoSelectPage -> rotation = 0;
+      photoSelectPage -> redraw_image();
     }
   }
 
@@ -96,23 +96,23 @@ class PhotoSelectWindow;
 
   G_MODULE_EXPORT void
   view_query_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    PhotoSelectWindow *photoSelectWindow = WindowRegistry::getPhotoSelectWindow(
+    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(
         GTK_WIDGET(GTK_MENU_ITEM(menuItem)));
-    photoSelectWindow->query();
+    photoSelectPage->query();
   }
 
   G_MODULE_EXPORT void
   edit_preferences_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    PhotoSelectWindow *photoSelectWindow = WindowRegistry::getPhotoSelectWindow(
+    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(
         GTK_WIDGET(GTK_MENU_ITEM(menuItem)));
-    photoSelectWindow->preferences();
+    photoSelectPage->preferences();
   }
 
   G_MODULE_EXPORT void
   file_import_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    PhotoSelectWindow *photoSelectWindow = WindowRegistry::getPhotoSelectWindow(
+    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(
         GTK_WIDGET(GTK_MENU_ITEM(menuItem)));
-    photoSelectWindow->import();
+    photoSelectPage->import();
   }
 
   G_MODULE_EXPORT void
