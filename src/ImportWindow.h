@@ -7,10 +7,6 @@
 #include <cairo-xlib.h>
 #include <stdlib.h>
 
-#ifdef GTK2
-#include <vte-0.0/vte/vte.h>
-#endif
-
 /* MySQL Connector/C++ specific headers */
 #include <driver.h>
 #include <connection.h>
@@ -27,7 +23,6 @@ class ImportWindow {
   Preferences *thePreferences;
   GtkWidget *window;
   GtkWidget *progressBar;
-  GtkWidget *importTerminal;
   bool cancel_requested;
   bool processing_imports;
   sql::Connection *connection;
@@ -48,7 +43,6 @@ class ImportWindow {
     }
     window = GTK_WIDGET( gtk_builder_get_object( builder, "ImportDialog" ));
     progressBar = GTK_WIDGET( gtk_builder_get_object( builder, "ImportProgressBar"));
-    importTerminal = GTK_WIDGET( gtk_builder_get_object( builder, "ImportTerminal"));
     WindowRegistry::setImportWindow(window, this);
 
     gtk_builder_connect_signals(builder, NULL);
@@ -112,11 +106,6 @@ class ImportWindow {
   void start_importing();
 
   void display_on_UI(std::string text) {
-    if (importTerminal) {
-#ifdef  GTK2
-      vte_terminal_feed(VTE_TERMINAL(importTerminal), (std::string("\r\n") + text).c_str(), -1);
-#endif // GTK2
-    }
   }
 };
 
