@@ -9,17 +9,6 @@
 class PhotoSelectPage;
  extern "C" {
 
-
-  G_MODULE_EXPORT void
-  quit(GtkWidget *widget, gpointer data) {
-    printf("Quit_activated_cb\n");
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
-    if (0 != photoSelectPage) {
-      photoSelectPage -> quit();
-      gtk_main_quit();
-    }
-  }
-
   G_MODULE_EXPORT void
   import_response_cb(GtkWidget *widget, gint response_id, gpointer user_data) {
     printf("import_response_activate_cb\n");
