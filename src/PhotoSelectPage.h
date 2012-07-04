@@ -6,7 +6,6 @@
 #include <list>
 #include <stdio.h>
 #include "ConversionEngine.h"
-#include "QueryWindow.h"
 #include "PreferencesWindow.h"
 #include "ImportWindow.h"
 #include <gtk/gtk.h>
@@ -146,11 +145,14 @@ class PhotoSelectPage {
     ScaledImage *scaled_image;
 
     ConvertedPhotoFile *convertedPhotoFile = conversionEngine.getConvertedPhotoFile(); 
-    printf("%d %d\n", convertedPhotoFile->width, convertedPhotoFile->height);
-
     cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(drawing_area));
     cairo_set_source_rgb(cr, 0.2,  0.5, 0.2);
     cairo_paint(cr);
+    if (NULL == convertedPhotoFile) {
+      return;
+    }
+
+    printf("%d %d\n", convertedPhotoFile->width, convertedPhotoFile->height);
 
     // Figure out the width and height of the rotated (but not scaled) image.
 

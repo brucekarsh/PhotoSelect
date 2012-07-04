@@ -5,6 +5,7 @@
 #include "ConversionEngine.h"
 #include <gtk/gtk.h>
 #include <cairo-xlib.h>
+#include "WindowRegistry.h"
 #include "Preferences.h"
 
 class PreferencesWindow {

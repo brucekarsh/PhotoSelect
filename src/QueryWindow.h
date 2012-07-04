@@ -21,6 +21,8 @@
 #include <exception.h>
 #include <warning.h>
 
+class Preferences;
+class BaseWindow;
 
 class QueryWindow {
   public:
@@ -45,14 +47,15 @@ class QueryWindow {
   GtkWidget *status_label;
   GtkWidget *accept_button;
   sql::Connection *connection;
+  Preferences *preferences;
+  BaseWindow *baseWindow;
+  std::list<std::string> photoFilenameList;
 
-  QueryWindow(sql::Connection *connection_) : connection(connection_) {
+  QueryWindow(sql::Connection *connection_, Preferences *preferences_, BaseWindow* baseWindow_) :
+      connection(connection_), preferences(preferences_), baseWindow(baseWindow_) {
   }
 
-  void
-  accept() {
-    std::cout << "QueryWindow::accept() called" << std::endl;
-  }
+  void accept();
 
   std::string
   makeQueryJSON() {
@@ -139,10 +142,13 @@ class QueryWindow {
       }
     }
 
+    last_part.append("ORDER BY t.adjustedDateTime, filePath ");
+
     std::string first_part =
       "SELECT filePath FROM PhotoFile p "
       "INNER JOIN Checksum c ON p.checksumId = c.id "
       "INNER JOIN Time t ON t.checksumId = c.id ";
+      "ORDER BY t.adjustedTime, filePath ";
 
     std::string sql_statement = first_part + last_part;
 
@@ -163,11 +169,13 @@ class QueryWindow {
     runUI();
     int count = 0;
     int total_count = 0;
-   std::string label;
+    std::string label;
+    photoFilenameList.clear();
     while (rs->next()) {
       std::string filePath = rs->getString(1);
       gtk_text_buffer_insert_at_cursor(scrollTextBuffer, filePath.c_str(), filePath.size());
       gtk_text_buffer_insert_at_cursor(scrollTextBuffer, "\n", 1);
+      photoFilenameList.push_back(filePath);
       count++;
       total_count++;
       if(count >= 300) {
@@ -428,4 +436,19 @@ class QueryWindow {
     gtk_widget_show(window);
   }
 }; // end class QueryWindow
+
+#include "BaseWindow.h"
+#include "PhotoSelectPage.h"
+
+inline  void
+QueryWindow::accept() {
+  std::cout << "QueryWindow::accept() called" << std::endl;
+  PhotoSelectPage *photoSelectPage = new PhotoSelectPage(connection);
+//  photoFilenameList.push_back("/home/bruce/Tanzania2012/AW100/DSCN0651.JPG");
+//  photoFilenameList.push_back("/home/bruce/Tanzania2012/AW100/DSCN0551.JPG");
+//  photoFilenameList.push_back("/home/bruce/Tanzania2012/D7000-6/DSC_8557.JPG");
+
+  photoSelectPage->setup(photoFilenameList, preferences);
+  baseWindow->add_page(photoSelectPage->get_tab_label(), photoSelectPage->get_notebook_page());
+}
 #endif // QUERYWINDOW_H__

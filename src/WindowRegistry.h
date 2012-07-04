@@ -5,6 +5,7 @@
 #include <gtk/gtk.h>
 #include <map>
 class PhotoSelectPage;
+class BaseWindow;
 class PreferencesWindow;
 class ImportWindow;
 class QueryWindow;
@@ -15,6 +16,7 @@ class QueryWindow;
 
 class WindowRegistry {
     static std::map<GtkWidget*, PhotoSelectPage*> photoSelectPageMap;
+    static std::map<GtkWindow*, BaseWindow*> baseWindowMap;
     static std::map<GtkWindow*, PreferencesWindow*> preferencesWindowMap;
     static std::map<GtkWindow*, ImportWindow*> importWindowMap;
     static std::map<GtkWindow*, QueryWindow*> queryWindowMap;
@@ -46,6 +48,28 @@ class WindowRegistry {
     static void forgetPhotoSelectPage(GtkWidget *widget) {
       std::cout << "XXX forgetPhotoSelectPage WRITEME" << std::endl;
     };
+
+    // BaseWindow registry methods
+
+    static BaseWindow* getBaseWindow(GtkWidget *widget) {
+      BaseWindow *baseWindow = 0;
+      std::map<GtkWindow*, BaseWindow*>::iterator it =
+        baseWindowMap.find(GTK_WINDOW(get_toplevel_widget(widget)));
+      if (baseWindowMap.end() == it) {
+        printf("Cannot find BaseWindow window in the baseWindowMap\n");
+      } else {
+        baseWindow = it -> second;
+      }
+      return baseWindow;
+    }
+
+    static void setBaseWindow(GtkWidget *widget, BaseWindow *baseWindow) {
+      baseWindowMap[GTK_WINDOW(gtk_widget_get_toplevel(widget))] = baseWindow;
+    }
+
+    static void forgetBaseWindow(GtkWidget *widget) {
+      std::cout << "XXX setBaseWindow WRITEME" << std::endl;
+    }
 
     // PreferencesWindow registry methods
 

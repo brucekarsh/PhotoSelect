@@ -2,9 +2,10 @@
 #define BASEWINDOW_H__
 
 #include <gtk/gtk.h>
-#include "QueryWindow.h"
 #include "PreferencesWindow.h"
 #include "ImportWindow.h"
+
+class QueryWindow;
 
 class BaseWindow {
   public:
@@ -46,6 +47,8 @@ class BaseWindow {
     gtk_window_set_resizable(GTK_WINDOW(top_level_window), TRUE);
     gtk_widget_show(top_level_window);
     g_signal_connect(top_level_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+    WindowRegistry::setBaseWindow(top_level_window, this);
+
 
     // Put a GtkBox (top_level_vbox) in top_level_window
     top_level_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -132,12 +135,13 @@ class BaseWindow {
     
   }
 
+  void view_query_activate();
+
   static void
   view_query_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     std::cout << "view_query_activate_cb" << std::endl;
-    QueryWindow* queryWindow = new QueryWindow(connection);
-    queryWindow->run();
-    // XXX TODO make sure that queryWindow gets destroyed eventually.
+    BaseWindow* baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(menuItem));
+    baseWindow->view_query_activate();
   }
 
   static void
@@ -154,4 +158,15 @@ class BaseWindow {
     importWindow->run();
   }
 };
+
+#include "BaseWindow.h"
+#include "QueryWindow.h"
+
+inline  void
+BaseWindow::view_query_activate() {
+  std::cout << "view_query_activate called" << std::endl;
+  QueryWindow* queryWindow = new QueryWindow(connection, thePreferences, this);
+  queryWindow->run();
+  // XXX TODO make sure that queryWindow gets destroyed eventually.
+}
 #endif // BASEWINDOW_H__

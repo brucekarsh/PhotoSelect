@@ -27,6 +27,10 @@ class ConversionEngine {
   /// \return A convertedPhotoFile (which could still be converting)
   ///         or an UnknownCovertedPhotoFile if it cannot convert the file.
   ConvertedPhotoFile * getConvertedPhotoFile() {
+    if (photoFilenameVectorPosition <0
+        || photoFilenameVectorPosition >= photoFilenameVector.size()) {
+      return NULL;
+    }
     std::string photoFilename = photoFilenameVector[photoFilenameVectorPosition];
     ConvertedPhotoFile * convertedPhotoFile = photoFileCache.get(photoFilename);
     if (0 == convertedPhotoFile) {
