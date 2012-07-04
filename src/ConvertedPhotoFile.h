@@ -51,7 +51,6 @@ class ConvertedPhotoFile {
     unsigned char *pixels_tmp;
     int width_tmp, height_tmp;
 
-    printf("Converting %s\n", photoFilePath.c_str());
     this->photoFilePath = photoFilePath;
 
     pixels_tmp = read_JPEG_file (photoFilePath.c_str(), &width_tmp, &height_tmp);
@@ -68,7 +67,6 @@ class ConvertedPhotoFile {
   }
 
   ScaledImage* scale(int width, int height) {
-    printf("ConvertedPhotoFile::scale %d %d\n", width, height);
     return new ScaledImage(width, height, scale_pixmap(width, height));
   }
 
@@ -187,14 +185,12 @@ class ConvertedPhotoFile {
               outbufp[2] = inbufcolp[0];
               outbufp[3] = inbufcolp[3];
               int tmp1 = colincrement.increment();
-  //printf("Col increment %d\n",tmp1);
               inbufcolp += IN_BYTES_PER_PIXEL*tmp1;
               outbufp+=OUT_BYTES_PER_PIXEL;
           }
           colincrement.reset();
           int tmp2;
           tmp2 = rowincrement.increment();
-  //printf("Row increment %d\n",tmp2);
           inbufrowp += IN_BYTES_PER_PIXEL*width*tmp2;
       }
   
