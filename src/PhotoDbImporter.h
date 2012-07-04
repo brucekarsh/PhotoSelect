@@ -289,13 +289,13 @@ exif_datetime_to_mysql_datetime(const std::string exif_datetime)
 
     bool has_first = rs->first();
     if (!has_first) {
-      printf("Cannot get a result set in insert_into_Checksum\n");
+      std::cout << "Cannot get a result set in insert_into_Checksum" << std::endl;
       exit(1);
     }
     bool is_first = rs->isFirst();
     bool is_last = rs->isLast();
     if (!is_first || ! is_last) {
-      printf("More than one key found in results in insert_into_Checksum\n");
+      std::cout << "More than one key found in results in insert_into_Checksum" << std::endl;
       std::cout << "isFirst(): " << rs->isFirst() << std::endl;
       std::cout << "isLast(): " << rs->isLast() << std::endl;
       exit(1);
@@ -329,7 +329,7 @@ exif_datetime_to_mysql_datetime(const std::string exif_datetime)
       bool is_first = rs->isFirst();
       bool is_last = rs->isLast();
       if (!is_first || ! is_last) {
-        printf("More than one key found in results in get_id_from_PhotoFile\n");
+        std::cout << "More than one key found in results in get_id_from_PhotoFile" << std::endl;
         std::cout << "isFirst(): " << rs->isFirst() << std::endl;
         std::cout << "isLast(): " << rs->isLast() << std::endl;
         exit(1);

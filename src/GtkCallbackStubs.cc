@@ -11,8 +11,8 @@ class PhotoSelectPage;
 
   G_MODULE_EXPORT void
   import_response_cb(GtkWidget *widget, gint response_id, gpointer user_data) {
-    printf("import_response_activate_cb\n");
-    printf("response_id = %d\n", response_id);
+    std::cout << "import_response_activate_cb" << std::endl;
+    std::cout << "response_id = " << response_id << std::endl;
     ImportWindow *importWindow = WindowRegistry::getImportWindow(widget);
     importWindow->import_response_cb(response_id);
   }

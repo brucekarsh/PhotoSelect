@@ -10,6 +10,7 @@ extern "C" {
 };
 #include "setjmp.h"
 #include "ScaledImage.h"
+#include <iostream>
 
 class ConvertedPhotoFile;
 
@@ -81,9 +82,7 @@ class ConvertedPhotoFile {
   my_error_exit (j_common_ptr cinfo)
   {
     my_error_ptr myerr = (my_error_ptr) cinfo->err;
-    printf("In my_error_exit\n");
     (*cinfo->err->output_message) (cinfo);
-    printf("Leaving my_error_exit\n");
     longjmp(myerr->setjmp_buffer, 1);
   }
 
@@ -103,7 +102,7 @@ class ConvertedPhotoFile {
     // Open the input file.
 
     if ((infile = fopen(filename, "rb")) == NULL) {
-      fprintf(stderr, "can't open %s\n", filename);
+      std::cout << "can't open " <<  filename << std::endl;
       return 0;
     }
 
@@ -114,8 +113,7 @@ class ConvertedPhotoFile {
       /* If we get here, the JPEG code has signaled an error.
        * We need to clean up the JPEG object, close the input file, and return.
        */
-  printf("Ouch!! in setjmp handler\n");
-  //printf("brow_stride=%d,buffer=0x%x, bufferp=0x%x, delta=%d\n",row_stride,buffer,bufferp,bufferp-buffer);
+      std::cout << "Ouch!! in setjmp handler" << std::endl;
       jpeg_destroy_decompress(&cinfo);
       fclose(infile);
   //    if(buffer)free(buffer);
@@ -202,7 +200,7 @@ class ConvertedPhotoFile {
           delta_sec -= 1;
       }
       delta_t = delta_sec + delta_usec/1000000.0;
-      printf("Scale took %f secs\n",delta_t);
+      std::cout << "Scale took " << delta_t << " secs" << std::endl;
       return newbuf;
   }
 
