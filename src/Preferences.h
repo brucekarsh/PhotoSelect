@@ -36,8 +36,6 @@ class Preferences {
       return result;
     }
     void validate() {
-      printf("\nValidating\n");
-
       std::string preferences_text = get_preferences_text();
 
       std::cout << "preferences_text " << preferences_text << std::endl;
@@ -92,7 +90,6 @@ class Preferences {
 
     std::string get_dbhost() {
       if(invalid) validate();
-      printf("get_dbhost returns %s\n", dbhost.c_str());
       return dbhost;
     }
 
@@ -112,7 +109,6 @@ class Preferences {
     }
 
     void set_dbhost(const char *dbhost) {
-      printf("set_dbhost sets %s\n", dbhost);
       this -> dbhost = dbhost;
     }
 

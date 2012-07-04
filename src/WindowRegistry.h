@@ -30,7 +30,7 @@ class WindowRegistry {
       std::map<GtkWidget*, PhotoSelectPage*>::iterator it =
         photoSelectPageMap.find(GTK_WIDGET(top_level_page));
       if (photoSelectPageMap.end() == it) {
-        printf("Cannot find PhotoSelect page in the photoSelectPageMap\n");
+        std::cout << "Cannot find PhotoSelect page in the photoSelectPageMap" << std::endl;
       } else {
         photoSelectPage = it -> second;
       }
@@ -53,7 +53,7 @@ class WindowRegistry {
       std::map<GtkWindow*, BaseWindow*>::iterator it =
         baseWindowMap.find(GTK_WINDOW(get_toplevel_widget(widget)));
       if (baseWindowMap.end() == it) {
-        printf("Cannot find BaseWindow window in the baseWindowMap\n");
+        std::cout << "Cannot find BaseWindow window in the baseWindowMap" << std::endl;
       } else {
         baseWindow = it -> second;
       }
@@ -75,7 +75,7 @@ class WindowRegistry {
       std::map<GtkWindow*, PreferencesWindow*>::iterator it =
         preferencesWindowMap.find(GTK_WINDOW(get_toplevel_widget(widget)));
       if (preferencesWindowMap.end() == it) {
-        printf("Cannot find PreferencesWindow window in the preferencesWindowMap\n");
+        std::cout << "Cannot find PreferencesWindow window in the preferencesWindowMap" << std::endl;
       } else {
         preferencesWindow = it -> second;
       }
@@ -97,7 +97,7 @@ class WindowRegistry {
       std::map<GtkWindow*, ImportWindow*>::iterator it =
         importWindowMap.find(GTK_WINDOW(get_toplevel_widget(widget)));
       if (importWindowMap.end() == it) {
-        printf("Cannot find ImportWindow window in the importWindowMap\n");
+        std::cout << "Cannot find ImportWindow window in the importWindowMap" << std::endl;
       } else {
         importWindow = it -> second;
       }
@@ -119,7 +119,7 @@ class WindowRegistry {
       std::map<GtkWindow*, QueryWindow*>::iterator it =
         queryWindowMap.find(GTK_WINDOW(get_toplevel_widget(widget)));
       if (queryWindowMap.end() == it) {
-        printf("Cannot find query window in the queryWindowMap\n");
+        std::cout << "Cannot find query window in the queryWindowMap" << std::endl;
       } else {
         queryWindow = it -> second;
       }
