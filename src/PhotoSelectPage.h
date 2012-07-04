@@ -61,6 +61,15 @@ class PhotoSelectPage {
     gtk_widget_show(drawing_area);
     gtk_box_pack_start(GTK_BOX(page_vbox), drawing_area, TRUE, TRUE, 0);
     g_signal_connect(drawing_area, "draw", G_CALLBACK(drawing_area_draw_cb), 0);
+    g_signal_connect(drawing_area, "button-press-event",
+        G_CALLBACK(drawing_area_button_press_cb), NULL);
+    g_signal_connect(drawing_area, "button-release-event",
+        G_CALLBACK(drawing_area_button_release_cb), NULL);
+    g_signal_connect(drawing_area, "scroll-event", G_CALLBACK(drawing_area_scroll_cb), NULL);
+    g_signal_connect(drawing_area, "motion-notify-event",
+        G_CALLBACK(drawing_area_motion_notify_cb), NULL);
+    gtk_widget_add_events(drawing_area, GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
+        | GDK_SCROLL_MASK | GDK_BUTTON_MOTION_MASK);
 
     // make an hbox (button_hbox) to hold the buttons, etc and add it to page_vbox
     button_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -154,6 +163,26 @@ class PhotoSelectPage {
     }
     conversionEngine.go_to(val-1);   
     set_position_entry();
+  }
+
+  void
+  drawing_area_button_press() {
+    std::cout << "photoSelectPage->drawing_area_button_press entered" << std::endl; 
+  }
+
+  void
+  drawing_area_button_release() {
+    std::cout << "photoSelectPage->drawing_area_button_release entered" << std::endl; 
+  }
+
+  void
+  drawing_area_scroll() {
+    std::cout << "photoSelectPage->drawing_area_scroll entered" << std::endl; 
+  }
+
+  void
+  drawing_area_motion_notify() {
+    std::cout << "photoSelectPage->drawing_area_motion_notify entered" << std::endl; 
   }
 
   /** Sets to position_entry widget to reflect the positioon of the ConversionEngine.
@@ -385,6 +414,41 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->position_entry_activate();
+      photoSelectPage -> redraw_image();
+    }
+  }
+  static void
+  drawing_area_button_press_cb(GtkWidget *widget, gpointer data) {
+    std::cout << "drawing_area_button_press_cb entered" << std::endl; 
+    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage->drawing_area_button_press();
+    }
+  }
+  static void
+  drawing_area_button_release_cb(GtkWidget *widget, gpointer data) {
+    std::cout << "drawing_area_button_release_cb entered" << std::endl; 
+    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage->drawing_area_button_release();
+      photoSelectPage -> redraw_image();
+    }
+  }
+  static void
+  drawing_area_scroll_cb(GtkWidget *widget, gpointer data) {
+    std::cout << "drawing_area_scroll_cb entered" << std::endl; 
+    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage->drawing_area_scroll();
+      photoSelectPage -> redraw_image();
+    }
+  }
+  static void
+  drawing_area_motion_notify_cb(GtkWidget *widget, gpointer data) {
+    std::cout << "drawing_area_motion_notify_cb entered" << std::endl; 
+    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage->drawing_area_motion_notify();
       photoSelectPage -> redraw_image();
     }
   }
