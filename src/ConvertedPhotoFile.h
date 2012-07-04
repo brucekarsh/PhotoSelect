@@ -60,7 +60,7 @@ class ConvertedPhotoFile {
       width  = width_tmp;
       height = height_tmp;
       } else {
-        // XXX WRITEME handle read_JPEG_file failure
+        // TODO WRITEME handle read_JPEG_file failure
         pixels = 0;
         width = 0;
         height = 0;

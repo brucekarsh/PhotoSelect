@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 
-// XXX This needs to be MP-Safe
+// TODO This needs to be MP-Safe
 
 class PhotoFileCache {
 
@@ -25,7 +25,7 @@ class PhotoFileCache {
   }
 
   ConvertedPhotoFile * add(std::string photoFilePath) {
-    // XXX WRITEME
+    // TODO WRITEME
     return get(photoFilePath);
   }
 };

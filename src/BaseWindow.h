@@ -167,6 +167,6 @@ BaseWindow::view_query_activate() {
   std::cout << "view_query_activate called" << std::endl;
   QueryWindow* queryWindow = new QueryWindow(connection, thePreferences, this);
   queryWindow->run();
-  // XXX TODO make sure that queryWindow gets destroyed eventually.
+  // TODO make sure that queryWindow gets destroyed eventually.
 }
 #endif // BASEWINDOW_H__

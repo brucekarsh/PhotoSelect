@@ -134,6 +134,9 @@ class PhotoSelectPage {
     snprintf(ofstring, 20, "of %d      ", numberOfPhotos);
     ofstring[19]=0;
     gtk_label_set_text(GTK_LABEL(of_label), ofstring);
+
+    // Set up the position_entry
+    set_position_entry();
   } 
 
   void
@@ -149,10 +152,19 @@ class PhotoSelectPage {
     if (val > siz) {
       val = siz;
     }
-    gtk_entry_set_text(GTK_ENTRY(position_entry), boost::lexical_cast<std::string>(val).c_str());
     conversionEngine.go_to(val-1);   
+    set_position_entry();
   }
 
+  /** Sets to position_entry widget to reflect the positioon of the ConversionEngine.
+      The ConversionEngine counts 0..N-1 and the position_entry counts 1..N. */
+  void
+  set_position_entry() {
+    std::cout << "photoSelectPage->set_position_entry entered" << std::endl; 
+    int val = conversionEngine.get_position();
+    std::string valstring =  boost::lexical_cast<std::string>(val + 1);
+    gtk_entry_set_text(GTK_ENTRY(position_entry), valstring.c_str());
+  }
 
   void quit() {
     printf("PhotoSelectPage::quit() entered\n");
@@ -198,7 +210,7 @@ class PhotoSelectPage {
     // entire widget->allocation.width
     // If it won't fit, then scale it vertically along the entire
     // widget->allocation.height
-    // XXX if this fp-safe?
+    // TODO is this fp-safe?
 
     cairo_surface_t * dest_surface = cairo_get_target(cr);
     printf("dest_surface = 0x%lx\n", (long)dest_surface);
@@ -278,12 +290,14 @@ class PhotoSelectPage {
     printf("PhotoSelectPage::next\n");
     rotation = 0;
     conversionEngine.next();   
+    set_position_entry();
   }
 
   void back() {
     printf("PhotoSelectPage::back\n");
     rotation = 0;
     conversionEngine.back();   
+    set_position_entry();
   }
 
   void rotate() {

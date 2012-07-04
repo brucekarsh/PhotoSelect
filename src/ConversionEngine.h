@@ -17,6 +17,8 @@ class ConversionEngine {
   std::vector<std::string> photoFilenameVector;
   int photoFilenameVectorPosition;
 
+  ConversionEngine() : photoFilenameVectorPosition(-1) {};
+
 
   //! Gets a ConvertedPhotoFile given a path to a file representing a photo.
   //! It first tries to get the ConvertedPhotoFile from the cache. If it
@@ -40,7 +42,6 @@ class ConversionEngine {
   }
 
   void setPhotoFileList(std::list<std::string> *photoFileNameList) {
-    // XXX WRITEME
     int i;
     std::list<std::string>::iterator photoFileNameListIterator = photoFileNameList->begin();
     for (i=0; i<photoFileNameList->size(); i++) {
@@ -49,33 +50,44 @@ class ConversionEngine {
       photoFileNameListIterator++;
     }
     photoFilenameVectorPosition = 0;
+    clip_position();
   }
 
-  void next() {
-    ++photoFilenameVectorPosition;
-    if (photoFilenameVectorPosition >= photoFilenameVector.size()) {
-      photoFilenameVectorPosition = photoFilenameVector.size() -1;
-    }
+  /** Enforces a constraint on photoFileVectorPosition.
+      It adjusts the photoFilenameVectorPosition so that it is in the range
+      0 <= photoFilenameVectorPosition < photoFilenameVector.size()
+      or -1 when 0 == photoFilenameVector.size() */
+  void
+  clip_position() {
     if (photoFilenameVectorPosition < 0) {
       photoFilenameVectorPosition = 0;
     }
+    if (photoFilenameVectorPosition >= photoFilenameVector.size()) {
+      photoFilenameVectorPosition = photoFilenameVector.size() -1;
+    }
+    if (0 == photoFilenameVector.size()) {
+      photoFilenameVectorPosition = -1;
+    }
+  }
+
+
+  void next() {
+    ++photoFilenameVectorPosition;
+    clip_position();
   }
 
   void back() {
     --photoFilenameVectorPosition;
-    if (photoFilenameVectorPosition < 0) {
-      photoFilenameVectorPosition = 0;
-    }
-    if (photoFilenameVectorPosition >= photoFilenameVector.size()) {
-      photoFilenameVectorPosition = photoFilenameVector.size() -1;
-    }
+    clip_position();
   }
 
   void go_to(int position) {
     photoFilenameVectorPosition = position;
-    if (photoFilenameVectorPosition < 0) {
-      photoFilenameVectorPosition = 0;
-    }
+    clip_position();
+  }
+
+  int get_position() {
+    return photoFilenameVectorPosition;
   }
 
 };
