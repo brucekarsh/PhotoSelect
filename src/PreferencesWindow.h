@@ -24,7 +24,6 @@ class PreferencesWindow {
   }
 
   void run() {
-    printf("PreferencesWindow::run()\n");
     
     /* Load UI from file. If error occurs, report it and quit application. */
     GError *error = NULL;
@@ -56,11 +55,6 @@ class PreferencesWindow {
   }
 
   void close_button_clicked() {
-    printf("PreferencesWindow::close_button_clicked called\n");
-    printf("dbhost: %s\n", gtk_entry_get_text(dbhost));
-    printf("user: %s\n", gtk_entry_get_text(user));
-    printf("password: %s\n", gtk_entry_get_text(password));
-    printf("database: %s\n", gtk_entry_get_text(database));
     thePreferences -> set_dbhost(gtk_entry_get_text(dbhost));
     thePreferences -> set_user(gtk_entry_get_text(user));
     thePreferences -> set_password(gtk_entry_get_text(password));
