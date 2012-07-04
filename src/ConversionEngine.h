@@ -66,6 +66,16 @@ class ConversionEngine {
     if (photoFilenameVectorPosition < 0) {
       photoFilenameVectorPosition = 0;
     }
+    if (photoFilenameVectorPosition >= photoFilenameVector.size()) {
+      photoFilenameVectorPosition = photoFilenameVector.size() -1;
+    }
+  }
+
+  void go_to(int position) {
+    photoFilenameVectorPosition = position;
+    if (photoFilenameVectorPosition < 0) {
+      photoFilenameVectorPosition = 0;
+    }
   }
 
 };

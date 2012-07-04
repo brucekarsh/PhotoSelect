@@ -10,6 +10,7 @@
 #include "ImportWindow.h"
 #include <gtk/gtk.h>
 #include <cairo-xlib.h>
+#include <boost/lexical_cast.hpp>
 
 class PhotoSelectPage {
   public:
@@ -111,6 +112,7 @@ class PhotoSelectPage {
     position_entry = gtk_entry_new();
     gtk_widget_show(position_entry);
     gtk_box_pack_end(GTK_BOX(button_hbox), position_entry, FALSE, FALSE, 0);
+    g_signal_connect(position_entry, "activate", G_CALLBACK(position_entry_activate_cb), 0);
   }
 
   void setup(std::list<std::string> photoFilenameList_, Preferences *thePreferences) {
@@ -133,6 +135,24 @@ class PhotoSelectPage {
     ofstring[19]=0;
     gtk_label_set_text(GTK_LABEL(of_label), ofstring);
   } 
+
+  void
+  position_entry_activate() {
+    std::cout << "photoSelectPage->position_entry_activate entered" << std::endl; 
+    std::string valstr = gtk_entry_get_text(GTK_ENTRY(position_entry));
+    std::cout << "position is " << valstr << std::endl; 
+    int val = atoi(valstr.c_str());
+    if (val < 1) {
+      val = 1;
+    }
+    int siz = photoFilenameList.size();
+    if (val > siz) {
+      val = siz;
+    }
+    gtk_entry_set_text(GTK_ENTRY(position_entry), boost::lexical_cast<std::string>(val).c_str());
+    conversionEngine.go_to(val-1);   
+  }
+
 
   void quit() {
     printf("PhotoSelectPage::quit() entered\n");
@@ -345,5 +365,14 @@ class PhotoSelectPage {
     }
   }
 
+  static void
+  position_entry_activate_cb(GtkWidget *widget, gpointer data) {
+    std::cout << "position_entry_activate_cb entered" << std::endl; 
+    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage->position_entry_activate();
+      photoSelectPage -> redraw_image();
+    }
+  }
 };
 #endif  // PHOTOSELECTWINOW_H__
