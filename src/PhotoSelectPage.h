@@ -150,9 +150,7 @@ class PhotoSelectPage {
 
   void
   position_entry_activate() {
-    std::cout << "photoSelectPage->position_entry_activate entered" << std::endl; 
     std::string valstr = gtk_entry_get_text(GTK_ENTRY(position_entry));
-    std::cout << "position is " << valstr << std::endl; 
     int val = atoi(valstr.c_str());
     if (val < 1) {
       val = 1;
@@ -168,35 +166,34 @@ class PhotoSelectPage {
   void
   drawing_area_button_press() {
     std::cout << "photoSelectPage->drawing_area_button_press entered" << std::endl; 
+    // TODO WRITEME
   }
 
   void
   drawing_area_button_release() {
     std::cout << "photoSelectPage->drawing_area_button_release entered" << std::endl; 
+    // TODO WRITEME
   }
 
   void
   drawing_area_scroll() {
     std::cout << "photoSelectPage->drawing_area_scroll entered" << std::endl; 
+    // TODO WRITEME
   }
 
   void
   drawing_area_motion_notify() {
     std::cout << "photoSelectPage->drawing_area_motion_notify entered" << std::endl; 
+    // TODO WRITEME
   }
 
   /** Sets to position_entry widget to reflect the positioon of the ConversionEngine.
       The ConversionEngine counts 0..N-1 and the position_entry counts 1..N. */
   void
   set_position_entry() {
-    std::cout << "photoSelectPage->set_position_entry entered" << std::endl; 
     int val = conversionEngine.get_position();
     std::string valstring =  boost::lexical_cast<std::string>(val + 1);
     gtk_entry_set_text(GTK_ENTRY(position_entry), valstring.c_str());
-  }
-
-  void quit() {
-    printf("PhotoSelectPage::quit() entered\n");
   }
 
   void redraw_image() {
@@ -212,8 +209,6 @@ class PhotoSelectPage {
     if (NULL == convertedPhotoFile) {
       return;
     }
-
-    printf("%d %d\n", convertedPhotoFile->width, convertedPhotoFile->height);
 
     // Figure out the width and height of the rotated (but not scaled) image.
 
@@ -242,16 +237,12 @@ class PhotoSelectPage {
     // TODO is this fp-safe?
 
     cairo_surface_t * dest_surface = cairo_get_target(cr);
-    printf("dest_surface = 0x%lx\n", (long)dest_surface);
     if (cairo_surface_status(dest_surface) != CAIRO_STATUS_SUCCESS) {
-      printf("Nil dest_surface\n");
-    } else {
-      printf("Non-Nil dest_surface\n");
+      std::cout << "Nil dest_surface" << std::endl;
+      // TODO handle this case
     }
-    printf("cairo_surface_get_type %d\n", cairo_surface_get_type(dest_surface));
     gint surface_width = gtk_widget_get_allocated_width(drawing_area);
     gint surface_height = gtk_widget_get_allocated_height(drawing_area);
-    printf("surface width %d height %d\n", surface_width, surface_height);
 
     rotated_aspectratio = ((double)rotated_image_width)/((double)rotated_image_height);
     scaled_image_width = surface_width;
@@ -268,10 +259,8 @@ class PhotoSelectPage {
     switch(rotation) {
         case 0:
         case 2:
-           printf("scaling, %d x %d\n", scaled_image_width, scaled_image_height);
            scaled_image =
                convertedPhotoFile->scale(scaled_image_width,scaled_image_height);
-           printf("scaled_image %d x %d\n", scaled_image->getWidth(), scaled_image->getHeight());
             break;
         case 1:
         case 3:
@@ -296,7 +285,6 @@ class PhotoSelectPage {
             break;
     }
 
-    printf("drawing %dx%d 0x%lx\n",scaled_image_width, scaled_image_height, (long)scaled_image->getPixels());
     int stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, scaled_image_width);
     cairo_surface_t *source_surface = cairo_image_surface_create_for_data(scaled_image->getPixels(),
         CAIRO_FORMAT_RGB24, scaled_image_width, scaled_image_height, stride);
@@ -308,29 +296,26 @@ class PhotoSelectPage {
   }
 
   void keep() {
-    printf("PhotoSelectPage::keep\n");
+    // TODO WRITEME or DELETEME
   }
 
   void drop() {
-    printf("PhotoSelectPage::drop\n");
+    // TODO WRITEME or DELETEME
   }
 
   void next() {
-    printf("PhotoSelectPage::next\n");
     rotation = 0;
     conversionEngine.next();   
     set_position_entry();
   }
 
   void back() {
-    printf("PhotoSelectPage::back\n");
     rotation = 0;
     conversionEngine.back();   
     set_position_entry();
   }
 
   void rotate() {
-    printf("PhotoSelectPage::rotate\n");
     rotation += 1;
     if (rotation == 4) {
       rotation = 0;
@@ -338,11 +323,10 @@ class PhotoSelectPage {
   }
 
   void gimp() {
-    printf("PhotoSelectPage::gimp\n");
+    // TODO WRITEME or DELETEME
   }
 
   static void keep_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    printf("keep_button_clicked_cb\n");
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> keep();
@@ -351,7 +335,6 @@ class PhotoSelectPage {
   }
 
   static void drop_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    printf("drop_button_clicked_cb\n");
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> drop();
@@ -361,7 +344,6 @@ class PhotoSelectPage {
 
   static void
   next_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    printf("next_button_clicked_cb\n");
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> next();
@@ -371,7 +353,6 @@ class PhotoSelectPage {
 
   static void
   back_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    printf("back_button_clicked_cb\n");
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> back();
@@ -381,7 +362,6 @@ class PhotoSelectPage {
 
   static void
   rotate_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    printf("rotate_button_clicked_cb\n");
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> rotate();
@@ -391,7 +371,6 @@ class PhotoSelectPage {
 
   static void
   gimp_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    printf("gimp_button_clicked_cb\n");
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> gimp();
@@ -401,7 +380,6 @@ class PhotoSelectPage {
 
   static void
   drawing_area_draw_cb(GtkWidget *widget, gpointer data) {
-    printf("drawing_area_draw_cb\n");
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> redraw_image();
@@ -410,7 +388,6 @@ class PhotoSelectPage {
 
   static void
   position_entry_activate_cb(GtkWidget *widget, gpointer data) {
-    std::cout << "position_entry_activate_cb entered" << std::endl; 
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->position_entry_activate();
@@ -419,7 +396,6 @@ class PhotoSelectPage {
   }
   static void
   drawing_area_button_press_cb(GtkWidget *widget, gpointer data) {
-    std::cout << "drawing_area_button_press_cb entered" << std::endl; 
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->drawing_area_button_press();
@@ -427,7 +403,6 @@ class PhotoSelectPage {
   }
   static void
   drawing_area_button_release_cb(GtkWidget *widget, gpointer data) {
-    std::cout << "drawing_area_button_release_cb entered" << std::endl; 
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->drawing_area_button_release();
@@ -436,7 +411,6 @@ class PhotoSelectPage {
   }
   static void
   drawing_area_scroll_cb(GtkWidget *widget, gpointer data) {
-    std::cout << "drawing_area_scroll_cb entered" << std::endl; 
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->drawing_area_scroll();
@@ -445,7 +419,6 @@ class PhotoSelectPage {
   }
   static void
   drawing_area_motion_notify_cb(GtkWidget *widget, gpointer data) {
-    std::cout << "drawing_area_motion_notify_cb entered" << std::endl; 
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->drawing_area_motion_notify();

@@ -25,11 +25,8 @@ class WindowRegistry {
     // PhotoSelectPage registry methods
 
     static PhotoSelectPage* getPhotoSelectPage(GtkWidget *widget) {
-      std::cout << "getPhotoSelectPage " << (long) widget << std::endl;
       PhotoSelectPage *photoSelectPage = 0;
-      std::cout << "looking for top_level_page for " << (long) widget << std::endl;
       GtkWidget* top_level_page = get_toplevel_page(widget);
-      std::cout << "found top_level_page " << (long) top_level_page << std::endl;
       std::map<GtkWidget*, PhotoSelectPage*>::iterator it =
         photoSelectPageMap.find(GTK_WIDGET(top_level_page));
       if (photoSelectPageMap.end() == it) {
@@ -165,27 +162,20 @@ class WindowRegistry {
       GtkWidget *parent;
       const int maxLevels = 10000; // Don't try forever
       int i;
-      std::cout << "get_toplevel_page entered" << std::endl;
       for (i=0; i<maxLevels; i++) {
-        std::cout << "widget class " << get_class(widget) << " " << (long) widget << std::endl;
         if (GTK_IS_MENU (widget)) {
           parent = gtk_menu_get_attach_widget (GTK_MENU (widget));
         } else {
           parent = gtk_widget_get_parent(widget);
         }
         if (parent == NULL) {
-          std::cout << "parent is null" << std::endl;
           break;
         }
-        std::cout << "parent class " << get_class(parent) << " " << (long) parent << std::endl;
         if (GTK_IS_NOTEBOOK(parent)) {
-	   std::cout << "Got a notebook " << (long) widget << std::endl;
-          std::cout << "get_toplevel_page done" << std::endl;
 	  return widget;
         }
         widget = parent;
       }
-      std::cout << "get_toplevel_page done (failed)" << std::endl;
       return (NULL);
     }
 
