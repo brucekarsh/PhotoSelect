@@ -37,7 +37,6 @@ class ImportWindow {
   }
 
   void run() {
-    printf("ImportWindow::run()\n");
     
     /* Load UI from file. If error occurs, report it and quit application. */
     GError *error = NULL;
@@ -63,7 +62,6 @@ class ImportWindow {
   }
 
   void import_response_cb(gint response_id) {
-    printf("ImportWindow::import_response_cb called, response_id=%d\n", response_id);
     if (1 == response_id) {
       // Cancel button pressed
       if (processing_imports) {
@@ -81,8 +79,8 @@ class ImportWindow {
       // Window destroyed
       cancel_requested = true;
     } else {
-      printf("ImportWindow::import_response_cb called with invalid response_id (%d), aborting\n",
-          response_id);
+      std::cout << "ImportWindow::import_response_cb called with invalid response_id ("
+          << response_id << "), aborting\n" << std::endl;
       abort();
     }
   }
@@ -136,10 +134,6 @@ class ImportWindow {
     GSList *p;
     std::queue<std::string> dirs_to_process;
     p = file_list;
-    printf("p is 0x%lx\n", (long) p);
-    printf("p->data is 0x%lx", (long) (p->data));
-    printf("Feeding terminal\n");
-    printf("Fed terminal\n");
 
     for (p = file_list; NULL != p; p = p -> next) {
       std::cout << (char*)(p -> data) << std::endl;

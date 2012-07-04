@@ -45,7 +45,6 @@ class ConversionEngine {
     int i;
     std::list<std::string>::iterator photoFileNameListIterator = photoFileNameList->begin();
     for (i=0; i<photoFileNameList->size(); i++) {
-      printf("%d %s\n", i, photoFileNameListIterator->c_str());
       photoFilenameVector.push_back(photoFileNameListIterator->c_str());
       photoFileNameListIterator++;
     }
