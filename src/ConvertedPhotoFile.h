@@ -5,12 +5,17 @@
 #include <string>
 #include <malloc.h>
 #include <sys/time.h>
+#include <math.h>
 extern "C" {
 #include <jpeglib.h>
 };
 #include "setjmp.h"
 #include "ScaledImage.h"
 #include <iostream>
+
+#define MINIMUM(a,b)	((a) < (b) ? (a) : (b))
+#define MAXIMUM(a,b)	((a) > (b) ? (a) : (b))
+#define SPACE (" ")
 
 class ConvertedPhotoFile;
 
@@ -67,8 +72,10 @@ class ConvertedPhotoFile {
       }
   }
 
-  ScaledImage* scale(int width, int height) {
-    return new ScaledImage(width, height, scale_pixmap(width, height));
+  ScaledImage* scale(int output_width, int output_height) {
+    float mag = MINIMUM((float)output_width/width, (float)output_height/height);
+    return new ScaledImage(output_width, output_height,
+        scale_and_pan_and_rotate( output_width, output_height, mag, 0, 0, 0));
   }
 
   struct my_error_mgr {
@@ -204,7 +211,95 @@ class ConvertedPhotoFile {
       return newbuf;
   }
 
+  class RotationMatrix {
+    public:
+      float r00;
+      float r01;
+      float r10;
+      float r11;
 
+      void compute_rotation_matrix(float rotation) {
+        // TODO rotation is in range 0..4. It should be something more sensible;.
+        // TODO this should be a constructor
+        // TODO it should be a homogeneous matrix and do scaling and translation.
+        float theta = rotation * M_PI / 2.0;
+        r00 =  cos(theta);
+        r10 =  sin(theta);
+        r01 = -sin(theta);
+        r11 =  cos(theta);
+      }
+
+      void
+      coordinate_transform(float sx0, float sy0, float dx, float dy,
+          float magnification, float *px, float *py) {
+        *px = (r00 * (sx0-dx) + r01 * (sy0-dy))/magnification;
+        *py = (r10 * (sx0-dx) + r11 * (sy0-dy))/magnification;
+      }
+  };
+
+  /**
+  sw, sh   The desired width and height of the output image, in pixels. This can be larger or
+           smaller than the transformed input image. The output will be clipped or padded
+           as necessary.
+  mag      The ratio of output pixel size over input pixel size assuming square pixels
+           A mag of 1 means one input pixel maps to one output pixel, a mag of
+           2 means that two input pixels map to one output pixel.
+  dx, dy   The displacement between (0,0) in the picture and (0,0)
+           in the output, in output pixels.
+  rotation The rotation of the transformed input image. In the range 0..4, where 0
+           is no rotation and 4 is 360 degrees rotation. Rotations are counter-clockwise.
+
+  @returns a pixel map, 4 unsigned chars per pixel (r,g,b,0) of the output image.
+  */
+
+  unsigned char *
+  scale_and_pan_and_rotate(int sw, int sh, float mag, float dx, float dy, float rotation)
+  {
+    int sx, sy;      // indexes in screen space
+    float sx0, sy0;  // coordinates in screen space
+    int px, py;      // indexes in picture space
+    float px0, py0;    // coordintates in picture space
+    RotationMatrix rotation_matrix;
+  
+    unsigned char *obuf = (unsigned char *)malloc(sw*sh*4);
+    unsigned char *ip = pixels; // TODO just use pixels, we don't need ip
+    printf("scaling sw %d, sh %d, mag %f, dx %f, dy %f\n",  sw, sh, mag, dx, dy);
+    rotation_matrix.compute_rotation_matrix(rotation);
+
+    // Iterate through each screen column and compute its coordinate
+    for (sx = 0; sx < sw; sx++) {
+      float sx0 = sx - sw/2.0 ;
+
+      // Iterate through each screen row and compute its coordinate
+      for (sy = 0; sy < sh; sy++) {
+        sy0 = sy - sh/2;
+
+        // Find the picture coordinate of (sx0, sy0)
+        rotation_matrix.coordinate_transform(sx0, sy0, dx, dy, mag, &px0, &py0);
+
+        // Find the pixel index in the image
+        px = px0 + width/2.0;
+        py = py0 + height/2.0;
+
+        // Get the pixel value
+        int pr, pg, pb;
+        if (px < 0 || px >= width || py < 0 || py >= height) {
+           pr = 0; pg = 0; pb = 0;
+        } else {
+           int ic = (py * width + px) * 3;
+           pr = ip[ic];
+           pg = ip[ic+1];
+           pb = ip[ic+2];
+        }
+        int oc = (sy * sw + sx) * 4;
+        obuf[oc] = pb;
+        obuf[oc+1] = pg;
+        obuf[oc+2] = pr;
+        obuf[oc+3] = 0;
+      }
+    }
+    return obuf;
+  }
 };
 
 #endif  // CONVERTEDPHOTOFILE_H__
