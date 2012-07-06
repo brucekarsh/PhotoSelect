@@ -12,6 +12,7 @@
 #include <cairo-xlib.h>
 #include <boost/lexical_cast.hpp>
 
+
 class PhotoSelectPage {
   public:
     Preferences *thePreferences;
@@ -33,9 +34,13 @@ class PhotoSelectPage {
     GtkWidget *of_label;
     GtkWidget *position_entry;
     GtkWidget *tab_label;
+    float Dx, Dy; // displacement of the current image in screen coordinates
+    float M;      // magnification of the current image (screen_size = m * image_size)
+
+    static const float ZOOMRATIO = 1.18920711500272106671;  // 2^(1/4)
 
   PhotoSelectPage(sql::Connection *connection_) :
-      rotation(0), drawing_area(0), thePreferences((Preferences*)0), connection(connection_) {
+      rotation(0), drawing_area(0), thePreferences((Preferences*)0), connection(connection_), M(1.0), Dx(0), Dy(0) {
   }
 
   GtkWidget *
@@ -146,7 +151,92 @@ class PhotoSelectPage {
 
     // Set up the position_entry
     set_position_entry();
+
+    calculate_initial_scaling();
   } 
+
+  void
+  calculate_initial_scaling() {
+    ConvertedPhotoFile *convertedPhotoFile = conversionEngine.getConvertedPhotoFile();
+    if (NULL == convertedPhotoFile) {
+      Dx = 0.0;
+      Dy = 0.0;
+      M = 1.0;
+    }
+
+    gint surface_height = gtk_widget_get_allocated_height(drawing_area);
+    gint surface_width = gtk_widget_get_allocated_width(drawing_area);
+
+    int width = convertedPhotoFile->width;
+    int height = convertedPhotoFile->height;
+
+    printf("R=%d P=(%d %d) S=(%d %d)\n", rotation,
+        width, height,
+        surface_width, surface_height);
+
+    if (rotation == 0 || rotation == 2) {
+      M = MIN(
+          (double) surface_width / width,
+          (double) surface_height /height);
+    } else {
+      M = MIN(
+          (double) surface_width / height,
+          (double) surface_height / width);
+    }
+
+    // Don't allow zero magnification. It would occur if surface_width or surface_height
+    // were zero.
+    if (M == 0.0) {
+      M = 1.0;
+    }
+    Dx = 0.0;
+    Dy = 0.0;
+  }
+
+  /** replacement for the deprecated gtk_widget_get_pointer */
+  void get_pointer(GtkWidget *widget, gint *pointer_x, gint *pointer_y) {
+    GdkDeviceManager *device_manager =
+        gdk_display_get_device_manager(gtk_widget_get_display (widget));
+    GdkDevice *pointer = gdk_device_manager_get_client_pointer(device_manager);
+    gdk_window_get_device_position(gtk_widget_get_window (widget),
+        pointer, pointer_x, pointer_y, NULL);
+  }
+
+  void zoom(float zoomfactor)
+  {
+    std::cout << "zoom entered " << M << std::endl;
+    int sx, sy;
+    //gtk_widget_get_pointer(drawing_area, &sx, &sy);
+    get_pointer(drawing_area, &sx, &sy);
+    gint surface_height = gtk_widget_get_allocated_height(drawing_area);
+    gint surface_width = gtk_widget_get_allocated_width(drawing_area);
+
+    std::cout << sx << " " << sy << " " << surface_width << " " << surface_height
+        << std::endl;
+
+    if (sx >= 0 && sx < surface_width &&
+        sy >= 0 && sy < surface_height) {
+
+      std::cout << "eligible scroll position" << std::endl;
+
+      float sx0 = sx - surface_width/2.0;
+      float sy0 = sy - surface_height/2.0;
+
+      float px = (sx0 - Dx) / M;
+      float py = (sy0 - Dy) / M;
+
+      std::cout << "before: " << M << std::endl;
+      M *= zoomfactor;
+      std::cout << "after: " << M << std::endl;
+
+      Dx = sx0 - M * px;
+      Dy = sy0 - M * py;
+    } else {
+      std::cout << "ineligible scroll position" << std::endl;
+    }
+    std::cout << "zoom exits " << M << std::endl;
+  }
+
 
   void
   position_entry_activate() {
@@ -160,6 +250,7 @@ class PhotoSelectPage {
       val = siz;
     }
     conversionEngine.go_to(val-1);   
+    calculate_initial_scaling();
     set_position_entry();
   }
 
@@ -176,9 +267,15 @@ class PhotoSelectPage {
   }
 
   void
-  drawing_area_scroll() {
+  drawing_area_scroll(GdkEvent *event) {
     std::cout << "photoSelectPage->drawing_area_scroll entered" << std::endl; 
-    // TODO WRITEME
+    if (event->scroll.direction == GDK_SCROLL_UP) {
+      zoom(ZOOMRATIO);
+    } else if (event->scroll.direction == GDK_SCROLL_DOWN) {
+      zoom(1.0/ZOOMRATIO);
+    } else {
+      std::cout << "don't know which way to scroll" << std::endl;
+    }
   }
 
   void
@@ -196,6 +293,31 @@ class PhotoSelectPage {
     gtk_entry_set_text(GTK_ENTRY(position_entry), valstring.c_str());
   }
 
+  void redraw_image() {
+    ConvertedPhotoFile *convertedPhotoFile = conversionEngine.getConvertedPhotoFile(); 
+    cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(drawing_area));
+    cairo_set_source_rgb(cr, 0.2,  0.5, 0.2);
+    cairo_paint(cr);
+    if (NULL == convertedPhotoFile) {
+      return;
+    }
+    gint surface_height = gtk_widget_get_allocated_height(drawing_area);
+    gint surface_width = gtk_widget_get_allocated_width(drawing_area);
+
+    unsigned char *transformed_image = convertedPhotoFile->scale_and_pan_and_rotate(
+      surface_width, surface_height, M, Dx, Dy, 0);
+
+    int stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, surface_width);
+    cairo_surface_t *source_surface = cairo_image_surface_create_for_data(
+        transformed_image,
+        CAIRO_FORMAT_RGB24, surface_width, surface_height, stride);
+    cairo_set_source_surface(cr, source_surface, 0, 0);
+    cairo_paint(cr);
+    cairo_surface_destroy(source_surface);
+
+    free(transformed_image);
+  }
+#ifdef OLDWAY
   void redraw_image() {
     double rotated_aspectratio;
     int scaled_image_width, scaled_image_height;
@@ -294,6 +416,7 @@ class PhotoSelectPage {
 
     delete scaled_image;
   }
+#endif //OLDWAY
 
   void keep() {
     // TODO WRITEME or DELETEME
@@ -306,12 +429,14 @@ class PhotoSelectPage {
   void next() {
     rotation = 0;
     conversionEngine.next();   
+    calculate_initial_scaling();
     set_position_entry();
   }
 
   void back() {
     rotation = 0;
     conversionEngine.back();   
+    calculate_initial_scaling();
     set_position_entry();
   }
 
@@ -410,10 +535,10 @@ class PhotoSelectPage {
     }
   }
   static void
-  drawing_area_scroll_cb(GtkWidget *widget, gpointer data) {
+  drawing_area_scroll_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
-      photoSelectPage->drawing_area_scroll();
+      photoSelectPage->drawing_area_scroll(event);
       photoSelectPage -> redraw_image();
     }
   }
