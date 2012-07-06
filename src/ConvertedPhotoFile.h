@@ -222,7 +222,7 @@ class ConvertedPhotoFile {
         // TODO rotation is in range 0..4. It should be something more sensible;.
         // TODO this should be a constructor
         // TODO it should be a homogeneous matrix and do scaling and translation.
-        float theta = rotation * M_PI / 2.0;
+        float theta = -rotation * M_PI / 2.0;
         r00 =  cos(theta);
         r10 =  sin(theta);
         r01 = -sin(theta);
@@ -247,7 +247,7 @@ class ConvertedPhotoFile {
   dx, dy   The displacement between (0,0) in the picture and (0,0)
            in the output, in output pixels.
   rotation The rotation of the transformed input image. In the range 0..4, where 0
-           is no rotation and 4 is 360 degrees rotation. Rotations are counter-clockwise.
+           is no rotation and 4 is 360 degrees rotation. Rotations are clockwise.
 
   @returns a pixel map, 4 unsigned chars per pixel (r,g,b,0) of the output image.
   */
