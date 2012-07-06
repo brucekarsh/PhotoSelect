@@ -16,7 +16,9 @@ class PreferencesWindow {
   GtkEntry *user;      // GtkEntry for the Db User
   GtkEntry *password;  // GtkEntry for the Db Password
   GtkEntry *database;  // GtkEntry for the DB database name
-  GtkWidget *close_button;  // GtkButton
+  GtkWidget *accept_button;  // GtkButton
+  GtkWidget *cancel_button;  // GtkButton
+  GtkWidget *apply_button;  // GtkButton
 
 
   PreferencesWindow(Preferences* thePreferences) {
@@ -38,7 +40,9 @@ class PreferencesWindow {
     user = GTK_ENTRY( gtk_builder_get_object( builder, "preferencesUser" ));
     password = GTK_ENTRY( gtk_builder_get_object( builder, "preferencesPassword" ));
     database = GTK_ENTRY( gtk_builder_get_object( builder, "preferencesDatabase" ));
-    close_button = GTK_WIDGET( gtk_builder_get_object( builder, "preferences_close_button" ));
+    accept_button = GTK_WIDGET( gtk_builder_get_object( builder, "preferences_accept_button" ));
+    cancel_button = GTK_WIDGET( gtk_builder_get_object( builder, "preferences_cancel_button" ));
+    apply_button = GTK_WIDGET( gtk_builder_get_object( builder, "preferences_apply_button" ));
 
     gtk_entry_set_text(dbhost, thePreferences -> get_dbhost().c_str());
     gtk_entry_set_text(user, thePreferences -> get_user().c_str());
@@ -47,27 +51,59 @@ class PreferencesWindow {
     WindowRegistry::setPreferencesWindow(window, this);
 
     gtk_builder_connect_signals(builder, NULL);
-    g_signal_connect(close_button, "clicked", G_CALLBACK(close_button_clicked_cb), NULL);
-    g_signal_connect(window, "destroy", G_CALLBACK(close_button_clicked_cb), NULL);
+    g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
+    g_signal_connect(cancel_button, "clicked", G_CALLBACK(cancel_button_clicked_cb), NULL);
+    g_signal_connect(window, "destroy", G_CALLBACK(cancel_button_clicked_cb), NULL);
+    g_signal_connect(apply_button, "clicked", G_CALLBACK(apply_button_clicked_cb), NULL);
 
     g_object_unref( G_OBJECT( builder ) );
     gtk_widget_show(window);
   }
 
-  void close_button_clicked() {
+  void apply() {
     thePreferences -> set_dbhost(gtk_entry_get_text(dbhost));
     thePreferences -> set_user(gtk_entry_get_text(user));
     thePreferences -> set_password(gtk_entry_get_text(password));
     thePreferences -> set_database(gtk_entry_get_text(database));
     thePreferences -> writeback();
+  }
+
+  void quit() {
     gtk_widget_destroy(window);
   }
 
-  static void
-  close_button_clicked_cb(GtkWidget* widget, gpointer callback_data) {
-    PreferencesWindow *preferencesWindow = WindowRegistry::getPreferencesWindow(widget);
-    preferencesWindow->close_button_clicked();
+  void accept_button_clicked() {
+    apply();
+    quit();
+  }
 
+  void apply_button_clicked() {
+    apply();
+  }
+
+  void cancel_button_clicked() {
+    quit();
+  }
+
+  static void
+  accept_button_clicked_cb(GtkWidget* widget, gpointer callback_data) {
+    std::cout << "accept_button_clicked_cb" << std::endl;
+    PreferencesWindow *preferencesWindow = WindowRegistry::getPreferencesWindow(widget);
+    preferencesWindow->accept_button_clicked();
+  }
+
+  static void
+  cancel_button_clicked_cb(GtkWidget* widget, gpointer callback_data) {
+    std::cout << "quit_button_clicked_cb" << std::endl;
+    PreferencesWindow *preferencesWindow = WindowRegistry::getPreferencesWindow(widget);
+    preferencesWindow->cancel_button_clicked();
+  }
+
+  static void
+  apply_button_clicked_cb(GtkWidget* widget, gpointer callback_data) {
+    std::cout << "apply_button_clicked_cb" << std::endl;
+    PreferencesWindow *preferencesWindow = WindowRegistry::getPreferencesWindow(widget);
+    preferencesWindow->apply_button_clicked();
   }
 };
 #endif  // PREFERENCESWINDOW_H__
