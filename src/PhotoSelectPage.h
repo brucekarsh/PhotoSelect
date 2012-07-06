@@ -532,7 +532,7 @@ class PhotoSelectPage {
   }
 
   static void
-  drawing_area_draw_cb(GtkWidget *widget, CairoContext *cr, gpointer data) {
+  drawing_area_draw_cb(GtkWidget *widget, cairo_t *cr, gpointer data) {
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> redraw_image();
