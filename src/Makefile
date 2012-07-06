@@ -10,7 +10,7 @@ CXXFLAGS = -O3 -I/usr/include/cppconn $(shell pkg-config --cflags gtk+-3.0 gmodu
 
 CPPFLAGS += -MD -MP
 
-LDFLAGS = -ljpeg -lboost_program_options -lboost_regex -lmysqlcppconn -ljson_spirit $(shell pkg-config --libs gtk+-3.0 gmodule-2.0 json exiv2 libcrypto++ xerces-c)
+LDFLAGS = -L/usr/local/gtk/lib -ljpeg -lboost_program_options -lboost_regex -lmysqlcppconn -ljson_spirit $(shell pkg-config --libs gtk+-3.0 gmodule-2.0 json exiv2 libcrypto++ xerces-c)
 
 main:	$(COBJ) $(CXXOBJ)
 	$(CXX) $^ $(LDFLAGS) -o $@
