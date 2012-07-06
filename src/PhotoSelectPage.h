@@ -331,7 +331,7 @@ class PhotoSelectPage {
     gint surface_width = gtk_widget_get_allocated_width(drawing_area);
 
     unsigned char *transformed_image = convertedPhotoFile->scale_and_pan_and_rotate(
-      surface_width, surface_height, M, Dx, Dy, 0);
+      surface_width, surface_height, M, Dx, Dy, (float)rotation);
 
     int stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, surface_width);
     cairo_surface_t *source_surface = cairo_image_surface_create_for_data(
