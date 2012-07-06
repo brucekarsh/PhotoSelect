@@ -36,11 +36,14 @@ class PhotoSelectPage {
     GtkWidget *tab_label;
     float Dx, Dy; // displacement of the current image in screen coordinates
     float M;      // magnification of the current image (screen_size = m * image_size)
+    bool drag_is_active;
+    int drag_start_x;
+    int drag_start_y;
 
     static const float ZOOMRATIO = 1.18920711500272106671;  // 2^(1/4)
 
   PhotoSelectPage(sql::Connection *connection_) :
-      rotation(0), drawing_area(0), thePreferences((Preferences*)0), connection(connection_), M(1.0), Dx(0), Dy(0) {
+      rotation(0), drawing_area(0), thePreferences((Preferences*)0), connection(connection_), M(1.0), Dx(0), Dy(0), drag_is_active(false) {
   }
 
   GtkWidget *
@@ -255,15 +258,30 @@ class PhotoSelectPage {
   }
 
   void
-  drawing_area_button_press() {
+  drawing_area_button_press(GdkEvent *event) {
     std::cout << "photoSelectPage->drawing_area_button_press entered" << std::endl; 
-    // TODO WRITEME
+    int button = event->button.button;
+    if (button == 1) {
+      drag_start_x = event->button.x;
+      drag_start_y = event->button.y;
+      drag_is_active = true;
+    }
   }
 
   void
-  drawing_area_button_release() {
+  drawing_area_button_release(GdkEvent *event) {
     std::cout << "photoSelectPage->drawing_area_button_release entered" << std::endl; 
-    // TODO WRITEME
+    int button = event->button.button;
+    if (button == 1 && drag_is_active) {
+      int drag_end_x = event->button.x;
+      int drag_end_y = event->button.y;
+      int deltaX = drag_end_x - drag_start_x;
+      int deltaY = drag_end_y - drag_start_y;
+      Dx += deltaX;
+      Dy += deltaY;
+      redraw_image();
+      drag_is_active = false;
+    }
   }
 
   void
@@ -279,9 +297,19 @@ class PhotoSelectPage {
   }
 
   void
-  drawing_area_motion_notify() {
+  drawing_area_motion_notify(GdkEvent * event) {
     std::cout << "photoSelectPage->drawing_area_motion_notify entered" << std::endl; 
-    // TODO WRITEME
+    if (drag_is_active) {
+        int drag_end_x = event->motion.x;
+        int drag_end_y = event->motion.y;
+        int deltaX = drag_end_x - drag_start_x;
+        int deltaY = drag_end_y - drag_start_y;
+        Dx += deltaX;
+        Dy += deltaY;
+        drag_start_x = drag_end_x;
+        drag_start_y = drag_end_y;
+        redraw_image();
+    }
   }
 
   /** Sets to position_entry widget to reflect the positioon of the ConversionEngine.
@@ -504,7 +532,7 @@ class PhotoSelectPage {
   }
 
   static void
-  drawing_area_draw_cb(GtkWidget *widget, gpointer data) {
+  drawing_area_draw_cb(GtkWidget *widget, CairoContext *cr, gpointer data) {
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> redraw_image();
@@ -520,18 +548,17 @@ class PhotoSelectPage {
     }
   }
   static void
-  drawing_area_button_press_cb(GtkWidget *widget, gpointer data) {
+  drawing_area_button_press_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
-      photoSelectPage->drawing_area_button_press();
+      photoSelectPage->drawing_area_button_press(event);
     }
   }
   static void
-  drawing_area_button_release_cb(GtkWidget *widget, gpointer data) {
+  drawing_area_button_release_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
-      photoSelectPage->drawing_area_button_release();
-      photoSelectPage -> redraw_image();
+      photoSelectPage->drawing_area_button_release(event);
     }
   }
   static void
@@ -543,11 +570,10 @@ class PhotoSelectPage {
     }
   }
   static void
-  drawing_area_motion_notify_cb(GtkWidget *widget, gpointer data) {
+  drawing_area_motion_notify_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
-      photoSelectPage->drawing_area_motion_notify();
-      photoSelectPage -> redraw_image();
+      photoSelectPage->drawing_area_motion_notify(event);
     }
   }
 };
