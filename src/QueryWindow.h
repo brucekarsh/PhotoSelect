@@ -231,7 +231,8 @@ class QueryWindow {
     gtk_box_pack_start(GTK_BOX(qwr->hbox), qwr->textEntryBox, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(qwr->hbox), qwr->addButton, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(qwr->hbox), qwr->removeButton, FALSE, FALSE, 0);
-    g_signal_connect(qwr->addButton, "clicked", G_CALLBACK(query_add_button_clicked_cb), (gpointer)qwr);
+    g_signal_connect(qwr->addButton, "clicked", G_CALLBACK(query_add_button_clicked_cb),
+        (gpointer)qwr);
     g_signal_connect(qwr->removeButton, "clicked", G_CALLBACK(query_remove_button_clicked_cb),
         (gpointer)qwr);
     gtk_widget_show(qwr->hbox);
@@ -444,11 +445,8 @@ inline  void
 QueryWindow::accept() {
   std::cout << "QueryWindow::accept() called" << std::endl;
   PhotoSelectPage *photoSelectPage = new PhotoSelectPage(connection);
-//  photoFilenameList.push_back("/home/bruce/Tanzania2012/AW100/DSCN0651.JPG");
-//  photoFilenameList.push_back("/home/bruce/Tanzania2012/AW100/DSCN0551.JPG");
-//  photoFilenameList.push_back("/home/bruce/Tanzania2012/D7000-6/DSC_8557.JPG");
-
   photoSelectPage->setup(photoFilenameList, preferences);
   baseWindow->add_page(photoSelectPage->get_tab_label(), photoSelectPage->get_notebook_page());
+  quit();
 }
 #endif // QUERYWINDOW_H__
