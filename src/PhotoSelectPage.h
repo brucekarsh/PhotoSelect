@@ -39,11 +39,14 @@ class PhotoSelectPage {
     bool drag_is_active;
     int drag_start_x;
     int drag_start_y;
+    boolean calculated_initial_scaling;
 
     static const float ZOOMRATIO = 1.18920711500272106671;  // 2^(1/4)
 
   PhotoSelectPage(sql::Connection *connection_) :
-      rotation(0), drawing_area(0), thePreferences((Preferences*)0), connection(connection_), M(1.0), Dx(0), Dy(0), drag_is_active(false) {
+      rotation(0), drawing_area(0), thePreferences((Preferences*)0),
+      connection(connection_), M(1.0), Dx(0), Dy(0), drag_is_active(false),
+      calculated_initial_scaling(false) {
   }
 
   GtkWidget *
@@ -154,17 +157,17 @@ class PhotoSelectPage {
 
     // Set up the position_entry
     set_position_entry();
-
-    calculate_initial_scaling();
   } 
 
   void
   calculate_initial_scaling() {
+    calculated_initial_scaling = true;
     ConvertedPhotoFile *convertedPhotoFile = conversionEngine.getConvertedPhotoFile();
     if (NULL == convertedPhotoFile) {
       Dx = 0.0;
       Dy = 0.0;
       M = 1.0;
+      return;
     }
 
     gint surface_height = gtk_widget_get_allocated_height(drawing_area);
@@ -323,6 +326,9 @@ class PhotoSelectPage {
 
   void redraw_image() {
     ConvertedPhotoFile *convertedPhotoFile = conversionEngine.getConvertedPhotoFile(); 
+    if (!calculated_initial_scaling) {
+      calculate_initial_scaling();
+    }
     cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(drawing_area));
     if (NULL == convertedPhotoFile) {
       return;
