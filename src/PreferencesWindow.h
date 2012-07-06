@@ -87,21 +87,18 @@ class PreferencesWindow {
 
   static void
   accept_button_clicked_cb(GtkWidget* widget, gpointer callback_data) {
-    std::cout << "accept_button_clicked_cb" << std::endl;
     PreferencesWindow *preferencesWindow = WindowRegistry::getPreferencesWindow(widget);
     preferencesWindow->accept_button_clicked();
   }
 
   static void
   cancel_button_clicked_cb(GtkWidget* widget, gpointer callback_data) {
-    std::cout << "quit_button_clicked_cb" << std::endl;
     PreferencesWindow *preferencesWindow = WindowRegistry::getPreferencesWindow(widget);
     preferencesWindow->cancel_button_clicked();
   }
 
   static void
   apply_button_clicked_cb(GtkWidget* widget, gpointer callback_data) {
-    std::cout << "apply_button_clicked_cb" << std::endl;
     PreferencesWindow *preferencesWindow = WindowRegistry::getPreferencesWindow(widget);
     preferencesWindow->apply_button_clicked();
   }
