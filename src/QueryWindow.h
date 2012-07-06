@@ -145,7 +145,7 @@ class QueryWindow {
     last_part.append("ORDER BY t.adjustedDateTime, filePath ");
 
     std::string first_part =
-      "SELECT filePath FROM PhotoFile p "
+      "SELECT DISTINCT filePath FROM PhotoFile p "
       "INNER JOIN Checksum c ON p.checksumId = c.id "
       "INNER JOIN Time t ON t.checksumId = c.id ";
       "ORDER BY t.adjustedTime, filePath ";
