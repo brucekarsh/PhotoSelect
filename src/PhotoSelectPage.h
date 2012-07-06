@@ -77,7 +77,7 @@ class PhotoSelectPage {
     g_signal_connect(drawing_area, "motion-notify-event",
         G_CALLBACK(drawing_area_motion_notify_cb), NULL);
     gtk_widget_add_events(drawing_area, GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
-        | GDK_SCROLL_MASK | GDK_BUTTON_MOTION_MASK);
+        | GDK_SCROLL_MASK | GDK_BUTTON_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK);
 
     // make an hbox (button_hbox) to hold the buttons, etc and add it to page_vbox
     button_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -324,8 +324,6 @@ class PhotoSelectPage {
   void redraw_image() {
     ConvertedPhotoFile *convertedPhotoFile = conversionEngine.getConvertedPhotoFile(); 
     cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(drawing_area));
-    cairo_set_source_rgb(cr, 0.2,  0.5, 0.2);
-    cairo_paint(cr);
     if (NULL == convertedPhotoFile) {
       return;
     }

@@ -6,7 +6,7 @@ CXXSRC = main.cc GtkCallbackStubs.cc WindowRegistry.cc BaseWindow.cc
 CXXOBJ = $(CXXSRC:%.cc=%.o)
 CXXDEP = $(CXXSRC:%.cc=%.d)
 
-CXXFLAGS = -g -I/usr/include/cppconn $(shell pkg-config --cflags gtk+-3.0 gmodule-2.0 json exiv2 libcrypto++ xerces-c)
+CXXFLAGS = -O3 -I/usr/include/cppconn $(shell pkg-config --cflags gtk+-3.0 gmodule-2.0 json exiv2 libcrypto++ xerces-c)
 
 CPPFLAGS += -MD -MP
 
