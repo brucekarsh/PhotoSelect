@@ -1,5 +1,5 @@
-#ifndef PHOTOSELECTWINOW_H__
-#define PHOTOSELECTWINOW_H__
+#ifndef PHOTOSELECTPAGE_H__
+#define PHOTOSELECTPAGE_H__
 
 #include "WindowRegistry.h"
 #include "Preferences.h"
@@ -11,7 +11,6 @@
 #include <gtk/gtk.h>
 #include <cairo-xlib.h>
 #include <boost/lexical_cast.hpp>
-
 
 class PhotoSelectPage {
   public:
@@ -33,7 +32,9 @@ class PhotoSelectPage {
     GtkWidget *button_separator;
     GtkWidget *of_label;
     GtkWidget *position_entry;
-    GtkWidget *tab_label;
+    GtkWidget *tab_label_hbox;
+    GtkWidget *tab_label_label;
+    GtkWidget *tab_label_button;
     float Dx, Dy; // displacement of the current image in screen coordinates
     float M;      // magnification of the current image (screen_size = m * image_size)
     bool drag_is_active;
@@ -56,13 +57,43 @@ class PhotoSelectPage {
 
   GtkWidget *
   get_tab_label() {
-    return tab_label;
+    return tab_label_hbox;
   }
 
   void
   build_page() {
     // Make a label for the notebook tab
-    tab_label = gtk_label_new("tab");
+    tab_label_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL,0);
+    tab_label_label = gtk_label_new("tab");
+    tab_label_button = gtk_button_new();
+    g_signal_connect(tab_label_button, "clicked", G_CALLBACK(tab_label_button_clicked_cb),
+        (gpointer)this);
+    gtk_button_set_relief(GTK_BUTTON(tab_label_button), GTK_RELIEF_NONE);
+    gtk_button_set_focus_on_click(GTK_BUTTON(tab_label_button), FALSE);
+    gtk_widget_set_tooltip_text(GTK_WIDGET(tab_label_button), "Close page");
+    GtkWidget *image = gtk_image_new_from_stock(GTK_STOCK_CLOSE, GTK_ICON_SIZE_MENU);
+    gtk_button_set_image(GTK_BUTTON(tab_label_button), image);
+    gtk_widget_set_size_request(tab_label_button, 0,0);
+    GtkStyleContext *style_context = gtk_widget_get_style_context(GTK_WIDGET(tab_label_button));
+    GtkCssProvider *css_provider = gtk_css_provider_new();
+    std::string data = ".button {\n"
+        "-GtkButton-default-border : 0px;\n"
+        "-GtkButton-default-outside-border : 0px;\n"
+        "-GtkButton-inner-border: 0px;\n"
+        "-GtkWidget-focus-line-width : 0px;\n"
+        "-GtkWidget-focus-padding : 0px;\n"
+        "padding: 0px;\n"
+        "}";
+    gtk_css_provider_load_from_data(css_provider, data.c_str(), -1, NULL);
+    gtk_style_context_add_provider(style_context,
+        GTK_STYLE_PROVIDER(css_provider), 600); // GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
+
+    gtk_widget_show(tab_label_button);
+    gtk_widget_show(tab_label_label);
+    gtk_widget_show(tab_label_hbox);
+    gtk_box_pack_start(GTK_BOX(tab_label_hbox), tab_label_label, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(tab_label_hbox), tab_label_button, FALSE, FALSE, 0);
+
     // make a vbox to hold the page (page_vbox)
     page_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(page_vbox);
@@ -483,6 +514,13 @@ class PhotoSelectPage {
     // TODO WRITEME or DELETEME
   }
 
+  static void tab_label_button_clicked_cb(GtkWidget *widget, gpointer data) {
+    PhotoSelectPage *photoSelectPage = (PhotoSelectPage *)data;
+    if (0 != photoSelectPage) {
+      photoSelectPage->quit();
+    }
+  }
+
   static void keep_button_clicked_cb(GtkWidget *widget, gpointer data) {
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
     if (0 != photoSelectPage) {
@@ -535,6 +573,8 @@ class PhotoSelectPage {
     }
   }
 
+  void quit();
+
   static void
   drawing_area_draw_cb(GtkWidget *widget, cairo_t *cr, gpointer data) {
     PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
@@ -581,4 +621,14 @@ class PhotoSelectPage {
     }
   }
 };
-#endif  // PHOTOSELECTWINOW_H__
+
+#include "BaseWindow.h"
+
+  inline void PhotoSelectPage::quit() {
+    BaseWindow *baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(drawing_area));
+    if (NULL != baseWindow) {
+      baseWindow->remove_page(page_vbox);
+    }
+  }
+
+#endif  // PHOTOSELECTPAGE_H__
