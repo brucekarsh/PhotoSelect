@@ -36,7 +36,8 @@ class BaseWindow {
 
   void
   add_page(GtkWidget* label, GtkWidget* page) {
-    gtk_notebook_append_page(GTK_NOTEBOOK(notebook), page, label);
+    gint pos = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), page, label);
+    gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), pos);
   }
 
 
