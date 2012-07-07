@@ -25,6 +25,7 @@ class BaseWindow {
   GtkWidget *edit_preferences_menu_item;
   GtkWidget *view_query_menu_item;
   GtkWidget *notebook;
+  PreferencesWindow *preferencesWindow;
 
   static sql::Connection *connection;
   static Preferences* thePreferences;
@@ -32,6 +33,7 @@ class BaseWindow {
   BaseWindow(sql::Connection *connection, Preferences *thePreferences) {
     BaseWindow::connection = connection;
     BaseWindow::thePreferences = thePreferences;
+    preferencesWindow = NULL;
   };
 
   void
@@ -154,10 +156,25 @@ class BaseWindow {
   }
 
   static void
-  edit_preferences_activate_cb() {
+  edit_preferences_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     std::cout << "edit_preferences_activate_cb" << std::endl;
-    PreferencesWindow *preferencesWindow = new PreferencesWindow(thePreferences);
-    preferencesWindow->run();
+    BaseWindow* baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(menuItem));
+    baseWindow->preferences_activate();
+  }
+
+  void
+  preferences_activate() {
+    std::cout << "preferences_activate entered" << std::endl;
+    if (NULL == preferencesWindow) {
+      std::cout << "NULL == preferencesWindow" << std::endl;
+      preferencesWindow = new PreferencesWindow(thePreferences);
+      preferencesWindow->run();
+      g_signal_connect(preferencesWindow->window, "destroy",
+        G_CALLBACK(preferences_window_destroy_cb), (gpointer) this);
+    } else {
+      std::cout << "NULL != preferencesWindow" << std::endl;
+      preferencesWindow->highlight();
+    }
   }
 
   static void
@@ -165,6 +182,13 @@ class BaseWindow {
     std::cout << "file_import_activate_cb" << std::endl;
     ImportWindow *importWindow = new ImportWindow(thePreferences, connection);
     importWindow->run();
+  }
+
+  static void
+  preferences_window_destroy_cb(GtkWidget *widget, gpointer user_data) {
+    std::cout << "preferences_window_destroy_cb" << std::endl;
+    BaseWindow *baseWindow = (BaseWindow *)user_data;
+    baseWindow->preferencesWindow = NULL;
   }
 };
 

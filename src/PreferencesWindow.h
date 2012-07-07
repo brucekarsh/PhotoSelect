@@ -25,6 +25,43 @@ class PreferencesWindow {
     this->thePreferences = thePreferences;
   }
 
+  void highlight() {
+    std::cout << "highlight preferences window" << std::endl;
+    GdkWindow *gdk_window = gtk_widget_get_window(window);
+    gtk_window_set_urgency_hint(GTK_WINDOW(window), true);
+    gtk_widget_show(window);
+    gdk_window_raise(gdk_window);
+    gdk_flush();
+    gdk_window_show(gdk_window);
+    gdk_flush();
+    gint x, y;
+    gdk_window_get_root_origin(gdk_window, &x, &y);
+    std::cout << "gdk_window_get_root_origin " << x << " " << y << std::endl;
+    gdk_window_move(gdk_window, x+10, y);
+    gdk_flush();
+    usleep(50000);
+    gdk_window_move(gdk_window, x-10, y);
+    gdk_flush();
+    usleep(50000);
+    gdk_window_move(gdk_window, x, y+10);
+    gdk_flush();
+    usleep(50000);
+    gdk_window_move(gdk_window, x, y-10);
+    gdk_flush();
+    usleep(50000);
+    gdk_window_move(gdk_window, x-10, y-10);
+    gdk_flush();
+    usleep(50000);
+    gdk_window_move(gdk_window, x-10, y+10);
+    gdk_flush();
+    usleep(50000);
+    gdk_window_move(gdk_window, x+10, y-10);
+    gdk_flush();
+    usleep(50000);
+    gdk_window_move(gdk_window, x, y);
+    gdk_flush();
+  }
+
   void run() {
     
     /* Load UI from file. If error occurs, report it and quit application. */

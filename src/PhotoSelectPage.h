@@ -161,6 +161,8 @@ class PhotoSelectPage {
     
     // add a text entry (position_entry) to button_hbox   
     position_entry = gtk_entry_new();
+    gtk_entry_set_alignment(GTK_ENTRY(position_entry), 1.0);
+    gtk_entry_set_width_chars(GTK_ENTRY(position_entry), 10);
     gtk_widget_show(position_entry);
     gtk_box_pack_end(GTK_BOX(button_hbox), position_entry, FALSE, FALSE, 0);
     g_signal_connect(position_entry, "activate", G_CALLBACK(position_entry_activate_cb), 0);
