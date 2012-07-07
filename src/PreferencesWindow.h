@@ -73,6 +73,13 @@ class PreferencesWindow {
       g_free( error );
     }
     window = GTK_WIDGET( gtk_builder_get_object( builder, "PreferencesWindow" ));
+    GdkGeometry geometry;
+    geometry.min_width = -1;
+    geometry.min_height = -1;
+    geometry.max_width = G_MAXSHORT;
+    geometry.max_height = -1;
+    gtk_window_set_geometry_hints(GTK_WINDOW(window), window, &geometry,
+        (GdkWindowHints)(GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
     dbhost = GTK_ENTRY( gtk_builder_get_object( builder, "preferencesDbHost" ));
     user = GTK_ENTRY( gtk_builder_get_object( builder, "preferencesUser" ));
     password = GTK_ENTRY( gtk_builder_get_object( builder, "preferencesPassword" ));
