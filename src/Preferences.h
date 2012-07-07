@@ -24,21 +24,16 @@ class Preferences {
         json_object *new_obj, std::string key, std::string default_value) {
       std::string result;
 
-      std::cout << "key " << key << std::endl;
-      std::cout << "default_value " << default_value << std::endl;
       json_object *object = json_object_object_get(new_obj, key.c_str());
       if (object && json_type_string == json_object_get_type(object)) {
         result = json_object_get_string(object);
       } else {
         result = default_value;
       }
-      std::cout << "result " << result << std::endl;
       return result;
     }
     void validate() {
       std::string preferences_text = get_preferences_text();
-
-      std::cout << "preferences_text " << preferences_text << std::endl;
 
       if (preferences_text == "") {
         use_default_preferences();
@@ -47,7 +42,6 @@ class Preferences {
 	if (0 == new_obj) {
           use_default_preferences();
         } else {
-	  std::cout << "using parsed preferences" << std::endl;
           dbhost = get_string_from_json(new_obj, "dbhost", default_dbhost());
           user = get_string_from_json(new_obj, "user", default_user());
           password = get_string_from_json(new_obj, "password", default_password());
@@ -58,7 +52,6 @@ class Preferences {
     }
 
     void use_default_preferences() {
-	std::cout << "use_default_preferences called" << std::endl;
         dbhost = default_dbhost();
         user = default_user();
         password = default_password();

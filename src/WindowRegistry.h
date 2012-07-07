@@ -38,7 +38,6 @@ class WindowRegistry {
     }
 
     static void setPhotoSelectPage(GtkWidget *widget, PhotoSelectPage *photoSelectPage) {
-      std::cout << "setPhotoSelectPage " << (long) widget << " " << (long) photoSelectPage << std::endl;
       photoSelectPageMap[GTK_WIDGET(widget)] = photoSelectPage;
     }
 

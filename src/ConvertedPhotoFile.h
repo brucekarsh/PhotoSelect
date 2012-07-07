@@ -263,7 +263,6 @@ class ConvertedPhotoFile {
   
     unsigned char *obuf = (unsigned char *)malloc(sw*sh*4);
     unsigned char *ip = pixels; // TODO just use pixels, we don't need ip
-    printf("scaling sw %d, sh %d, mag %f, dx %f, dy %f\n",  sw, sh, mag, dx, dy);
     rotation_matrix.compute_rotation_matrix(rotation);
 
     // Iterate through each screen column and compute its coordinate

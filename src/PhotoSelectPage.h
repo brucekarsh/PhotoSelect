@@ -209,10 +209,6 @@ class PhotoSelectPage {
     int width = convertedPhotoFile->width;
     int height = convertedPhotoFile->height;
 
-    printf("R=%d P=(%d %d) S=(%d %d)\n", rotation,
-        width, height,
-        surface_width, surface_height);
-
     if (rotation == 0 || rotation == 2) {
       M = MIN(
           (double) surface_width / width,
@@ -243,20 +239,14 @@ class PhotoSelectPage {
 
   void zoom(float zoomfactor)
   {
-    std::cout << "zoom entered " << M << std::endl;
     int sx, sy;
     //gtk_widget_get_pointer(drawing_area, &sx, &sy);
     get_pointer(drawing_area, &sx, &sy);
     gint surface_height = gtk_widget_get_allocated_height(drawing_area);
     gint surface_width = gtk_widget_get_allocated_width(drawing_area);
 
-    std::cout << sx << " " << sy << " " << surface_width << " " << surface_height
-        << std::endl;
-
     if (sx >= 0 && sx < surface_width &&
         sy >= 0 && sy < surface_height) {
-
-      std::cout << "eligible scroll position" << std::endl;
 
       float sx0 = sx - surface_width/2.0;
       float sy0 = sy - surface_height/2.0;
@@ -264,16 +254,13 @@ class PhotoSelectPage {
       float px = (sx0 - Dx) / M;
       float py = (sy0 - Dy) / M;
 
-      std::cout << "before: " << M << std::endl;
       M *= zoomfactor;
-      std::cout << "after: " << M << std::endl;
 
       Dx = sx0 - M * px;
       Dy = sy0 - M * py;
     } else {
       std::cout << "ineligible scroll position" << std::endl;
     }
-    std::cout << "zoom exits " << M << std::endl;
   }
 
 
@@ -295,7 +282,6 @@ class PhotoSelectPage {
 
   void
   drawing_area_button_press(GdkEvent *event) {
-    std::cout << "photoSelectPage->drawing_area_button_press entered" << std::endl; 
     int button = event->button.button;
     if (button == 1) {
       drag_start_x = event->button.x;
@@ -306,7 +292,6 @@ class PhotoSelectPage {
 
   void
   drawing_area_button_release(GdkEvent *event) {
-    std::cout << "photoSelectPage->drawing_area_button_release entered" << std::endl; 
     int button = event->button.button;
     if (button == 1 && drag_is_active) {
       int drag_end_x = event->button.x;
@@ -322,7 +307,6 @@ class PhotoSelectPage {
 
   void
   drawing_area_scroll(GdkEvent *event) {
-    std::cout << "photoSelectPage->drawing_area_scroll entered" << std::endl; 
     if (event->scroll.direction == GDK_SCROLL_UP) {
       zoom(ZOOMRATIO);
     } else if (event->scroll.direction == GDK_SCROLL_DOWN) {
@@ -334,7 +318,6 @@ class PhotoSelectPage {
 
   void
   drawing_area_motion_notify(GdkEvent * event) {
-    std::cout << "photoSelectPage->drawing_area_motion_notify entered" << std::endl; 
     if (drag_is_active) {
         int drag_end_x = event->motion.x;
         int drag_end_y = event->motion.y;
