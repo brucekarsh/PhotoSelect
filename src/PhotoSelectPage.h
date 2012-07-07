@@ -276,6 +276,7 @@ class PhotoSelectPage {
       val = siz;
     }
     conversionEngine.go_to(val-1);   
+    rotation = 0;
     calculate_initial_scaling();
     set_position_entry();
   }
