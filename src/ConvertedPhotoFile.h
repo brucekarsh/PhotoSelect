@@ -10,7 +10,6 @@ extern "C" {
 #include <jpeglib.h>
 };
 #include "setjmp.h"
-#include "ScaledImage.h"
 #include <iostream>
 
 #define MINIMUM(a,b)	((a) < (b) ? (a) : (b))
@@ -70,12 +69,6 @@ class ConvertedPhotoFile {
         width = 0;
         height = 0;
       }
-  }
-
-  ScaledImage* scale(int output_width, int output_height) {
-    float mag = MINIMUM((float)output_width/width, (float)output_height/height);
-    return new ScaledImage(output_width, output_height,
-        scale_and_pan_and_rotate( output_width, output_height, mag, 0, 0, 0));
   }
 
   struct my_error_mgr {
@@ -162,53 +155,6 @@ class ConvertedPhotoFile {
   
     fclose(infile);
     return buffer;
-  }
-
-  unsigned char *scale_pixmap(int output_width, int output_height)
-  {
-      unsigned char *newbuf;
-      const int IN_BYTES_PER_PIXEL = 3;
-      const int OUT_BYTES_PER_PIXEL = 4;
-      newbuf = (unsigned char *)malloc(output_width*output_height*OUT_BYTES_PER_PIXEL);
-  
-      unsigned char *inbufrowp, *inbufcolp;
-      unsigned char *outbufp;
-      FractionalIncrement colincrement(width, output_width), rowincrement(height, output_height);
-      struct timeval tv0, tv1;
-      int delta_sec, delta_usec;
-      double delta_t;
-  
-      gettimeofday(&tv0,0);
-      int x,y;
-      outbufp = newbuf;
-      inbufrowp = pixels;
-      for(y=0;y<output_height;y++) {
-          inbufcolp = inbufrowp;
-          for(x=0;x<output_width;x++) {
-              outbufp[0] = inbufcolp[2];
-              outbufp[1] = inbufcolp[1];
-              outbufp[2] = inbufcolp[0];
-              outbufp[3] = inbufcolp[3];
-              int tmp1 = colincrement.increment();
-              inbufcolp += IN_BYTES_PER_PIXEL*tmp1;
-              outbufp+=OUT_BYTES_PER_PIXEL;
-          }
-          colincrement.reset();
-          int tmp2;
-          tmp2 = rowincrement.increment();
-          inbufrowp += IN_BYTES_PER_PIXEL*width*tmp2;
-      }
-  
-      gettimeofday(&tv1,0);
-      delta_sec = tv1.tv_sec-tv0.tv_sec;
-      delta_usec = tv1.tv_usec-tv0.tv_usec;
-      if(delta_usec<0) {
-          delta_usec += 1000000;
-          delta_sec -= 1;
-      }
-      delta_t = delta_sec + delta_usec/1000000.0;
-      std::cout << "Scale took " << delta_t << " secs" << std::endl;
-      return newbuf;
   }
 
   class RotationMatrix {
