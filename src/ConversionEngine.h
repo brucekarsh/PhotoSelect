@@ -41,6 +41,16 @@ class ConversionEngine {
     return convertedPhotoFile;
   }
 
+  //! Gets the full pathname  of the current photo file.
+  std::string getPhotoFilePath() {
+    if (photoFilenameVectorPosition <0
+        || photoFilenameVectorPosition >= photoFilenameVector.size()) {
+      return "";
+    }
+    std::string photoFilename = photoFilenameVector[photoFilenameVectorPosition];
+    return photoFilename;
+  }
+
   void setPhotoFileList(std::list<std::string> *photoFileNameList) {
     int i;
     std::list<std::string>::iterator photoFileNameListIterator = photoFileNameList->begin();

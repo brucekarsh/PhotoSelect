@@ -31,6 +31,7 @@ class PhotoSelectPage {
     GtkWidget *gimp_button;
     GtkWidget *button_separator;
     GtkWidget *of_label;
+    GtkWidget *filename_entry;
     GtkWidget *position_entry;
     GtkWidget *tab_label_hbox;
     GtkWidget *tab_label_label;
@@ -148,6 +149,18 @@ class PhotoSelectPage {
     gtk_widget_show(gimp_button);
     gtk_box_pack_start(GTK_BOX(button_hbox), gimp_button, FALSE, FALSE, 0);
     g_signal_connect(gimp_button, "clicked", G_CALLBACK(gimp_button_clicked_cb), 0);
+
+    // add a text entry (filename_entry) to button_hbox   
+    filename_entry = gtk_entry_new();
+    gtk_entry_set_alignment(GTK_ENTRY(filename_entry), 0.5);
+    gtk_box_pack_start(GTK_BOX(button_hbox), filename_entry, TRUE, TRUE, 3);
+    gtk_entry_set_text(GTK_ENTRY(filename_entry), "filename");
+    GValue value = {0};
+    g_value_init(&value, G_TYPE_BOOLEAN);
+    g_value_set_boolean(&value, false);
+    g_object_set_property(G_OBJECT(filename_entry),"editable", &value);
+    g_object_set_property(G_OBJECT(filename_entry),"has-frame", &value);
+    gtk_widget_show(filename_entry);
     
     // add a separator (button_separator) to button_hbox
     button_separator = gtk_separator_new(GTK_ORIENTATION_VERTICAL);
@@ -343,6 +356,10 @@ class PhotoSelectPage {
 
   void redraw_image() {
     ConvertedPhotoFile *convertedPhotoFile = conversionEngine.getConvertedPhotoFile(); 
+    std::string photoFilePath = conversionEngine.getPhotoFilePath();
+    gtk_entry_set_text(GTK_ENTRY(filename_entry), photoFilePath.c_str());
+    gtk_editable_set_position(GTK_EDITABLE(filename_entry), photoFilePath.size());
+    
     if (!calculated_initial_scaling) {
       calculate_initial_scaling();
     }
