@@ -70,19 +70,10 @@ class QueryWindow {
         QueryWindowRow* qwr = queryWindowRows[GTK_WIDGET(row->data)];
 
         const gchar *value =  gtk_entry_get_text(GTK_ENTRY(qwr->textEntryBox));
-        std::cout << "value " << value << std::endl;
   
         gchar *relation = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(qwr->relationComboBox));
-        std::cout << "got relation " << std::endl;
-        if (relation) {
-          std::cout << "relation " << relation << std::endl;
-        }
 
         gchar *fieldName = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(qwr->fieldNameComboBox));
-        std::cout << "got fieldName " << std::endl;
-        if (fieldName) {
-          std::cout << "fieldName " << fieldName << std::endl;
-        }
 
         json_spirit::Object query_row;
         if (fieldName) {
@@ -138,10 +129,6 @@ class QueryWindow {
         last_part.append(" ");
         last_part.append("?");
         last_part.append(") ");
-        std::cout << "Row " 
-            << object["fieldName"].get_str() << " "
-            << object["relation"].get_str() << " "
-            << object["value"].get_str() << std::endl;
       }
     }
 
@@ -155,7 +142,6 @@ class QueryWindow {
 
     std::string sql_statement = first_part + last_part;
 
-    std::cout << "queryJSONToQuery statement: " << sql_statement << std::endl;
     gtk_widget_show(scrollBox);
     sql::PreparedStatement *queryPreparedStatement = connection->prepareStatement( sql_statement);
     for (int i=0; i<value_vector.size(); i++) {
@@ -197,7 +183,6 @@ class QueryWindow {
     gtk_widget_set_sensitive(GTK_WIDGET(accept_button), TRUE);
     runUI();
 
-    std::cout << "queryJSONToQuery done: " << sql_statement << std::endl;
     return first_part + last_part;
   }
 
@@ -249,7 +234,6 @@ class QueryWindow {
 
   static void
   accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    std::cout << "accept_button_clicked_cb" << std::endl;
     QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
     queryWindow->accept();
   }
@@ -258,15 +242,12 @@ class QueryWindow {
   query_submit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
     QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
     QueryWindowRow *qwr = (QueryWindowRow*) callback_data;
-    std::cout << "query_submit_button_clicked_cb" << std::endl;
     std::string queryJSON = queryWindow->makeQueryJSON();
-    std::cout << queryJSON << std::endl;
     queryWindow->queryJSONToQuery(queryJSON);
   }
 
   static void
   query_add_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    std::cout << "query_add_button_clicked_cb entered" << std::endl;
     QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
     QueryWindowRow *qwr = (QueryWindowRow*) callback_data;
     int qwri = queryWindow->get_qwri(qwr);
@@ -274,50 +255,36 @@ class QueryWindow {
     queryWindow->queryWindowRows.insert(std::pair<GtkWidget*,
         QueryWindowRow*>(new_qwr->hbox, new_qwr));
     gtk_box_pack_start(GTK_BOX(queryWindow->verticalBox), new_qwr->hbox, FALSE, FALSE, 0);
-    std::cout << "reorder to " << qwri+1 << std::endl;
     gtk_box_reorder_child(GTK_BOX(queryWindow->verticalBox), new_qwr->hbox, qwri+1);
-    std::cout << "query_add_button_clicked_cb done " << qwri << std::endl;
   }
 
   static void
   empty_row_add_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    std::cout << "empty_row_add_button_clicked_cb" << std::endl;
     QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
     QueryWindowRow *new_qwr = queryWindow->make_row();
     queryWindow->queryWindowRows.insert(std::pair<GtkWidget*,
         QueryWindowRow*>(new_qwr->hbox, new_qwr));
     gtk_box_pack_start(GTK_BOX(queryWindow->verticalBox), new_qwr->hbox, FALSE, FALSE, 0);
-    std::cout << "reorder to " << 1 << std::endl;
     gtk_box_reorder_child(GTK_BOX(queryWindow->verticalBox), new_qwr->hbox, 1);
-    std::cout << "empty_row_add_button_clicked_cb done " << std::endl;
 
   }
 
   static void
   query_remove_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    std::cout << "query_remove_button_clicked_cb entered" << std::endl;
     QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
     QueryWindowRow *qwr = (QueryWindowRow*) callback_data;
       gtk_container_remove(GTK_CONTAINER(queryWindow->verticalBox), qwr->hbox);
-      std::cout << "query_remove_button_clicked_cb queryWindowRows #elements =" <<
-          queryWindow->queryWindowRows.size() << std::endl;
       queryWindow->queryWindowRows.erase(qwr->hbox);
-      std::cout << "query_remove_button_clicked_cb queryWindowRows #elements =" <<
-          queryWindow->queryWindowRows.size() << std::endl;
       if (queryWindow->queryWindowRows.empty()) {
         QueryWindowRow *qwr = queryWindow->make_row();
         queryWindow->queryWindowRows.insert(std::pair<GtkWidget*,
             QueryWindowRow*>(qwr->hbox, qwr));
         gtk_box_pack_start(GTK_BOX(queryWindow->verticalBox), qwr->hbox, FALSE, FALSE, 0);
     }
-    std::cout << "query_remove_button_clicked_cb queryWindowRows #elements ="
-        << queryWindow->queryWindowRows.size() << std::endl;
-    std::cout << "query_remove_button_clicked_cb done " << std::endl;
   }
 
   static void
   quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    std::cout << "QueryWindow quit_button_clicked_cb entered" << std::endl;
     QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
     queryWindow->quit();
   }
@@ -328,9 +295,7 @@ class QueryWindow {
     GParamSpec ** params = gtk_container_class_list_child_properties(G_OBJECT_GET_CLASS(qwr->hbox), &n_properties);
     for (GParamSpec **pp = params; *pp != NULL; pp++) {
       GParamSpec *p = *pp;
-      std::cout << "got one " << p->name << std::endl;
     }
-    std::cout << "n_properties " << n_properties << std::endl;
   }
 
   int
@@ -446,7 +411,6 @@ class QueryWindow {
 
 inline  void
 QueryWindow::accept() {
-  std::cout << "QueryWindow::accept() called" << std::endl;
   PhotoSelectPage *photoSelectPage = new PhotoSelectPage(connection, photoFileCache);
   photoSelectPage->setup(photoFilenameList, preferences);
   baseWindow->add_page(photoSelectPage->get_tab_label(), photoSelectPage->get_notebook_page());
