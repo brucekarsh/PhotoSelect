@@ -154,43 +154,36 @@ class BaseWindow {
 
   static void
   view_query_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    std::cout << "view_query_activate_cb" << std::endl;
     BaseWindow* baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(menuItem));
     baseWindow->view_query_activate();
   }
 
   static void
   edit_preferences_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    std::cout << "edit_preferences_activate_cb" << std::endl;
     BaseWindow* baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(menuItem));
     baseWindow->preferences_activate();
   }
 
   void
   preferences_activate() {
-    std::cout << "preferences_activate entered" << std::endl;
     if (NULL == preferencesWindow) {
-      std::cout << "NULL == preferencesWindow" << std::endl;
       preferencesWindow = new PreferencesWindow(thePreferences);
       preferencesWindow->run();
       g_signal_connect(preferencesWindow->window, "destroy",
         G_CALLBACK(preferences_window_destroy_cb), (gpointer) this);
     } else {
-      std::cout << "NULL != preferencesWindow" << std::endl;
       preferencesWindow->highlight();
     }
   }
 
   static void
   file_import_activate_cb() {
-    std::cout << "file_import_activate_cb" << std::endl;
     ImportWindow *importWindow = new ImportWindow(thePreferences, connection);
     importWindow->run();
   }
 
   static void
   preferences_window_destroy_cb(GtkWidget *widget, gpointer user_data) {
-    std::cout << "preferences_window_destroy_cb" << std::endl;
     BaseWindow *baseWindow = (BaseWindow *)user_data;
     baseWindow->preferencesWindow = NULL;
   }
@@ -201,7 +194,6 @@ class BaseWindow {
 
 inline  void
 BaseWindow::view_query_activate() {
-  std::cout << "view_query_activate called" << std::endl;
   QueryWindow* queryWindow = new QueryWindow(connection, thePreferences, photoFileCache, this);
   queryWindow->run();
   // TODO make sure that queryWindow gets destroyed eventually.
