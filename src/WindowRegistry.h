@@ -9,6 +9,7 @@ class BaseWindow;
 class PreferencesWindow;
 class ImportWindow;
 class QueryWindow;
+class NewProjectWindow;
 
 /** Remembers a mapping from top-level windows to our objects so we can get find
 **  our objects given a top-level window.
@@ -20,6 +21,7 @@ class WindowRegistry {
     static std::map<GtkWindow*, PreferencesWindow*> preferencesWindowMap;
     static std::map<GtkWindow*, ImportWindow*> importWindowMap;
     static std::map<GtkWindow*, QueryWindow*> queryWindowMap;
+    static std::map<GtkWindow*, NewProjectWindow*> newProjectWindowMap;
   public:
 
     // PhotoSelectPage registry methods
@@ -131,6 +133,28 @@ class WindowRegistry {
 
     static void forgetQueryWindow(GtkWidget *widget) {
       std::cout << "TODO forgetQueryWindow WRITEME" << std::endl;
+    };
+
+    // NewProjectWindow registry methods
+
+    static NewProjectWindow* getNewProjectWindow(GtkWidget *widget) {
+      NewProjectWindow *newProjectWindow = 0;
+      std::map<GtkWindow*, NewProjectWindow*>::iterator it =
+        newProjectWindowMap.find(GTK_WINDOW(get_toplevel_widget(widget)));
+      if (newProjectWindowMap.end() == it) {
+        std::cout << "Cannot find newProject window in the newProjectWindowMap" << std::endl;
+      } else {
+        newProjectWindow = it -> second;
+      }
+      return newProjectWindow;
+    }
+
+    static void setNewProjectWindow(GtkWidget *widget, NewProjectWindow *newProjectWindow) {
+      newProjectWindowMap[GTK_WINDOW(gtk_widget_get_toplevel(widget))] = newProjectWindow;
+    }
+
+    static void forgetNewProjectWindow(GtkWidget *widget) {
+      std::cout << "TODO forgetNewProjectWindow WRITEME" << std::endl;
     };
     
     // Other registry methods
