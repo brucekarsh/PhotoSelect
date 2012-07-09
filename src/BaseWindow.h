@@ -22,6 +22,11 @@ class BaseWindow {
   GtkWidget *view_menu;
   GtkWidget *help_menu;
   GtkWidget *file_import_menu_item;
+  GtkWidget *file_project_menu_item;
+  GtkWidget *file_project_menu;
+  GtkWidget *file_project_open_menu_item;
+  GtkWidget *file_project_new_menu_item;
+  GtkWidget *file_project_add_to_menu_item;
   GtkWidget *file_quit_menu_item;
   GtkWidget *edit_preferences_menu_item;
   GtkWidget *view_query_menu_item;
@@ -119,11 +124,36 @@ class BaseWindow {
     gtk_menu_item_set_submenu(GTK_MENU_ITEM(help_menu_item), help_menu);
     gtk_widget_show(edit_menu);
 
+    // Put a menuitem (file_project_menu_item) into file_menu
+    file_project_menu_item = gtk_menu_item_new_with_label("Project");
+    gtk_container_add(GTK_CONTAINER(file_menu), file_project_menu_item);
+    gtk_widget_show(file_project_menu_item);
+    
     // Put a menuitem (file_import_menu_item) into file_menu
     file_import_menu_item = gtk_menu_item_new_with_label("Import");
     gtk_container_add(GTK_CONTAINER(file_menu), file_import_menu_item);
     gtk_widget_show(file_import_menu_item);
     g_signal_connect(file_import_menu_item, "activate", G_CALLBACK(file_import_activate_cb), NULL);
+
+    // Put a menu (file_project_menu) into file_project_menu_item
+    file_project_menu = gtk_menu_new();
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(file_project_menu_item), file_project_menu);
+    gtk_widget_show(file_project_menu);
+
+    // Put a menuitem (file_project_open_menuitem) into file_project_menu
+    file_project_open_menu_item = gtk_menu_item_new_with_label("Open Project...");
+    gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_open_menu_item);
+    gtk_widget_show(file_project_open_menu_item);
+
+    // Put a menuitem (file_project_new_menuitem) into file_project_menu
+    file_project_new_menu_item = gtk_menu_item_new_with_label("New Project...");
+    gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_new_menu_item);
+    gtk_widget_show(file_project_new_menu_item);
+
+    // Put a menuitem (file_project_add_to_menuitem) into file_project_menu
+    file_project_add_to_menu_item = gtk_menu_item_new_with_label("Add To Project...");
+    gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_add_to_menu_item);
+    gtk_widget_show(file_project_add_to_menu_item);
 
     // Put an imagemenuitem (file_quit_menu_item) into file_menu
     file_quit_menu_item = gtk_menu_item_new_with_label("Quit");
