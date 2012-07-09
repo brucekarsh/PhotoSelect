@@ -12,6 +12,8 @@
 #include <cairo-xlib.h>
 #include <boost/lexical_cast.hpp>
 
+class PhotoFileCache;
+
 class PhotoSelectPage {
   public:
     Preferences *thePreferences;
@@ -19,6 +21,7 @@ class PhotoSelectPage {
     ConversionEngine conversionEngine;
     std::list<std::string> photoFilenameList;
     sql::Connection *connection;
+    PhotoFileCache *photoFileCache;
 
     GtkWidget *page_vbox;
     GtkWidget *drawing_area;
@@ -45,10 +48,11 @@ class PhotoSelectPage {
 
     static const float ZOOMRATIO = 1.18920711500272106671;  // 2^(1/4)
 
-  PhotoSelectPage(sql::Connection *connection_) :
+  PhotoSelectPage(sql::Connection *connection_, PhotoFileCache *photoFileCache_) :
+      conversionEngine(photoFileCache_), 
       rotation(0), drawing_area(0), thePreferences((Preferences*)0),
-      connection(connection_), M(1.0), Dx(0), Dy(0), drag_is_active(false),
-      calculated_initial_scaling(false) {
+      connection(connection_), photoFileCache(photoFileCache_), M(1.0), Dx(0),
+      Dy(0), drag_is_active(false), calculated_initial_scaling(false) {
   }
 
   GtkWidget *

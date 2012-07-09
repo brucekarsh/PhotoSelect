@@ -49,10 +49,13 @@ class QueryWindow {
   sql::Connection *connection;
   Preferences *preferences;
   BaseWindow *baseWindow;
+  PhotoFileCache *photoFileCache;
   std::list<std::string> photoFilenameList;
 
-  QueryWindow(sql::Connection *connection_, Preferences *preferences_, BaseWindow* baseWindow_) :
-      connection(connection_), preferences(preferences_), baseWindow(baseWindow_) {
+  QueryWindow(sql::Connection *connection_, Preferences *preferences_,
+      PhotoFileCache *photoFileCache_, BaseWindow* baseWindow_) :
+      connection(connection_), preferences(preferences_), photoFileCache(photoFileCache_),
+      baseWindow(baseWindow_) {
   }
 
   void accept();
@@ -444,7 +447,7 @@ class QueryWindow {
 inline  void
 QueryWindow::accept() {
   std::cout << "QueryWindow::accept() called" << std::endl;
-  PhotoSelectPage *photoSelectPage = new PhotoSelectPage(connection);
+  PhotoSelectPage *photoSelectPage = new PhotoSelectPage(connection, photoFileCache);
   photoSelectPage->setup(photoFilenameList, preferences);
   baseWindow->add_page(photoSelectPage->get_tab_label(), photoSelectPage->get_notebook_page());
   quit();

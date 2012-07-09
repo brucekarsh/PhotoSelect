@@ -13,11 +13,12 @@
 
 class ConversionEngine {
   public:
-  PhotoFileCache photoFileCache;
+  PhotoFileCache *photoFileCache;
   std::vector<std::string> photoFilenameVector;
   int photoFilenameVectorPosition;
 
-  ConversionEngine() : photoFilenameVectorPosition(-1) {};
+  ConversionEngine(PhotoFileCache *photoFileCache_) : photoFilenameVectorPosition(-1),
+      photoFileCache(photoFileCache_) {};
 
 
   //! Gets a ConvertedPhotoFile given a path to a file representing a photo.
@@ -34,9 +35,9 @@ class ConversionEngine {
       return NULL;
     }
     std::string photoFilename = photoFilenameVector[photoFilenameVectorPosition];
-    ConvertedPhotoFile * convertedPhotoFile = photoFileCache.get(photoFilename);
+    ConvertedPhotoFile * convertedPhotoFile = photoFileCache->get(photoFilename);
     if (0 == convertedPhotoFile) {
-      convertedPhotoFile = photoFileCache.add(photoFilename);
+      convertedPhotoFile = photoFileCache->add(photoFilename);
     }
     return convertedPhotoFile;
   }

@@ -9,6 +9,7 @@
 #include "BaseWindow.h"
 #include "PhotoSelectPage.h"
 #include "Preferences.h"
+#include "PhotoFileCache.h"
 
 sql::Connection *
 open_database(std::string dbhost, std::string user, std::string password, std::string database);
@@ -18,6 +19,7 @@ using namespace std;
 main(int argc, char **argv)
 {
   Preferences preferences;
+  PhotoFileCache photoFileCache;
 
   gtk_init(&argc, &argv);
 
@@ -39,14 +41,14 @@ main(int argc, char **argv)
   std::string database = preferences.get_database();
   sql::Connection *connection = open_database(dbhost, user, password, database);
 
-  BaseWindow baseWindow(connection, &preferences);
+  BaseWindow baseWindow(connection, &preferences, &photoFileCache);
   baseWindow.run();
 
   list<string> photoFilenameList1;
   photoFilenameList1.push_back("/home/bruce/Tanzania2012/AW100/DSCN0651.JPG");
   photoFilenameList1.push_back("/home/bruce/Tanzania2012/AW100/DSCN0551.JPG");
   photoFilenameList1.push_back("/home/bruce/Tanzania2012/D7000-6/DSC_8557.JPG");
-  PhotoSelectPage photoSelectPage(connection);
+  PhotoSelectPage photoSelectPage(connection, &photoFileCache);
   photoSelectPage.setup(photoFilenameList1, &preferences);
 
   baseWindow.add_page(photoSelectPage.get_tab_label(), photoSelectPage.get_notebook_page());

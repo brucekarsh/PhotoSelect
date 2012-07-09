@@ -6,6 +6,7 @@
 #include "ImportWindow.h"
 
 class QueryWindow;
+class PhotoFileCache;
 
 class BaseWindow {
   public:
@@ -26,14 +27,17 @@ class BaseWindow {
   GtkWidget *view_query_menu_item;
   GtkWidget *notebook;
   PreferencesWindow *preferencesWindow;
+  PhotoFileCache *photoFileCache;
 
   static sql::Connection *connection;
   static Preferences* thePreferences;
 
-  BaseWindow(sql::Connection *connection, Preferences *thePreferences) {
+  BaseWindow(sql::Connection *connection, Preferences *thePreferences,
+      PhotoFileCache *photoFileCache_) {
     BaseWindow::connection = connection;
     BaseWindow::thePreferences = thePreferences;
     preferencesWindow = NULL;
+    photoFileCache = photoFileCache_;
   };
 
   void
@@ -198,7 +202,7 @@ class BaseWindow {
 inline  void
 BaseWindow::view_query_activate() {
   std::cout << "view_query_activate called" << std::endl;
-  QueryWindow* queryWindow = new QueryWindow(connection, thePreferences, this);
+  QueryWindow* queryWindow = new QueryWindow(connection, thePreferences, photoFileCache, this);
   queryWindow->run();
   // TODO make sure that queryWindow gets destroyed eventually.
 }
