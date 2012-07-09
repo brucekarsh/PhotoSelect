@@ -82,6 +82,15 @@ Create Table Project (
   name VARCHAR(766) UNIQUE KEY NOT NULL
 ) Engine=innodb;
 
+Create Table ProjectPhotoFile (
+  id          INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  projectId   INT,
+  photoFileId INT,
+  FOREIGN KEY(photoFileId) REFERENCES Checksum(id),
+  FOREIGN KEY(projectId) REFERENCES Project(id),
+  UNIQUE KEY (photoFileId, projectId)
+) Engine=innodb;
+
 Create Table ProjectChecksum (
   id          INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
   checksumId  INT,
@@ -106,6 +115,7 @@ DROP Table ExifTag;
 DROP Table ExifTagName;
 DROP Table ExifTagValue;
 DROP Table PhotoFile;
+DROP Table ProjectPhotoFile;
 DROP TABLE ProjectChecksum;
 DROP Table Checksum;
 DROP TABLE Project;

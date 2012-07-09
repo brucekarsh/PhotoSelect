@@ -63,6 +63,7 @@ class NewProjectWindow {
   }
 
   void accept();
+  void submit();
 
   std::string
   makeNewProjectJSON() {
@@ -245,8 +246,7 @@ class NewProjectWindow {
   static void
   query_submit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
     NewProjectWindow *newProjectWindow = WindowRegistry::getNewProjectWindow(widget);
-    std::string queryJSON = newProjectWindow->makeNewProjectJSON();
-    newProjectWindow->queryJSONToQuery(queryJSON);
+    newProjectWindow->submit();
   }
 
   static void
@@ -337,7 +337,7 @@ class NewProjectWindow {
     error_label = gtk_label_new("");
     gtk_label_set_markup(GTK_LABEL(error_label),
         "<span color=\"red\">This is the error label</span>");
-    gtk_widget_show(error_label);
+    gtk_widget_hide(error_label);
     gtk_box_pack_start(GTK_BOX(windowBox), error_label, FALSE, FALSE, 0);
 
     // Add a box (project_name_box) to windowBox
@@ -429,16 +429,117 @@ class NewProjectWindow {
 
     gtk_widget_show(window);
   }
+
+  long
+  insert_into_project(std::string project_name) {
+
+    std::string project_insert_sql = "INSERT INTO Project (name) VALUES(?)";
+    sql::PreparedStatement *project_insert_prepared_statement = connection->prepareStatement(
+        project_insert_sql);
+
+    std::string get_last_id_sql = "SELECT LAST_INSERT_ID() as id";
+    sql::PreparedStatement *get_last_id_prepared_statement = connection->prepareStatement(
+      get_last_id_sql);
+
+    long projectId = -1;
+    try {
+      project_insert_prepared_statement->setString(1, project_name);
+      project_insert_prepared_statement->execute();
+      sql::ResultSet *rs = get_last_id_prepared_statement->executeQuery();
+      if (rs->next()) {
+        projectId = rs->getInt64("id");
+      }
+    } catch (sql::SQLException &ex) {
+    }
+    return projectId;
+  }
+
+  long
+  find_in_project(std::string project_name) {
+
+    std::string project_select_sql = "SELECT id from Project where name = ?";
+    sql::PreparedStatement *project_select_prepared_statement = connection->prepareStatement(
+        project_select_sql);
+
+    long project_id = -1;
+    try {
+      project_select_prepared_statement->setString(1,project_name);
+      sql::ResultSet *rs = 
+      project_select_prepared_statement->executeQuery();
+      if (rs->next()) {
+        project_id = rs->getInt64("id");
+      }
+    } catch (sql::SQLException &ex) {
+    }
+    return project_id;
+  }
+
+  void
+  set_error_label(std::string text) {
+    gtk_label_set_markup(GTK_LABEL(error_label),
+        ("<span color=\"red\">" + text + "</span>").c_str());
+    gtk_widget_show(GTK_WIDGET(error_label));
+  }
 }; // end class NewProjectWindow
 
 #include "BaseWindow.h"
 #include "PhotoSelectPage.h"
 
+
+inline  void
+NewProjectWindow::submit() {
+  // Validate the project name
+  std::string project_name = gtk_entry_get_text(GTK_ENTRY(project_name_entry));
+  if (0 == project_name.length()) {
+    set_error_label("Missing project name.");
+    return;
+  }
+
+  long project_id = find_in_project(project_name);
+  if (project_id != -1) {
+    set_error_label("Duplicate project name");
+    return;
+  }
+
+  std::string queryJSON = makeNewProjectJSON();
+  queryJSONToQuery(queryJSON);
+}
+
 inline  void
 NewProjectWindow::accept() {
-  PhotoSelectPage *photoSelectPage = new PhotoSelectPage(connection, photoFileCache);
-  photoSelectPage->setup(photoFilenameList, preferences);
-  baseWindow->add_page(photoSelectPage->get_tab_label(), photoSelectPage->get_notebook_page());
+  // Get the project name
+  std::string project_name = gtk_entry_get_text(GTK_ENTRY(project_name_entry));
+  if (0 == project_name.length()) {
+    set_error_label("Missing project name.");
+    return;
+  }
+  // Insert it into the database and get its id
+  long project_id = insert_into_project(project_name);
+  if (project_id == -1) {
+    set_error_label("Duplicate project name.");
+  }
+
+  if (project_id == -1) {
+    connection->rollback();
+    return;
+  }
+
+  connection->commit();
   quit();
+
+#ifdef LATER
+  std::string project_photo_file_insert_sql =
+      "INSERT INTO ProjectPhotoFile (id, photoFileId) VALUES(?,?)";
+  sql::PreparedStatement *project_photo_file_insert_prepared_statement =
+      connection->prepareStatement(project_photo_file_insert_sql);
+  // Add project_name to Project file.
+
+  for (std::list<std::string>::iterator iter = photoFilenameList.begin();
+      iter != photoFilenameList.end();
+      ++iter) {
+    
+    // add *iter to projectPhotoFile
+  }
+#endif
 }
 #endif // NEWPROJECTWINDOW_H__
