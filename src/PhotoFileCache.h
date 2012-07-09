@@ -15,6 +15,15 @@ class PhotoFileCache {
 
   public:
   PhotoFileCache() : sequence_number(0) {};
+  ~PhotoFileCache() {
+    for (
+        std::map<std::string, ConvertedPhotoFile *>::iterator it = map_path_to_file.begin();
+        it != map_path_to_file.end();
+        ++it) {
+      delete it->second;
+    }
+    
+  }
 
   ConvertedPhotoFile * get(std::string photoFilePath) { 
     ConvertedPhotoFile *convertedPhotoFile = 0;
