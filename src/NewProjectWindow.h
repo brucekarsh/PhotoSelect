@@ -41,6 +41,9 @@ class NewProjectWindow {
   GtkWidget *window;
   GtkWidget *windowBox;
   GtkWidget *error_label;
+  GtkWidget *project_name_entry;
+  GtkWidget *project_name_label;
+  GtkWidget *project_name_box;
   GtkWidget *verticalBox;
   GtkWidget *scrollTextView;
   GtkWidget *scrollWindow;
@@ -242,7 +245,6 @@ class NewProjectWindow {
   static void
   query_submit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
     NewProjectWindow *newProjectWindow = WindowRegistry::getNewProjectWindow(widget);
-    NewProjectWindowRow *qwr = (NewProjectWindowRow*) callback_data;
     std::string queryJSON = newProjectWindow->makeNewProjectJSON();
     newProjectWindow->queryJSONToQuery(queryJSON);
   }
@@ -337,6 +339,21 @@ class NewProjectWindow {
         "<span color=\"red\">This is the error label</span>");
     gtk_widget_show(error_label);
     gtk_box_pack_start(GTK_BOX(windowBox), error_label, FALSE, FALSE, 0);
+
+    // Add a box (project_name_box) to windowBox
+    project_name_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_show(project_name_box);
+    gtk_box_pack_start(GTK_BOX(windowBox), project_name_box, FALSE, FALSE, 0);
+
+    // Add a label (project_name_label) to project_name_box
+    project_name_label = gtk_label_new("Project name");
+    gtk_widget_show(project_name_label);
+    gtk_box_pack_start(GTK_BOX(project_name_box), project_name_label, FALSE, FALSE, 0);
+
+    // Add an entry (project_name_entry) to project_name_box
+    project_name_entry = gtk_entry_new();
+    gtk_widget_show(project_name_entry);
+    gtk_box_pack_start(GTK_BOX(project_name_box), project_name_entry, FALSE, FALSE, 0);
 
     // Add a box (verticalBox) for the query rows to windowBox
     verticalBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
