@@ -100,14 +100,20 @@ class OpenProjectWindow {
     gtk_box_pack_end(GTK_BOX(button_hbox), accept_button, FALSE, FALSE, 0);
     gtk_box_pack_end(GTK_BOX(button_hbox), quit_button, FALSE, FALSE, 0);
 
+    std::string sql = "SELECT DISTINCT name FROM Project ";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    sql::ResultSet *rs = prepared_statement->executeQuery();
+    
     GtkWidget* group = NULL;
     GtkWidget* l;
-    for (int i=0;i<10;i++) {
+    while (rs->next()) {
+      std::string project_name = rs->getString(1);
       if (NULL == group) {
-        l = gtk_radio_button_new_with_label(NULL, "Label");
+        l = gtk_radio_button_new_with_label(NULL, project_name.c_str());
         group = l;
       } else {
-        l = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(group), "Label");
+        l = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(group),
+            project_name.c_str());
       }
       gtk_widget_show(GTK_WIDGET(l));
       gtk_box_pack_start(GTK_BOX(scrolled_vbox), l, FALSE, FALSE, 0);
