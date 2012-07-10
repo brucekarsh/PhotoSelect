@@ -7,6 +7,7 @@
 
 class OpenProjectWindow;
 class NewProjectWindow;
+class DeleteProjectWindow;
 class QueryWindow;
 class PhotoFileCache;
 
@@ -31,6 +32,7 @@ class BaseWindow {
   GtkWidget *file_project_add_to_menu_item;
   GtkWidget *file_project_rename_menu_item;
   GtkWidget *file_project_remove_menu_item;
+  GtkWidget *file_project_delete_menu_item;
   GtkWidget *file_quit_menu_item;
   GtkWidget *edit_preferences_menu_item;
   GtkWidget *view_query_menu_item;
@@ -173,6 +175,13 @@ class BaseWindow {
     gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_rename_menu_item);
     gtk_widget_show(file_project_rename_menu_item);
 
+    // Put a menuitem (file_project_delete_menuitem) into file_project_menu
+    file_project_delete_menu_item = gtk_menu_item_new_with_label("Delete Project...");
+    gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_delete_menu_item);
+    gtk_widget_show(file_project_delete_menu_item);
+    g_signal_connect(file_project_delete_menu_item, "activate",
+        G_CALLBACK(file_project_delete_activate_cb), NULL);
+
     // Put an imagemenuitem (file_quit_menu_item) into file_menu
     file_quit_menu_item = gtk_menu_item_new_with_label("Quit");
     gtk_container_add(GTK_CONTAINER(file_menu), file_quit_menu_item);
@@ -201,6 +210,7 @@ class BaseWindow {
   void view_query_activate();
   void file_project_new_activate();
   void file_project_open_activate();
+  void file_project_delete_activate();
 
   static void
   view_query_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
@@ -218,6 +228,12 @@ class BaseWindow {
   file_project_new_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     BaseWindow* baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(menuItem));
     baseWindow->file_project_new_activate();
+  }
+
+  static void
+  file_project_delete_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
+    BaseWindow* baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(menuItem));
+    baseWindow->file_project_delete_activate();
   }
 
   static void
@@ -255,6 +271,7 @@ class BaseWindow {
 #include "QueryWindow.h"
 #include "OpenProjectWindow.h"
 #include "NewProjectWindow.h"
+#include "DeleteProjectWindow.h"
 
 inline  void
 BaseWindow::view_query_activate() {
@@ -277,5 +294,13 @@ BaseWindow::file_project_new_activate() {
       new NewProjectWindow(connection, thePreferences, photoFileCache, this);
   newProjectWindow->run();
   // TODO make sure that newProjectWindow gets destroyed eventually.
+}
+
+inline  void
+BaseWindow::file_project_delete_activate() {
+  DeleteProjectWindow* deleteProjectWindow =
+      new DeleteProjectWindow(connection, thePreferences, this);
+  deleteProjectWindow->run();
+  // TODO make sure that deleteProjectWindow gets destroyed eventually.
 }
 #endif // BASEWINDOW_H__
