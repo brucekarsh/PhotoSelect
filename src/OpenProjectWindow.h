@@ -63,8 +63,6 @@ class OpenProjectWindow {
 
   void
   run() {
-    GtkWidget *quitButton;
-
     // Make a window with a vertical box (windowBox) in it.
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     WindowRegistry::setOpenProjectWindow(window, this);
@@ -120,7 +118,7 @@ class OpenProjectWindow {
     }
 
     g_signal_connect(window, "destroy", G_CALLBACK(quit_button_clicked_cb), NULL);
-    g_signal_connect(quitButton, "clicked", G_CALLBACK(quit_button_clicked_cb), NULL);
+    g_signal_connect(quit_button, "clicked", G_CALLBACK(quit_button_clicked_cb), NULL);
 
     gtk_widget_show(window);
   }
