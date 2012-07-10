@@ -28,11 +28,11 @@ class OpenProjectWindow {
   public:
   GtkWidget *window;
   GtkWidget *windowBox;
+  GtkWidget *first_radio_button;
   sql::Connection *connection;
   Preferences *preferences;
   BaseWindow *baseWindow;
   PhotoFileCache *photoFileCache;
-  std::list<std::string> photoFilenameList;
   std::list<long> photoFileIdList;
 
   OpenProjectWindow(sql::Connection *connection_, Preferences *preferences_,
@@ -102,26 +102,43 @@ class OpenProjectWindow {
     sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
     sql::ResultSet *rs = prepared_statement->executeQuery();
     
-    GtkWidget* group = NULL;
-    GtkWidget* l;
+    GtkWidget* radio_button;
+    first_radio_button = NULL;
     while (rs->next()) {
       std::string project_name = rs->getString(1);
-      if (NULL == group) {
-        l = gtk_radio_button_new_with_label(NULL, project_name.c_str());
-        group = l;
+      if (NULL == first_radio_button) {
+        radio_button = gtk_radio_button_new_with_label(NULL, project_name.c_str());
+        first_radio_button = radio_button;
       } else {
-        l = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(group),
-            project_name.c_str());
+        radio_button = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(
+            first_radio_button), project_name.c_str());
       }
-      gtk_widget_show(GTK_WIDGET(l));
-      gtk_box_pack_start(GTK_BOX(scrolled_vbox), l, FALSE, FALSE, 0);
+      gtk_widget_show(GTK_WIDGET(radio_button));
+      gtk_box_pack_start(GTK_BOX(scrolled_vbox), radio_button, FALSE, FALSE, 0);
     }
 
     g_signal_connect(window, "destroy", G_CALLBACK(quit_button_clicked_cb), NULL);
     g_signal_connect(quit_button, "clicked", G_CALLBACK(quit_button_clicked_cb), NULL);
+    g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
 
     gtk_widget_show(window);
   }
+
+  std::string get_project_name() {
+    if (NULL == first_radio_button) {
+      return "";
+    }
+    GSList *radio_buttons = gtk_radio_button_get_group(GTK_RADIO_BUTTON(first_radio_button));
+    for (GSList *p = radio_buttons; p != NULL; p = g_slist_next(p)) {
+      GtkRadioButton *radio_button = GTK_RADIO_BUTTON(p->data);
+      if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio_button))) {
+        std::string project_name = gtk_button_get_label(GTK_BUTTON(radio_button));
+	return project_name;
+      }
+    }
+    return "";
+  }
+  
 };
 
 #include "BaseWindow.h"
@@ -130,6 +147,29 @@ class OpenProjectWindow {
 
 inline  void
 OpenProjectWindow::accept() {
+  std::string project_name = get_project_name();
+  if (0 == project_name.size()) {
+    return;
+  }
+  std::list<std::string> photoFilenameList;
+  std::string sql = 
+      "SELECT DISTINCT filePath FROM Project "
+      "INNER JOIN ProjectPhotoFile ON (ProjectPhotoFile.projectId = Project.id) "
+      "INNER JOIN PhotoFile ON (ProjectPhotoFile.photoFileId = PhotoFile.id) "
+      "INNER JOIN Time ON (PhotoFile.checksumId = Time.checksumId) "
+      "WHERE Project.name = ? "
+      "ORDER by Time.adjustedDateTime ";
+  sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+  prepared_statement->setString(1, project_name);
+  sql::ResultSet *rs = prepared_statement->executeQuery();
+  while ( rs->next()) {
+    std::string file_path = rs->getString(1);
+    photoFilenameList.push_back(file_path);
+  }
+
+  PhotoSelectPage *photoSelectPage = new PhotoSelectPage(connection, photoFileCache);
+  photoSelectPage->setup(photoFilenameList, preferences);
+  baseWindow->add_page(photoSelectPage->get_tab_label(), photoSelectPage->get_notebook_page());
   quit();
 }
 #endif // OPENPROJECTWINDOW_H__
