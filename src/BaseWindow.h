@@ -163,12 +163,12 @@ class BaseWindow {
     gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_add_to_menu_item);
     gtk_widget_show(file_project_add_to_menu_item);
 
-    // Put a menuitem (file_project_add_to_menuitem) into file_project_menu
+    // Put a menuitem (file_project_remove_menuitem) into file_project_menu
     file_project_remove_menu_item = gtk_menu_item_new_with_label("Remove From Project...");
     gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_remove_menu_item);
     gtk_widget_show(file_project_remove_menu_item);
 
-    // Put a menuitem (file_project_add_to_menuitem) into file_project_menu
+    // Put a menuitem (file_project_rename_menuitem) into file_project_menu
     file_project_rename_menu_item = gtk_menu_item_new_with_label("Rename Project...");
     gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_rename_menu_item);
     gtk_widget_show(file_project_rename_menu_item);
