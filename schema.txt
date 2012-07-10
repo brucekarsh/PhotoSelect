@@ -86,18 +86,9 @@ Create Table ProjectPhotoFile (
   id          INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
   projectId   INT,
   photoFileId INT,
-  FOREIGN KEY(photoFileId) REFERENCES PhotoFile(id),
-  FOREIGN KEY(projectId) REFERENCES Project(id),
+  FOREIGN KEY(photoFileId) REFERENCES PhotoFile(id) ON DELETE CASCADE,
+  FOREIGN KEY(projectId) REFERENCES Project(id) ON DELETE CASCADE,
   UNIQUE KEY (photoFileId, projectId)
-) Engine=innodb;
-
-Create Table ProjectChecksum (
-  id          INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  checksumId  INT,
-  projectId   INT,
-  FOREIGN KEY(checksumId) REFERENCES Checksum(id),
-  FOREIGN KEY(projectId) REFERENCES Project(id),
-  UNIQUE KEY (checksumId, projectId)
 ) Engine=innodb;
 
 Create Table Time (
@@ -116,7 +107,6 @@ DROP Table ExifTagName;
 DROP Table ExifTagValue;
 DROP Table PhotoFile;
 DROP Table ProjectPhotoFile;
-DROP TABLE ProjectChecksum;
 DROP Table Checksum;
 DROP TABLE Project;
 DROP DATABASE PhotoSelect;
