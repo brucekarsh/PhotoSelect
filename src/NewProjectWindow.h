@@ -55,6 +55,7 @@ class NewProjectWindow {
   BaseWindow *baseWindow;
   PhotoFileCache *photoFileCache;
   std::list<std::string> photoFilenameList;
+  std::list<long> photoFileIdList;
 
   NewProjectWindow(sql::Connection *connection_, Preferences *preferences_,
       PhotoFileCache *photoFileCache_, BaseWindow* baseWindow_) :
@@ -140,7 +141,7 @@ class NewProjectWindow {
     last_part.append("ORDER BY t.adjustedDateTime, filePath ");
 
     std::string first_part =
-      "SELECT DISTINCT filePath FROM PhotoFile p "
+      "SELECT DISTINCT filePath, p.id FROM PhotoFile p "
       "INNER JOIN Checksum c ON p.checksumId = c.id "
       "INNER JOIN Time t ON t.checksumId = c.id ";
       "ORDER BY t.adjustedTime, filePath ";
@@ -167,9 +168,11 @@ class NewProjectWindow {
     photoFilenameList.clear();
     while (rs->next()) {
       std::string filePath = rs->getString(1);
+      long id = rs->getInt64(2);
       gtk_text_buffer_insert_at_cursor(scrollTextBuffer, filePath.c_str(), filePath.size());
       gtk_text_buffer_insert_at_cursor(scrollTextBuffer, "\n", 1);
       photoFilenameList.push_back(filePath);
+      photoFileIdList.push_back(id);
       count++;
       total_count++;
       if(count >= 300) {
@@ -524,22 +527,27 @@ NewProjectWindow::accept() {
     return;
   }
 
+  // Add the filenames into the ProjectPhotoFile table
+  std::string project_photo_file_insert_sql =
+      "INSERT INTO ProjectPhotoFile (projectId, photoFileId) VALUES(?,?)";
+  sql::PreparedStatement *project_photo_file_insert_prepared_statement =
+      connection->prepareStatement(project_photo_file_insert_sql);
+
+  std::list<long>::iterator id_iter = photoFileIdList.begin();
+  for (std::list<std::string>::iterator filename_iter = photoFilenameList.begin();
+      filename_iter != photoFilenameList.end();
+      ++filename_iter) {
+    long photo_file_id = *id_iter;
+    ++id_iter;
+
+    project_photo_file_insert_prepared_statement->setInt64(1, project_id);
+    project_photo_file_insert_prepared_statement->setInt64(2, photo_file_id);
+    project_photo_file_insert_prepared_statement->execute();
+    
+  }
   connection->commit();
   quit();
 
-#ifdef LATER
-  std::string project_photo_file_insert_sql =
-      "INSERT INTO ProjectPhotoFile (id, photoFileId) VALUES(?,?)";
-  sql::PreparedStatement *project_photo_file_insert_prepared_statement =
-      connection->prepareStatement(project_photo_file_insert_sql);
-  // Add project_name to Project file.
 
-  for (std::list<std::string>::iterator iter = photoFilenameList.begin();
-      iter != photoFilenameList.end();
-      ++iter) {
-    
-    // add *iter to projectPhotoFile
-  }
-#endif
 }
 #endif // NEWPROJECTWINDOW_H__

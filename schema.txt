@@ -86,7 +86,7 @@ Create Table ProjectPhotoFile (
   id          INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
   projectId   INT,
   photoFileId INT,
-  FOREIGN KEY(photoFileId) REFERENCES Checksum(id),
+  FOREIGN KEY(photoFileId) REFERENCES PhotoFile(id),
   FOREIGN KEY(projectId) REFERENCES Project(id),
   UNIQUE KEY (photoFileId, projectId)
 ) Engine=innodb;
