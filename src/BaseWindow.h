@@ -5,6 +5,7 @@
 #include "PreferencesWindow.h"
 #include "ImportWindow.h"
 
+class OpenProjectWindow;
 class NewProjectWindow;
 class QueryWindow;
 class PhotoFileCache;
@@ -147,6 +148,8 @@ class BaseWindow {
     file_project_open_menu_item = gtk_menu_item_new_with_label("Open Project...");
     gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_open_menu_item);
     gtk_widget_show(file_project_open_menu_item);
+    g_signal_connect(file_project_open_menu_item, "activate",
+        G_CALLBACK(file_project_open_activate_cb), NULL);
 
     // Put a menuitem (file_project_new_menuitem) into file_project_menu
     file_project_new_menu_item = gtk_menu_item_new_with_label("New Project...");
@@ -197,11 +200,18 @@ class BaseWindow {
 
   void view_query_activate();
   void file_project_new_activate();
+  void file_project_open_activate();
 
   static void
   view_query_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     BaseWindow* baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(menuItem));
     baseWindow->view_query_activate();
+  }
+
+  static void
+  file_project_open_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
+    BaseWindow* baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(menuItem));
+    baseWindow->file_project_open_activate();
   }
 
   static void
@@ -243,6 +253,7 @@ class BaseWindow {
 
 #include "BaseWindow.h"
 #include "QueryWindow.h"
+#include "OpenProjectWindow.h"
 #include "NewProjectWindow.h"
 
 inline  void
@@ -250,6 +261,14 @@ BaseWindow::view_query_activate() {
   QueryWindow* queryWindow = new QueryWindow(connection, thePreferences, photoFileCache, this);
   queryWindow->run();
   // TODO make sure that queryWindow gets destroyed eventually.
+}
+
+inline  void
+BaseWindow::file_project_open_activate() {
+  OpenProjectWindow* openProjectWindow =
+      new OpenProjectWindow(connection, thePreferences, photoFileCache, this);
+  openProjectWindow->run();
+  // TODO make sure that openProjectWindow gets destroyed eventually.
 }
 
 inline  void

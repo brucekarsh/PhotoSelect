@@ -9,6 +9,7 @@ class BaseWindow;
 class PreferencesWindow;
 class ImportWindow;
 class QueryWindow;
+class OpenProjectWindow;
 class NewProjectWindow;
 
 /** Remembers a mapping from top-level windows to our objects so we can get find
@@ -21,6 +22,7 @@ class WindowRegistry {
     static std::map<GtkWindow*, PreferencesWindow*> preferencesWindowMap;
     static std::map<GtkWindow*, ImportWindow*> importWindowMap;
     static std::map<GtkWindow*, QueryWindow*> queryWindowMap;
+    static std::map<GtkWindow*, OpenProjectWindow*> openProjectWindowMap;
     static std::map<GtkWindow*, NewProjectWindow*> newProjectWindowMap;
   public:
 
@@ -133,6 +135,28 @@ class WindowRegistry {
 
     static void forgetQueryWindow(GtkWidget *widget) {
       std::cout << "TODO forgetQueryWindow WRITEME" << std::endl;
+    };
+
+    // OpenProjectWindow registry methods
+
+    static OpenProjectWindow* getOpenProjectWindow(GtkWidget *widget) {
+      OpenProjectWindow *openProjectWindow = 0;
+      std::map<GtkWindow*, OpenProjectWindow*>::iterator it =
+        openProjectWindowMap.find(GTK_WINDOW(get_toplevel_widget(widget)));
+      if (openProjectWindowMap.end() == it) {
+        std::cout << "Cannot find openProject window in the openProjectWindowMap" << std::endl;
+      } else {
+        openProjectWindow = it -> second;
+      }
+      return openProjectWindow;
+    }
+
+    static void setOpenProjectWindow(GtkWidget *widget, OpenProjectWindow *openProjectWindow) {
+      openProjectWindowMap[GTK_WINDOW(gtk_widget_get_toplevel(widget))] = openProjectWindow;
+    }
+
+    static void forgetOpenProjectWindow(GtkWidget *widget) {
+      std::cout << "TODO forgetOpenProjectWindow WRITEME" << std::endl;
     };
 
     // NewProjectWindow registry methods
