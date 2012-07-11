@@ -154,6 +154,7 @@ DeleteProjectWindow::accept() {
   sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
   prepared_statement->setString(1, project_name);
   prepared_statement->execute();
+  connection->commit();
   quit();
 }
 #endif // DELETEPROJECTWINDOW_H__
