@@ -131,18 +131,6 @@ class RenameProjectWindow {
     first_radio_button = NULL;
     while (rs->next()) {
       std::string project_name = rs->getString(1);
-#ifdef OLDWAY
-      if (NULL == first_radio_button) {
-        radio_button = gtk_radio_button_new_with_label(NULL, project_name.c_str());
-        first_radio_button = radio_button;
-      } else {
-        radio_button = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(
-            first_radio_button), project_name.c_str());
-      }
-      make_radio_button_label_selectable(radio_button);
-      gtk_widget_show(GTK_WIDGET(radio_button));
-      gtk_box_pack_start(GTK_BOX(scrolled_vbox), radio_button, FALSE, FALSE, 0);
-#else // OLDWAY
       if (NULL == first_radio_button) {
         radio_button = gtk_radio_button_new(NULL);
         first_radio_button = radio_button;
@@ -150,7 +138,9 @@ class RenameProjectWindow {
         radio_button = gtk_radio_button_new_from_widget(GTK_RADIO_BUTTON(
             first_radio_button));
       }
-      //make_radio_button_label_selectable(radio_button);
+      // Make a radio button and label packed into a vbox. We do this instead of
+      // just making a radio button with a label because we want the label text to
+      // be selectable.
       gtk_widget_show(GTK_WIDGET(radio_button));
       GtkWidget *radio_button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
       gtk_widget_show(radio_button_box);
@@ -160,7 +150,6 @@ class RenameProjectWindow {
       gtk_label_set_selectable(GTK_LABEL(radio_button_label), true);
       gtk_widget_show(radio_button_label);
       gtk_box_pack_start(GTK_BOX(radio_button_box), radio_button_label, FALSE, FALSE, 0);
-#endif // OLDWAY
     }
 
     // Make a hidden radio button that's initially active so that no active button appears
@@ -182,21 +171,6 @@ class RenameProjectWindow {
     gtk_widget_show(window);
   }
 
-
-  void
-  make_radio_button_label_selectable(GtkWidget *radio_button) {
-    GList *glist = gtk_container_get_children(GTK_CONTAINER(radio_button));
-    std::cout << "button has " <<  g_list_length(glist) << " children" << std::endl;
-    if (1 != g_list_length(glist)) {
-      std::cout << "button has too many children" << std::endl;
-    }
-    GtkLabel *label = GTK_LABEL(glist->data);
-    std::cout << "before " << gtk_label_get_selectable(label) << std::endl;
-    gtk_label_set_selectable(label, true);
-    std::cout << "after " << gtk_label_get_selectable(label) << std::endl;
-    std::cout << "set label on " << gtk_label_get_text(label) << std::endl;
-  }
-
   std::string get_old_project_name() {
     if (NULL == first_radio_button) {
       return "";
@@ -205,9 +179,6 @@ class RenameProjectWindow {
     for (GSList *p = radio_buttons; p != NULL; p = g_slist_next(p)) {
       GtkRadioButton *radio_button = GTK_RADIO_BUTTON(p->data);
       if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio_button))) {
-#ifdef OLDWAY
-        std::string project_name = gtk_button_get_label(GTK_BUTTON(radio_button));
-#else
         GtkWidget *parent = gtk_widget_get_parent(GTK_WIDGET(radio_button));
         if (NULL == parent) {
 	  // NULL parent implies that this is the hidden button
@@ -216,7 +187,6 @@ class RenameProjectWindow {
         GList *parent_contents = gtk_container_get_children(GTK_CONTAINER(parent));
         GtkLabel *label = GTK_LABEL(g_list_nth_data(parent_contents,1));
         std::string project_name = gtk_label_get_text(label);
-#endif
 	return project_name;
       }
     }
