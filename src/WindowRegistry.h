@@ -72,7 +72,7 @@ class WindowRegistry {
     }
 
     static void forgetBaseWindow(GtkWidget *widget) {
-      std::cout << "TODO setBaseWindow WRITEME" << std::endl;
+      std::cout << "TODO forgetBaseWindow WRITEME" << std::endl;
     }
 
     // PreferencesWindow registry methods
@@ -94,7 +94,7 @@ class WindowRegistry {
     }
 
     static void forgetPreferencesWindow(GtkWidget *widget) {
-      std::cout << "TODO setPreferencesWindow WRITEME" << std::endl;
+      std::cout << "TODO forgetPreferencesWindow WRITEME" << std::endl;
     }
 
     // ImportWindow registry methods
@@ -116,7 +116,7 @@ class WindowRegistry {
     }
 
     static void forgetImportWindow(GtkWidget *widget) {
-      std::cout << "TODO setImportWindow WRITEME" << std::endl;
+      std::cout << "TODO forgetImportWindow WRITEME" << std::endl;
     }
 
     // QueryWindow registry methods
