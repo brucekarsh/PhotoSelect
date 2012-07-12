@@ -56,6 +56,7 @@ class BaseWindow {
   add_page(GtkWidget* label, GtkWidget* page) {
     gint page_num = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), page, label);
     gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), page_num);
+    gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(notebook), page, true);
   }
 
   void
