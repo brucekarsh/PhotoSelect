@@ -57,6 +57,8 @@ class BaseWindow {
     gint page_num = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), page, label);
     gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), page_num);
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(notebook), page, true);
+    gtk_notebook_set_tab_detachable(GTK_NOTEBOOK(notebook), page, true);
+    g_signal_connect(notebook, "create-window", G_CALLBACK(create_window_cb), NULL);
   }
 
   void
@@ -69,6 +71,12 @@ class BaseWindow {
 
 
   void run() {
+    GtkWidget *notebook_ = gtk_notebook_new();
+    run(notebook_);
+  }
+
+  void run(GtkWidget *notebook_) {
+    notebook = notebook_;
     // Make a GtkWindow (top_level_window)
     top_level_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(top_level_window), "PhotoSelect");
@@ -205,10 +213,8 @@ class BaseWindow {
     g_signal_connect(view_query_menu_item, "activate", G_CALLBACK(view_query_activate_cb), NULL);
 
     // Put a notebook (notebook) into top_level_vbox
-    notebook = gtk_notebook_new();
     gtk_box_pack_start(GTK_BOX(top_level_vbox), notebook, TRUE, TRUE, 0);
     gtk_widget_show(notebook);
-    
   }
 
   void view_query_activate();
@@ -275,6 +281,21 @@ class BaseWindow {
   preferences_window_destroy_cb(GtkWidget *widget, gpointer user_data) {
     BaseWindow *baseWindow = (BaseWindow *)user_data;
     baseWindow->preferencesWindow = NULL;
+  }
+
+  static GtkNotebook *
+  create_window_cb(GtkNotebook *notebook, GtkWidget *page, gint x, gint y, gpointer user_data) {
+    BaseWindow *base_window = WindowRegistry::getBaseWindow(GTK_WIDGET(notebook));
+    GtkNotebook *new_notebook = base_window->create_window(notebook, page, x, y, user_data);
+    return new_notebook;
+  }
+
+  GtkNotebook *
+  create_window(GtkNotebook *notebook, GtkWidget *page, gint x, gint y, gpointer user_data) {
+    GtkWidget *new_notebook = gtk_notebook_new();
+    BaseWindow *base_window = new BaseWindow(connection, thePreferences, photoFileCache);
+    base_window->run(new_notebook);
+    return GTK_NOTEBOOK(new_notebook);
   }
 };
 
