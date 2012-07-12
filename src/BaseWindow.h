@@ -7,6 +7,7 @@
 
 class OpenProjectWindow;
 class NewProjectWindow;
+class RenameProjectWindow;
 class DeleteProjectWindow;
 class QueryWindow;
 class PhotoFileCache;
@@ -174,6 +175,8 @@ class BaseWindow {
     file_project_rename_menu_item = gtk_menu_item_new_with_label("Rename Project...");
     gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_rename_menu_item);
     gtk_widget_show(file_project_rename_menu_item);
+    g_signal_connect(file_project_rename_menu_item, "activate",
+        G_CALLBACK(file_project_rename_activate_cb), NULL);
 
     // Put a menuitem (file_project_delete_menuitem) into file_project_menu
     file_project_delete_menu_item = gtk_menu_item_new_with_label("Delete Project...");
@@ -210,6 +213,7 @@ class BaseWindow {
   void view_query_activate();
   void file_project_new_activate();
   void file_project_open_activate();
+  void file_project_rename_activate();
   void file_project_delete_activate();
 
   static void
@@ -228,6 +232,12 @@ class BaseWindow {
   file_project_new_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     BaseWindow* baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(menuItem));
     baseWindow->file_project_new_activate();
+  }
+
+  static void
+  file_project_rename_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
+    BaseWindow* baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(menuItem));
+    baseWindow->file_project_rename_activate();
   }
 
   static void
@@ -272,6 +282,7 @@ class BaseWindow {
 #include "OpenProjectWindow.h"
 #include "NewProjectWindow.h"
 #include "DeleteProjectWindow.h"
+#include "RenameProjectWindow.h"
 
 inline  void
 BaseWindow::view_query_activate() {
@@ -294,6 +305,14 @@ BaseWindow::file_project_new_activate() {
       new NewProjectWindow(connection, thePreferences, photoFileCache, this);
   newProjectWindow->run();
   // TODO make sure that newProjectWindow gets destroyed eventually.
+}
+
+inline  void
+BaseWindow::file_project_rename_activate() {
+  RenameProjectWindow* renameProjectWindow =
+      new RenameProjectWindow(connection, thePreferences, this);
+  renameProjectWindow->run();
+  // TODO make sure that RenameProjectWindow gets destroyed eventually.
 }
 
 inline  void

@@ -11,6 +11,7 @@ class ImportWindow;
 class QueryWindow;
 class OpenProjectWindow;
 class NewProjectWindow;
+class RenameProjectWindow;
 class DeleteProjectWindow;
 
 /** Remembers a mapping from top-level windows to our objects so we can get find
@@ -25,6 +26,7 @@ class WindowRegistry {
     static std::map<GtkWindow*, QueryWindow*> queryWindowMap;
     static std::map<GtkWindow*, OpenProjectWindow*> openProjectWindowMap;
     static std::map<GtkWindow*, NewProjectWindow*> newProjectWindowMap;
+    static std::map<GtkWindow*, RenameProjectWindow*> renameProjectWindowMap;
     static std::map<GtkWindow*, DeleteProjectWindow*> deleteProjectWindowMap;
   public:
 
@@ -181,6 +183,28 @@ class WindowRegistry {
 
     static void forgetNewProjectWindow(GtkWidget *widget) {
       std::cout << "TODO forgetNewProjectWindow WRITEME" << std::endl;
+    };
+
+    // RenameProjectWindow registry methods
+
+    static RenameProjectWindow* getRenameProjectWindow(GtkWidget *widget) {
+      RenameProjectWindow *renameProjectWindow = 0;
+      std::map<GtkWindow*, RenameProjectWindow*>::iterator it =
+        renameProjectWindowMap.find(GTK_WINDOW(get_toplevel_widget(widget)));
+      if (renameProjectWindowMap.end() == it) {
+        std::cout << "Cannot find renameProject window in the newProjectWindowMap" << std::endl;
+      } else {
+        renameProjectWindow = it -> second;
+      }
+      return renameProjectWindow;
+    }
+
+    static void setRenameProjectWindow(GtkWidget *widget, RenameProjectWindow *renameProjectWindow) {
+      renameProjectWindowMap[GTK_WINDOW(gtk_widget_get_toplevel(widget))] = renameProjectWindow;
+    }
+
+    static void forgetRenameProjectWindow(GtkWidget *widget) {
+      std::cout << "TODO forgetRenameProjectWindow WRITEME" << std::endl;
     };
 
     // DeleteProjectWindow registry methods

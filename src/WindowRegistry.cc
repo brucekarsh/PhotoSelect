@@ -10,4 +10,5 @@ map<GtkWindow*, ImportWindow*> WindowRegistry::importWindowMap;
 map<GtkWindow*, QueryWindow*> WindowRegistry::queryWindowMap;
 map<GtkWindow*, OpenProjectWindow*> WindowRegistry::openProjectWindowMap;
 map<GtkWindow*, NewProjectWindow*> WindowRegistry::newProjectWindowMap;
+map<GtkWindow*, RenameProjectWindow*> WindowRegistry::renameProjectWindowMap;
 map<GtkWindow*, DeleteProjectWindow*> WindowRegistry::deleteProjectWindowMap;

@@ -1,5 +1,5 @@
-#ifndef DELETEPROJECTWINDOW_H__
-#define DELETEPROJECTWINDOW_H__
+#ifndef RENAMEPROJECTWINDOW_H__
+#define RENAMEPROJECTWINDOW_H__
 #include <gtk/gtk.h>
 #include <iostream>
 #include <fstream>
@@ -24,16 +24,18 @@
 class Preferences;
 class BaseWindow;
 
-class DeleteProjectWindow {
+class RenameProjectWindow {
   public:
   GtkWidget *window;
   GtkWidget *windowBox;
+  GtkWidget *error_label;
   GtkWidget *first_radio_button;
+  GtkWidget *new_name_entry;
   sql::Connection *connection;
   Preferences *preferences;
   BaseWindow *baseWindow;
 
-  DeleteProjectWindow(sql::Connection *connection_, Preferences *preferences_,
+  RenameProjectWindow(sql::Connection *connection_, Preferences *preferences_,
       BaseWindow* baseWindow_) :
       connection(connection_), preferences(preferences_),
       baseWindow(baseWindow_) {
@@ -48,13 +50,13 @@ class DeleteProjectWindow {
 
   static void
   accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    DeleteProjectWindow *renameProjectWindow = WindowRegistry::getDeleteProjectWindow(widget);
+    RenameProjectWindow *renameProjectWindow = WindowRegistry::getRenameProjectWindow(widget);
     renameProjectWindow->accept();
   }
 
   static void
   quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    DeleteProjectWindow *renameProjectWindow = WindowRegistry::getDeleteProjectWindow(widget);
+    RenameProjectWindow *renameProjectWindow = WindowRegistry::getRenameProjectWindow(widget);
     renameProjectWindow->quit();
   }
 
@@ -62,15 +64,41 @@ class DeleteProjectWindow {
   run() {
     // Make a window with a vertical box (windowBox) in it.
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    WindowRegistry::setDeleteProjectWindow(window, this);
+    WindowRegistry::setRenameProjectWindow(window, this);
     windowBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(windowBox);
     gtk_container_add(GTK_CONTAINER(window), windowBox);
 
+    // Add a label (error_label) to windowBox
+    error_label = gtk_label_new("");
+    gtk_label_set_markup(GTK_LABEL(error_label),
+        "<span color=\"red\">This is the error label</span>");
+    gtk_widget_hide(error_label);
+    gtk_box_pack_start(GTK_BOX(windowBox), error_label, FALSE, FALSE, 0);
+
     // Make a label (title_label) and put it in windowBox
-    GtkWidget *title_label = gtk_label_new("Delete Project");
+    GtkWidget *title_label = gtk_label_new("Rename Project");
     gtk_widget_show(GTK_WIDGET(title_label));
     gtk_box_pack_start(GTK_BOX(windowBox), title_label, FALSE, FALSE, 0);
+
+    // Make a box, label and text entry (new_name_box, new_name_label, new_name_entry) and
+    // put them in windowBox
+    GtkWidget *new_name_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_show(new_name_box);
+    GtkWidget *new_name_label = gtk_label_new("New Project Name");
+    gtk_widget_show(GTK_WIDGET(new_name_label));
+    gtk_box_pack_start(GTK_BOX(new_name_box), new_name_label, FALSE, FALSE, 0);
+    new_name_entry = gtk_entry_new();
+    gtk_widget_show(GTK_WIDGET(new_name_entry));
+    gtk_box_pack_start(GTK_BOX(new_name_box), new_name_entry, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(windowBox), new_name_box, FALSE, FALSE, 0);
+
+    // Make a label (old_name_label) and put it in windowBox
+    GtkWidget *old_name_label = gtk_label_new("Current Project Name:");
+    //gtk_misc_set_alignment(GTK_MISC(old_name_label), 0.0, 0.5);
+    gtk_widget_set_halign(GTK_WIDGET(old_name_label), GTK_ALIGN_START);
+    gtk_widget_show(old_name_label);
+    gtk_box_pack_start(GTK_BOX(windowBox), old_name_label, FALSE, FALSE, 0);
 
     // Make a ScrolledWindow (scrolled_window) and put it in the windowBox
     GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
@@ -114,6 +142,18 @@ class DeleteProjectWindow {
       gtk_box_pack_start(GTK_BOX(scrolled_vbox), radio_button, FALSE, FALSE, 0);
     }
 
+    // Make a hidden radio button that's initially active so that no active button appears
+    // until the user makes a choice. (This is intended to lessen the chance that a user
+    // inadvertently renames the first project on the list because they forgot to make a
+    // choice).
+
+    if (NULL != first_radio_button) {
+      GtkWidget *hidden_radio_button =
+          gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON( first_radio_button), "");
+          gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(hidden_radio_button), true);
+          gtk_widget_hide(GTK_WIDGET(hidden_radio_button));
+    }
+
     g_signal_connect(window, "destroy", G_CALLBACK(quit_button_clicked_cb), NULL);
     g_signal_connect(quit_button, "clicked", G_CALLBACK(quit_button_clicked_cb), NULL);
     g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
@@ -121,7 +161,7 @@ class DeleteProjectWindow {
     gtk_widget_show(window);
   }
 
-  std::string get_project_name() {
+  std::string get_old_project_name() {
     if (NULL == first_radio_button) {
       return "";
     }
@@ -135,7 +175,13 @@ class DeleteProjectWindow {
     }
     return "";
   }
-  
+
+  void
+  set_error_label(std::string text) {
+    gtk_label_set_markup(GTK_LABEL(error_label),
+        ("<span color=\"red\">" + text + "</span>").c_str());
+    gtk_widget_show(GTK_WIDGET(error_label));
+  }
 };
 
 #include "BaseWindow.h"
@@ -143,18 +189,35 @@ class DeleteProjectWindow {
 
 
 inline  void
-DeleteProjectWindow::accept() {
-  std::string project_name = get_project_name();
-  if (0 == project_name.size()) {
+RenameProjectWindow::accept() {
+  boolean error_occurred = false;
+  std::string error_string;
+  std::string old_project_name = get_old_project_name();
+  if (0 == old_project_name.size()) {
+    if (error_string.length() != 0) error_string += "\n";
+    error_string += "Please select project to rename.";
+    error_occurred = true;
+  }
+
+  std::string new_project_name = gtk_entry_get_text(GTK_ENTRY(new_name_entry));
+  if (0 == new_project_name.size()) {
+    if (error_string.length() != 0) error_string += "\n";
+    error_string += "Please enter a new project name.";
+    error_occurred = true;
+  }
+
+  if (error_occurred) {
+    set_error_label(error_string);
     return;
   }
-  std::list<std::string> photoFilenameList;
+
   std::string sql = 
-      "DELETE FROM Project WHERE name = ?";
+      "UPDATE Project SET name=? WHERE name=?";
   sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
-  prepared_statement->setString(1, project_name);
+  prepared_statement->setString(1, new_project_name);
+  prepared_statement->setString(2, old_project_name);
   prepared_statement->execute();
   connection->commit();
   quit();
 }
-#endif // DELETEPROJECTWINDOW_H__
+#endif // RENAMEPROJECTWINDOW_H__
