@@ -137,7 +137,7 @@ class BaseWindow {
     gtk_widget_show(file_project_menu_item);
     
     // Put a menuitem (file_import_menu_item) into file_menu
-    file_import_menu_item = gtk_menu_item_new_with_label("Import");
+    file_import_menu_item = gtk_menu_item_new_with_label("Import...");
     gtk_container_add(GTK_CONTAINER(file_menu), file_import_menu_item);
     gtk_widget_show(file_import_menu_item);
     g_signal_connect(file_import_menu_item, "activate", G_CALLBACK(file_import_activate_cb), NULL);
