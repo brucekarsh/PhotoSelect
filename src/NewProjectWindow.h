@@ -63,6 +63,10 @@ class NewProjectWindow {
       baseWindow(baseWindow_) {
   }
 
+  ~NewProjectWindow() {
+    WindowRegistry::forgetNewProjectWindow(window);
+  }
+
   void accept();
   void submit();
 

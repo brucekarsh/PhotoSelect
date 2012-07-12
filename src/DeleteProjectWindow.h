@@ -39,6 +39,10 @@ class DeleteProjectWindow {
       baseWindow(baseWindow_) {
   }
 
+  ~DeleteProjectWindow() {
+    WindowRegistry::forgetDeleteProjectWindow(window);
+  }
+
   void accept();
 
   void

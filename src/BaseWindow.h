@@ -52,6 +52,10 @@ class BaseWindow {
     photoFileCache = photoFileCache_;
   };
 
+  ~BaseWindow() {
+    WindowRegistry::forgetBaseWindow(top_level_window);
+  }
+
   void
   add_page(GtkWidget* label, GtkWidget* page) {
     gint page_num = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), page, label);

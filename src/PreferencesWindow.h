@@ -25,6 +25,10 @@ class PreferencesWindow {
     this->thePreferences = thePreferences;
   }
 
+  ~PreferencesWindow() {
+    WindowRegistry::forgetPreferencesWindow(window);
+  }
+
   void highlight() {
     std::cout << "highlight preferences window" << std::endl;
     GdkWindow *gdk_window = gtk_widget_get_window(window);

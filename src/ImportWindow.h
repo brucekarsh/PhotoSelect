@@ -31,6 +31,10 @@ class ImportWindow {
       thePreferences( thePreferences_), cancel_requested(false), processing_imports(false), connection(connection_) {
   }
 
+  ~ImportWindow() {
+    WindowRegistry::forgetImportWindow(window);
+  }
+
   void run() {
     
     /* Load UI from file. If error occurs, report it and quit application. */

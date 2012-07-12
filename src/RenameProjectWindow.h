@@ -41,6 +41,10 @@ class RenameProjectWindow {
       baseWindow(baseWindow_) {
   }
 
+  ~RenameProjectWindow() {
+    WindowRegistry::forgetRenameProjectWindow(window);
+  }
+
   void accept();
 
   void

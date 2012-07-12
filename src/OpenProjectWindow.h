@@ -41,6 +41,10 @@ class OpenProjectWindow {
       baseWindow(baseWindow_) {
   }
 
+  ~OpenProjectWindow() {
+    WindowRegistry::forgetOpenProjectWindow(window);
+  }
+
   void accept();
   void submit();
 

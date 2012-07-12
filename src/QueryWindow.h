@@ -58,6 +58,10 @@ class QueryWindow {
       baseWindow(baseWindow_) {
   }
 
+  ~QueryWindow() {
+    WindowRegistry::forgetQueryWindow(window);
+  }
+
   void accept();
 
   std::string
