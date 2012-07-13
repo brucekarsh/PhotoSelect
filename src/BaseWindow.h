@@ -62,7 +62,6 @@ class BaseWindow {
     gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), page_num);
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(notebook), page, true);
     gtk_notebook_set_tab_detachable(GTK_NOTEBOOK(notebook), page, true);
-    g_signal_connect(notebook, "create-window", G_CALLBACK(create_window_cb), NULL);
   }
 
   void
@@ -86,7 +85,7 @@ class BaseWindow {
     gtk_window_set_title(GTK_WINDOW(top_level_window), "PhotoSelect");
     gtk_window_set_resizable(GTK_WINDOW(top_level_window), TRUE);
     gtk_widget_show(top_level_window);
-    g_signal_connect(top_level_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+    g_signal_connect(top_level_window, "destroy", G_CALLBACK(quit_cb), NULL);
     WindowRegistry<BaseWindow>::setWindow(top_level_window, this);
 
 
@@ -202,7 +201,7 @@ class BaseWindow {
     file_quit_menu_item = gtk_menu_item_new_with_label("Quit");
     gtk_container_add(GTK_CONTAINER(file_menu), file_quit_menu_item);
     gtk_widget_show(file_quit_menu_item);
-    g_signal_connect(file_quit_menu_item, "activate", G_CALLBACK(gtk_main_quit), NULL);
+    g_signal_connect(file_quit_menu_item, "activate", G_CALLBACK(quit_cb), NULL);
 
     // Put a menuitem (edit_preferences_menu_item) into edit_menu
     edit_preferences_menu_item = gtk_menu_item_new_with_label("Preferences");
@@ -218,6 +217,8 @@ class BaseWindow {
 
     // Put a notebook (notebook) into top_level_vbox
     gtk_box_pack_start(GTK_BOX(top_level_vbox), notebook, TRUE, TRUE, 0);
+    g_signal_connect(notebook, "create-window", G_CALLBACK(create_window_cb), NULL);
+    g_signal_connect(notebook, "page-removed", G_CALLBACK(page_removed_cb), NULL);
     gtk_widget_show(notebook);
   }
 
@@ -294,6 +295,25 @@ class BaseWindow {
     return new_notebook;
   }
 
+  void
+  page_removed(GtkNotebook *notebook, GtkWidget *child, guint page_num, gpointer user_data) {
+    std::cout << "page_removed entered" << std::endl;
+    gint n_pages = gtk_notebook_get_n_pages(notebook);
+    if (0 == n_pages) {
+      std::cout << "page_removed calling quit" << std::endl;
+      quit();
+    }
+  }
+
+  static void
+  page_removed_cb(GtkNotebook *notebook, GtkWidget *child, guint page_num, gpointer user_data) {
+    std::cout << "page_removed_cb entered" << std::endl;
+    BaseWindow *base_window = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(notebook));
+    if (NULL != base_window) {
+      base_window->page_removed(notebook, child, page_num, user_data);
+    }
+  }
+
   GtkNotebook *
   create_window(GtkNotebook *notebook, GtkWidget *page, gint x, gint y, gpointer user_data) {
     GtkWidget *new_notebook = gtk_notebook_new();
@@ -301,6 +321,28 @@ class BaseWindow {
     base_window->run(new_notebook);
     return GTK_NOTEBOOK(new_notebook);
   }
+
+  void
+  quit() {
+    // If we are the last BaseWindow, then stop the event loop
+    long n_base_windows =  WindowRegistry<BaseWindow>::count();
+    std::cout << "n_base_windows " << n_base_windows << std::endl;
+    if (1 == n_base_windows) {
+      gtk_main_quit();
+    }
+    gtk_widget_destroy(top_level_window);
+    // TODO delete this;
+  }
+
+  static void
+  quit_cb(GtkWidget *widget, gpointer user_data) {
+    std::cout << "quit_cb entered" << std::endl;
+    BaseWindow *base_window = WindowRegistry<BaseWindow>::getWindow(widget);
+    base_window->quit();
+    std::cout << "quit_cb done" << std::endl;
+  }
+    
+
 };
 
 #include "BaseWindow.h"

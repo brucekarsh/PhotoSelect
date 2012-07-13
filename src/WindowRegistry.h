@@ -15,7 +15,6 @@ template <class C> class WindowRegistry {
     typename std::map<GtkWidget*, C *>::iterator it =
       windowMap.find(GTK_WIDGET(top_level_window));
     if (windowMap.end() == it) {
-      std::cout << "Cannot find window in the map" << std::endl;
     } else {
       window = it -> second;
     }
@@ -30,6 +29,10 @@ template <class C> class WindowRegistry {
     C *x;
     windowMap.erase(widget);
   };
+
+  static long count() {
+    return windowMap.size();
+  }
     
   // Other registry methods
 

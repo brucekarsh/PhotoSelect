@@ -15,7 +15,6 @@ template <class C> class PageRegistry {
     typename std::map<GtkWidget*, C *>::iterator it =
       pageMap.find(GTK_WIDGET(top_level_page));
     if (pageMap.end() == it) {
-      std::cout << "Cannot find page in the map" << std::endl;
     } else {
       page = it -> second;
     }
