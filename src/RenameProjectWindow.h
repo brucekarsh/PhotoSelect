@@ -42,7 +42,7 @@ class RenameProjectWindow {
   }
 
   ~RenameProjectWindow() {
-    WindowRegistry::forgetRenameProjectWindow(window);
+    WindowRegistry<RenameProjectWindow>::forgetWindow(window);
   }
 
   void accept();
@@ -54,13 +54,15 @@ class RenameProjectWindow {
 
   static void
   accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    RenameProjectWindow *renameProjectWindow = WindowRegistry::getRenameProjectWindow(widget);
+    RenameProjectWindow *renameProjectWindow =
+        WindowRegistry<RenameProjectWindow>::getWindow(widget);
     renameProjectWindow->accept();
   }
 
   static void
   quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    RenameProjectWindow *renameProjectWindow = WindowRegistry::getRenameProjectWindow(widget);
+    RenameProjectWindow *renameProjectWindow =
+        WindowRegistry<RenameProjectWindow>::getWindow(widget);
     renameProjectWindow->quit();
   }
 
@@ -68,7 +70,7 @@ class RenameProjectWindow {
   run() {
     // Make a window with a vertical box (windowBox) in it.
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    WindowRegistry::setRenameProjectWindow(window, this);
+    WindowRegistry<RenameProjectWindow>::setWindow(window, this);
     windowBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(windowBox);
     gtk_container_add(GTK_CONTAINER(window), windowBox);

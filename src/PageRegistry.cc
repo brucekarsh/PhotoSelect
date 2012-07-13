@@ -3,4 +3,9 @@
 
 using namespace std;
 
-map<GtkWidget*, PhotoSelectPage*> PageRegistry<PhotoSelectPage>::pageMap;
+class PhotoSelectPage;
+
+template <class T> std::map<GtkWidget*, T*> PageRegistry<T>::pageMap;
+
+template class PageRegistry<PhotoSelectPage>;
+

@@ -26,7 +26,7 @@ class PreferencesWindow {
   }
 
   ~PreferencesWindow() {
-    WindowRegistry::forgetPreferencesWindow(window);
+    WindowRegistry<PreferencesWindow>::forgetWindow(window);
   }
 
   void highlight() {
@@ -96,7 +96,7 @@ class PreferencesWindow {
     gtk_entry_set_text(user, thePreferences -> get_user().c_str());
     gtk_entry_set_text(password, thePreferences -> get_password().c_str());
     gtk_entry_set_text(database, thePreferences -> get_database().c_str());
-    WindowRegistry::setPreferencesWindow(window, this);
+    WindowRegistry<PreferencesWindow>::setWindow(window, this);
 
     gtk_builder_connect_signals(builder, NULL);
     g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
@@ -135,19 +135,19 @@ class PreferencesWindow {
 
   static void
   accept_button_clicked_cb(GtkWidget* widget, gpointer callback_data) {
-    PreferencesWindow *preferencesWindow = WindowRegistry::getPreferencesWindow(widget);
+    PreferencesWindow *preferencesWindow = WindowRegistry<PreferencesWindow>::getWindow(widget);
     preferencesWindow->accept_button_clicked();
   }
 
   static void
   cancel_button_clicked_cb(GtkWidget* widget, gpointer callback_data) {
-    PreferencesWindow *preferencesWindow = WindowRegistry::getPreferencesWindow(widget);
+    PreferencesWindow *preferencesWindow = WindowRegistry<PreferencesWindow>::getWindow(widget);
     preferencesWindow->cancel_button_clicked();
   }
 
   static void
   apply_button_clicked_cb(GtkWidget* widget, gpointer callback_data) {
-    PreferencesWindow *preferencesWindow = WindowRegistry::getPreferencesWindow(widget);
+    PreferencesWindow *preferencesWindow = WindowRegistry<PreferencesWindow>::getWindow(widget);
     preferencesWindow->apply_button_clicked();
   }
 };

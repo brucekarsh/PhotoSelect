@@ -64,7 +64,7 @@ class NewProjectWindow {
   }
 
   ~NewProjectWindow() {
-    WindowRegistry::forgetNewProjectWindow(window);
+    WindowRegistry<NewProjectWindow>::forgetWindow(window);
   }
 
   void accept();
@@ -246,19 +246,19 @@ class NewProjectWindow {
 
   static void
   accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    NewProjectWindow *newProjectWindow = WindowRegistry::getNewProjectWindow(widget);
+    NewProjectWindow *newProjectWindow = WindowRegistry<NewProjectWindow>::getWindow(widget);
     newProjectWindow->accept();
   }
 
   static void
   query_submit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    NewProjectWindow *newProjectWindow = WindowRegistry::getNewProjectWindow(widget);
+    NewProjectWindow *newProjectWindow = WindowRegistry<NewProjectWindow>::getWindow(widget);
     newProjectWindow->submit();
   }
 
   static void
   query_add_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    NewProjectWindow *newProjectWindow = WindowRegistry::getNewProjectWindow(widget);
+    NewProjectWindow *newProjectWindow = WindowRegistry<NewProjectWindow>::getWindow(widget);
     NewProjectWindowRow *qwr = (NewProjectWindowRow*) callback_data;
     int qwri = newProjectWindow->get_qwri(qwr);
     NewProjectWindowRow *new_qwr = newProjectWindow->make_row();
@@ -270,7 +270,7 @@ class NewProjectWindow {
 
   static void
   empty_row_add_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    NewProjectWindow *newProjectWindow = WindowRegistry::getNewProjectWindow(widget);
+    NewProjectWindow *newProjectWindow = WindowRegistry<NewProjectWindow>::getWindow(widget);
     NewProjectWindowRow *new_qwr = newProjectWindow->make_row();
     newProjectWindow->newProjectWindowRows.insert(std::pair<GtkWidget*,
         NewProjectWindowRow*>(new_qwr->hbox, new_qwr));
@@ -281,7 +281,7 @@ class NewProjectWindow {
 
   static void
   query_remove_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    NewProjectWindow *newProjectWindow = WindowRegistry::getNewProjectWindow(widget);
+    NewProjectWindow *newProjectWindow = WindowRegistry<NewProjectWindow>::getWindow(widget);
     NewProjectWindowRow *qwr = (NewProjectWindowRow*) callback_data;
       gtk_container_remove(GTK_CONTAINER(newProjectWindow->verticalBox), qwr->hbox);
       newProjectWindow->newProjectWindowRows.erase(qwr->hbox);
@@ -295,7 +295,7 @@ class NewProjectWindow {
 
   static void
   quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    NewProjectWindow *newProjectWindow = WindowRegistry::getNewProjectWindow(widget);
+    NewProjectWindow *newProjectWindow = WindowRegistry<NewProjectWindow>::getWindow(widget);
     newProjectWindow->quit();
   }
 
@@ -335,7 +335,7 @@ class NewProjectWindow {
 
     // Make a window with a vertical box (windowBox) in it.
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    WindowRegistry::setNewProjectWindow(window, this);
+    WindowRegistry<NewProjectWindow>::setWindow(window, this);
     windowBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(windowBox);
     gtk_container_add(GTK_CONTAINER(window), windowBox);

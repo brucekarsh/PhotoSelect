@@ -53,7 +53,7 @@ class BaseWindow {
   };
 
   ~BaseWindow() {
-    WindowRegistry::forgetBaseWindow(top_level_window);
+    WindowRegistry<BaseWindow>::forgetWindow(top_level_window);
   }
 
   void
@@ -87,7 +87,7 @@ class BaseWindow {
     gtk_window_set_resizable(GTK_WINDOW(top_level_window), TRUE);
     gtk_widget_show(top_level_window);
     g_signal_connect(top_level_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-    WindowRegistry::setBaseWindow(top_level_window, this);
+    WindowRegistry<BaseWindow>::setWindow(top_level_window, this);
 
 
     // Put a GtkBox (top_level_vbox) in top_level_window
@@ -229,37 +229,37 @@ class BaseWindow {
 
   static void
   view_query_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    BaseWindow* baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(menuItem));
+    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
     baseWindow->view_query_activate();
   }
 
   static void
   file_project_open_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    BaseWindow* baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(menuItem));
+    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
     baseWindow->file_project_open_activate();
   }
 
   static void
   file_project_new_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    BaseWindow* baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(menuItem));
+    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
     baseWindow->file_project_new_activate();
   }
 
   static void
   file_project_rename_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    BaseWindow* baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(menuItem));
+    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
     baseWindow->file_project_rename_activate();
   }
 
   static void
   file_project_delete_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    BaseWindow* baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(menuItem));
+    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
     baseWindow->file_project_delete_activate();
   }
 
   static void
   edit_preferences_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    BaseWindow* baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(menuItem));
+    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
     baseWindow->preferences_activate();
   }
 
@@ -289,7 +289,7 @@ class BaseWindow {
 
   static GtkNotebook *
   create_window_cb(GtkNotebook *notebook, GtkWidget *page, gint x, gint y, gpointer user_data) {
-    BaseWindow *base_window = WindowRegistry::getBaseWindow(GTK_WIDGET(notebook));
+    BaseWindow *base_window = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(notebook));
     GtkNotebook *new_notebook = base_window->create_window(notebook, page, x, y, user_data);
     return new_notebook;
   }

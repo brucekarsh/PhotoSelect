@@ -40,7 +40,7 @@ class DeleteProjectWindow {
   }
 
   ~DeleteProjectWindow() {
-    WindowRegistry::forgetDeleteProjectWindow(window);
+    WindowRegistry<DeleteProjectWindow>::forgetWindow(window);
   }
 
   void accept();
@@ -52,13 +52,15 @@ class DeleteProjectWindow {
 
   static void
   accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    DeleteProjectWindow *renameProjectWindow = WindowRegistry::getDeleteProjectWindow(widget);
+    DeleteProjectWindow *renameProjectWindow =
+        WindowRegistry<DeleteProjectWindow>::getWindow(widget);
     renameProjectWindow->accept();
   }
 
   static void
   quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    DeleteProjectWindow *renameProjectWindow = WindowRegistry::getDeleteProjectWindow(widget);
+    DeleteProjectWindow *renameProjectWindow =
+        WindowRegistry<DeleteProjectWindow>::getWindow(widget);
     renameProjectWindow->quit();
   }
 
@@ -66,7 +68,7 @@ class DeleteProjectWindow {
   run() {
     // Make a window with a vertical box (windowBox) in it.
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    WindowRegistry::setDeleteProjectWindow(window, this);
+    WindowRegistry<DeleteProjectWindow>::setWindow(window, this);
     windowBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(windowBox);
     gtk_container_add(GTK_CONTAINER(window), windowBox);

@@ -42,7 +42,7 @@ class OpenProjectWindow {
   }
 
   ~OpenProjectWindow() {
-    WindowRegistry::forgetOpenProjectWindow(window);
+    WindowRegistry<OpenProjectWindow>::forgetWindow(window);
   }
 
   void accept();
@@ -55,13 +55,13 @@ class OpenProjectWindow {
 
   static void
   accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    OpenProjectWindow *openProjectWindow = WindowRegistry::getOpenProjectWindow(widget);
+    OpenProjectWindow *openProjectWindow = WindowRegistry<OpenProjectWindow>::getWindow(widget);
     openProjectWindow->accept();
   }
 
   static void
   quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    OpenProjectWindow *openProjectWindow = WindowRegistry::getOpenProjectWindow(widget);
+    OpenProjectWindow *openProjectWindow = WindowRegistry<OpenProjectWindow>::getWindow(widget);
     openProjectWindow->quit();
   }
 
@@ -69,7 +69,7 @@ class OpenProjectWindow {
   run() {
     // Make a window with a vertical box (windowBox) in it.
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    WindowRegistry::setOpenProjectWindow(window, this);
+    WindowRegistry<OpenProjectWindow>::setWindow(window, this);
     windowBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(windowBox);
     gtk_container_add(GTK_CONTAINER(window), windowBox);

@@ -59,7 +59,7 @@ class QueryWindow {
   }
 
   ~QueryWindow() {
-    WindowRegistry::forgetQueryWindow(window);
+    WindowRegistry<QueryWindow>::forgetWindow(window);
   }
 
   void accept();
@@ -238,13 +238,13 @@ class QueryWindow {
 
   static void
   accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
+    QueryWindow *queryWindow = WindowRegistry<QueryWindow>::getWindow(widget);
     queryWindow->accept();
   }
 
   static void
   query_submit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
+    QueryWindow *queryWindow = WindowRegistry<QueryWindow>::getWindow(widget);
     QueryWindowRow *qwr = (QueryWindowRow*) callback_data;
     std::string queryJSON = queryWindow->makeQueryJSON();
     queryWindow->queryJSONToQuery(queryJSON);
@@ -252,7 +252,7 @@ class QueryWindow {
 
   static void
   query_add_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
+    QueryWindow *queryWindow = WindowRegistry<QueryWindow>::getWindow(widget);
     QueryWindowRow *qwr = (QueryWindowRow*) callback_data;
     int qwri = queryWindow->get_qwri(qwr);
     QueryWindowRow *new_qwr = queryWindow->make_row();
@@ -264,7 +264,7 @@ class QueryWindow {
 
   static void
   empty_row_add_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
+    QueryWindow *queryWindow = WindowRegistry<QueryWindow>::getWindow(widget);
     QueryWindowRow *new_qwr = queryWindow->make_row();
     queryWindow->queryWindowRows.insert(std::pair<GtkWidget*,
         QueryWindowRow*>(new_qwr->hbox, new_qwr));
@@ -275,7 +275,7 @@ class QueryWindow {
 
   static void
   query_remove_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
+    QueryWindow *queryWindow = WindowRegistry<QueryWindow>::getWindow(widget);
     QueryWindowRow *qwr = (QueryWindowRow*) callback_data;
       gtk_container_remove(GTK_CONTAINER(queryWindow->verticalBox), qwr->hbox);
       queryWindow->queryWindowRows.erase(qwr->hbox);
@@ -289,7 +289,7 @@ class QueryWindow {
 
   static void
   quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    QueryWindow *queryWindow = WindowRegistry::getQueryWindow(widget);
+    QueryWindow *queryWindow = WindowRegistry<QueryWindow>::getWindow(widget);
     queryWindow->quit();
   }
 
@@ -329,7 +329,7 @@ class QueryWindow {
 
     // Make a window with a vertical box (windowBox) in it.
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    WindowRegistry::setQueryWindow(window, this);
+    WindowRegistry<QueryWindow>::setWindow(window, this);
     windowBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(windowBox);
     gtk_container_add(GTK_CONTAINER(window), windowBox);

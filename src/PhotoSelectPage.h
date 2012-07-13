@@ -1,7 +1,7 @@
 #ifndef PHOTOSELECTPAGE_H__
 #define PHOTOSELECTPAGE_H__
 
-#include "WindowRegistry.h"
+#include "PageRegistry.h"
 #include "Preferences.h"
 #include <list>
 #include <stdio.h>
@@ -196,7 +196,7 @@ class PhotoSelectPage {
     build_page();
 
     // Add it to the registry so we can find this object when we get a callback
-    WindowRegistry::setPhotoSelectPage(page_vbox, this);
+    PageRegistry<PhotoSelectPage>::setPage(page_vbox, this);
 
     // Set up the of_label
     char ofstring[20];
@@ -430,7 +430,7 @@ class PhotoSelectPage {
   }
 
   static void keep_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> keep();
       photoSelectPage -> redraw_image();
@@ -438,7 +438,7 @@ class PhotoSelectPage {
   }
 
   static void drop_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> drop();
       photoSelectPage -> redraw_image();
@@ -447,7 +447,7 @@ class PhotoSelectPage {
 
   static void
   next_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> next();
       photoSelectPage -> redraw_image();
@@ -456,7 +456,7 @@ class PhotoSelectPage {
 
   static void
   back_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> back();
       photoSelectPage -> redraw_image();
@@ -465,7 +465,7 @@ class PhotoSelectPage {
 
   static void
   rotate_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> rotate();
       photoSelectPage -> redraw_image();
@@ -474,7 +474,7 @@ class PhotoSelectPage {
 
   static void
   gimp_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> gimp();
       photoSelectPage -> redraw_image();
@@ -485,7 +485,7 @@ class PhotoSelectPage {
 
   static void
   drawing_area_draw_cb(GtkWidget *widget, cairo_t *cr, gpointer data) {
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> redraw_image();
     }
@@ -493,7 +493,7 @@ class PhotoSelectPage {
 
   static void
   position_entry_activate_cb(GtkWidget *widget, gpointer data) {
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->position_entry_activate();
       photoSelectPage -> redraw_image();
@@ -501,21 +501,21 @@ class PhotoSelectPage {
   }
   static void
   drawing_area_button_press_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->drawing_area_button_press(event);
     }
   }
   static void
   drawing_area_button_release_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->drawing_area_button_release(event);
     }
   }
   static void
   drawing_area_scroll_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->drawing_area_scroll(event);
       photoSelectPage -> redraw_image();
@@ -523,7 +523,7 @@ class PhotoSelectPage {
   }
   static void
   drawing_area_motion_notify_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
-    PhotoSelectPage *photoSelectPage = WindowRegistry::getPhotoSelectPage(widget);
+    PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->drawing_area_motion_notify(event);
     }
@@ -533,7 +533,7 @@ class PhotoSelectPage {
 #include "BaseWindow.h"
 
   inline void PhotoSelectPage::quit() {
-    BaseWindow *baseWindow = WindowRegistry::getBaseWindow(GTK_WIDGET(drawing_area));
+    BaseWindow *baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(drawing_area));
     if (NULL != baseWindow) {
       baseWindow->remove_page(page_vbox);
     }

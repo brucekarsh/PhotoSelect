@@ -32,7 +32,7 @@ class ImportWindow {
   }
 
   ~ImportWindow() {
-    WindowRegistry::forgetImportWindow(window);
+    WindowRegistry<ImportWindow>::forgetWindow(window);
   }
 
   void run() {
@@ -47,7 +47,7 @@ class ImportWindow {
     }
     window = GTK_WIDGET( gtk_builder_get_object( builder, "ImportDialog" ));
     progressBar = GTK_WIDGET( gtk_builder_get_object( builder, "ImportProgressBar"));
-    WindowRegistry::setImportWindow(window, this);
+    WindowRegistry<ImportWindow>::setWindow(window, this);
 
     gtk_builder_connect_signals(builder, NULL);
     g_object_unref( G_OBJECT( builder ) );
