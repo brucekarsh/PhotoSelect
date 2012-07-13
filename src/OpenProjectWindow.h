@@ -125,6 +125,19 @@ class OpenProjectWindow {
     g_signal_connect(quit_button, "clicked", G_CALLBACK(quit_button_clicked_cb), NULL);
     g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
 
+    GtkRequisition minimum_size;
+    GtkRequisition natural_size;
+    gtk_widget_get_preferred_size(scrolled_vbox, &minimum_size, &natural_size);
+    gint width = minimum_size.width;
+    gint height = minimum_size.width;
+    const gint max_width = 400;
+    const gint max_height = 400;
+    if (width < natural_size.width) width = natural_size.width;
+    if (height < natural_size.height) height = natural_size.height;
+    if (width > max_width) width = max_width;
+    if (height > max_height) height = max_height;
+    gtk_widget_set_size_request(scrolled_window, width, height);
+
     gtk_widget_show(window);
   }
 
