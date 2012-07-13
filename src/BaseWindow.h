@@ -297,17 +297,14 @@ class BaseWindow {
 
   void
   page_removed(GtkNotebook *notebook, GtkWidget *child, guint page_num, gpointer user_data) {
-    std::cout << "page_removed entered" << std::endl;
     gint n_pages = gtk_notebook_get_n_pages(notebook);
     if (0 == n_pages) {
-      std::cout << "page_removed calling quit" << std::endl;
       quit();
     }
   }
 
   static void
   page_removed_cb(GtkNotebook *notebook, GtkWidget *child, guint page_num, gpointer user_data) {
-    std::cout << "page_removed_cb entered" << std::endl;
     BaseWindow *base_window = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(notebook));
     if (NULL != base_window) {
       base_window->page_removed(notebook, child, page_num, user_data);
@@ -326,7 +323,6 @@ class BaseWindow {
   quit() {
     // If we are the last BaseWindow, then stop the event loop
     long n_base_windows =  WindowRegistry<BaseWindow>::count();
-    std::cout << "n_base_windows " << n_base_windows << std::endl;
     if (1 == n_base_windows) {
       gtk_main_quit();
     }
@@ -336,10 +332,8 @@ class BaseWindow {
 
   static void
   quit_cb(GtkWidget *widget, gpointer user_data) {
-    std::cout << "quit_cb entered" << std::endl;
     BaseWindow *base_window = WindowRegistry<BaseWindow>::getWindow(widget);
     base_window->quit();
-    std::cout << "quit_cb done" << std::endl;
   }
     
 

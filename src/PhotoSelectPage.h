@@ -359,7 +359,6 @@ class PhotoSelectPage {
   }
 
   void redraw_image() {
-    std::cout << "redraw_image called" << std::endl;
     ConvertedPhotoFile *convertedPhotoFile = conversionEngine.getConvertedPhotoFile(); 
     std::string photoFilePath = conversionEngine.getPhotoFilePath();
     gtk_entry_set_text(GTK_ENTRY(filename_entry), photoFilePath.c_str());
