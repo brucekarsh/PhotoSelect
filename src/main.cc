@@ -41,8 +41,8 @@ main(int argc, char **argv)
   std::string database = preferences.get_database();
   sql::Connection *connection = open_database(dbhost, user, password, database);
 
-  BaseWindow baseWindow(connection, &preferences, &photoFileCache);
-  baseWindow.run();
+  BaseWindow *baseWindow = new BaseWindow(connection, &preferences, &photoFileCache);
+  baseWindow->run();
 
   list<string> photoFilenameList1;
   photoFilenameList1.push_back("/home/bruce/Tanzania2012/AW100/DSCN0651.JPG");
@@ -51,7 +51,7 @@ main(int argc, char **argv)
   PhotoSelectPage photoSelectPage(connection, &photoFileCache);
   photoSelectPage.setup(photoFilenameList1, &preferences);
 
-  baseWindow.add_page(photoSelectPage.get_tab_label(), photoSelectPage.get_notebook_page());
+  baseWindow->add_page(photoSelectPage.get_tab_label(), photoSelectPage.get_notebook_page());
 
 
   //list<string> photoFilenameList2;

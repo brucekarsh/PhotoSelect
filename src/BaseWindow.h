@@ -331,7 +331,7 @@ class BaseWindow {
       gtk_main_quit();
     }
     gtk_widget_destroy(top_level_window);
-    // TODO delete this;
+    delete this;
   }
 
   static void
