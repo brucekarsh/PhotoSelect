@@ -10,7 +10,6 @@ class OpenProjectWindow;
 class NewProjectWindow;
 class RenameProjectWindow;
 class DeleteProjectWindow;
-class QueryWindow;
 class PhotoFileCache;
 
 class BaseWindow {
@@ -37,7 +36,6 @@ class BaseWindow {
   GtkWidget *file_project_delete_menu_item;
   GtkWidget *file_quit_menu_item;
   GtkWidget *edit_preferences_menu_item;
-  GtkWidget *view_query_menu_item;
   GtkWidget *notebook;
   PreferencesWindow *preferencesWindow;
   guint preferencesWindow_handler_id;
@@ -206,11 +204,6 @@ class BaseWindow {
     gtk_container_add(GTK_CONTAINER(edit_menu), edit_preferences_menu_item);
     gtk_widget_show(edit_preferences_menu_item);
 
-    // Put a menuitem (view_query_menu_item) into view_menu
-    view_query_menu_item = gtk_menu_item_new_with_label("Query");
-    gtk_container_add(GTK_CONTAINER(view_menu), view_query_menu_item);
-    gtk_widget_show(view_query_menu_item);
-
     // Put a notebook (notebook) into top_level_vbox
     gtk_box_pack_start(GTK_BOX(top_level_vbox), notebook, TRUE, TRUE, 0);
     gtk_widget_show(notebook);
@@ -218,17 +211,10 @@ class BaseWindow {
     connect_signals();
   }
 
-  void view_query_activate();
   void file_project_new_activate();
   void file_project_open_activate();
   void file_project_rename_activate();
   void file_project_delete_activate();
-
-  static void
-  view_query_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
-    baseWindow->view_query_activate();
-  }
 
   static void
   file_project_open_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
@@ -379,7 +365,6 @@ class BaseWindow {
     connect_signal(file_quit_menu_item, "activate", G_CALLBACK(quit_cb), NULL);
     connect_signal(edit_preferences_menu_item, "activate",
         G_CALLBACK(edit_preferences_activate_cb), NULL);
-    connect_signal(view_query_menu_item, "activate", G_CALLBACK(view_query_activate_cb), NULL);
     connect_signal(notebook, "create-window", G_CALLBACK(create_window_cb), NULL);
     connect_signal(notebook, "page-removed", G_CALLBACK(page_removed_cb), NULL);
   }
@@ -405,18 +390,10 @@ class BaseWindow {
 };
 
 #include "BaseWindow.h"
-#include "QueryWindow.h"
 #include "OpenProjectWindow.h"
 #include "NewProjectWindow.h"
 #include "DeleteProjectWindow.h"
 #include "RenameProjectWindow.h"
-
-inline  void
-BaseWindow::view_query_activate() {
-  QueryWindow* queryWindow = new QueryWindow(connection, thePreferences, photoFileCache, this);
-  queryWindow->run();
-  // TODO make sure that queryWindow gets destroyed eventually.
-}
 
 inline  void
 BaseWindow::file_project_open_activate() {
