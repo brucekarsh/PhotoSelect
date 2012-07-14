@@ -100,6 +100,32 @@ Create Table Time (
   FOREIGN KEY(checksumId) REFERENCES Checksum(id)
 ) Engine=innodb;
 
+CREATE TABLE Tag (
+  id	      INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(64) UNIQUE KEY NOT NULL
+) ENGINE=innodb;
+
+CREATE TABLE TagChecksum (
+  id	      INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tagId        INT NOT NULL,
+  checksumId  INT NOT NULL,
+  KEY(tagId),
+  KEY(checksumId),
+  FOREIGN KEY(tagId) REFERENCES Tag(id),
+  FOREIGN KEY(checksumId) REFERENCES Checksum(id)
+) ENGINE=innodb;
+
+CREATE TABLE TagChecksumValue (
+  id	      INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tagId        INT NOT NULL,
+  checksumId  INT NOT NULL,
+  value	      VARCHAR(766),
+  KEY(tagId),
+  KEY(checksumId),
+  FOREIGN KEY(tagId) REFERENCES Tag(id),
+  FOREIGN KEY(checksumId) REFERENCES Checksum(id)
+) ENGINE=innodb;
+
 Drop Table Time;
 DROP Table ExifBlob;
 DROP Table ExifTag;
@@ -110,4 +136,7 @@ DROP Table ProjectPhotoFile;
 DROP Table Checksum;
 DROP TABLE Project;
 DROP DATABASE PhotoSelect;
+DROP TABLE TagChecksum;
+DROP TABLE TagChecksumValue;
+DROP TABLE Tag;
 
