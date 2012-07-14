@@ -82,18 +82,20 @@ class BaseWindow {
 
   void run() {
     GtkWidget *notebook_ = gtk_notebook_new();
-    run(notebook_);
+    run(notebook_, GTK_WIN_POS_NONE, 500, 500);
   }
 
-  void run(GtkWidget *notebook_) {
+  void run(GtkWidget *notebook_, GtkWindowPosition window_position, gint width, gint height) {
     // Remember the notebook and make it a part of a group
     notebook = notebook_;
     gtk_notebook_set_group_name(GTK_NOTEBOOK(notebook), "BaseWindowNotebook");
 
     // Make a GtkWindow (top_level_window)
     top_level_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_position(GTK_WINDOW(top_level_window), window_position);
     gtk_window_set_title(GTK_WINDOW(top_level_window), "PhotoSelect");
     gtk_window_set_resizable(GTK_WINDOW(top_level_window), TRUE);
+    gtk_window_set_default_size(GTK_WINDOW(top_level_window), width, height);
     gtk_widget_show(top_level_window);
     WindowRegistry<BaseWindow>::setWindow(top_level_window, this);
 
@@ -334,9 +336,12 @@ class BaseWindow {
 
   GtkNotebook *
   create_window(GtkNotebook *notebook, GtkWidget *page, gint x, gint y, gpointer user_data) {
+    GtkWidget* parent_window = gtk_widget_get_toplevel(GTK_WIDGET(notebook));
+    gint parent_window_width, parent_window_height;
+    gtk_window_get_size(GTK_WINDOW(parent_window), &parent_window_width, &parent_window_height);
     GtkWidget *new_notebook = gtk_notebook_new();
     BaseWindow *base_window = new BaseWindow(connection, thePreferences, photoFileCache);
-    base_window->run(new_notebook);
+    base_window->run(new_notebook, GTK_WIN_POS_MOUSE, parent_window_width, parent_window_height);
     return GTK_NOTEBOOK(new_notebook);
   }
 
