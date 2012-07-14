@@ -36,6 +36,8 @@ class BaseWindow {
   GtkWidget *file_project_delete_menu_item;
   GtkWidget *file_quit_menu_item;
   GtkWidget *edit_preferences_menu_item;
+  GtkWidget *view_tags_menu_item;
+  GtkWidget *view_tags_menu;
   GtkWidget *notebook;
   PreferencesWindow *preferencesWindow;
   guint preferencesWindow_handler_id;
@@ -203,6 +205,26 @@ class BaseWindow {
     edit_preferences_menu_item = gtk_menu_item_new_with_label("Preferences");
     gtk_container_add(GTK_CONTAINER(edit_menu), edit_preferences_menu_item);
     gtk_widget_show(edit_preferences_menu_item);
+
+    // Put a menuitem (view_tags_menu_item) into view_menu
+    view_tags_menu_item = gtk_menu_item_new_with_label("Tags");
+    gtk_container_add(GTK_CONTAINER(view_menu), view_tags_menu_item);
+    gtk_widget_show(view_tags_menu_item);
+
+    // Put a menu (view_tags_menu) into view_tags_menu_item
+    view_tags_menu = gtk_menu_new();
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(view_tags_menu_item), view_tags_menu);
+    gtk_widget_show(view_tags_menu);
+
+    // Put some choices into the view_tags_menu
+    GSList *group = NULL;
+    std::string view_tags_menu_item_labels[] = { "none", "left", "right", "top", "bottom"};
+    BOOST_FOREACH(std::string label, view_tags_menu_item_labels) {
+      GtkWidget *item = gtk_radio_menu_item_new_with_label(group, label.c_str());
+      group = gtk_radio_menu_item_get_group (GTK_RADIO_MENU_ITEM (item));
+      gtk_container_add(GTK_CONTAINER(view_tags_menu), item);
+      gtk_widget_show(item);
+    }
 
     // Put a notebook (notebook) into top_level_vbox
     gtk_box_pack_start(GTK_BOX(top_level_vbox), notebook, TRUE, TRUE, 0);
