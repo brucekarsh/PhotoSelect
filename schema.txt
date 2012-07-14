@@ -1,32 +1,8 @@
+(Some example selects)
 mysql -p -D PhotoSelect -e 'SELECT DISTINCT    ExifTagName.name,ExifTagValue.value  FROM    ExifTag, ExifTagName, ExifTagValue  where ExifTag.exifTagNameId=ExifTagName.id and ExifTag.exifTagValueId=ExifTagValue.id order by ExifTagName.name'
 
 select count(filePath) from PhotoFile, Checksum, ExifBlob where PhotoFile.checksumId=Checksum.id and ExifBlob.checksumId=Checksum.id and ExtractValue(ExifBlob.value, "count(/exif/t[@name='Exif.Image.Make' and @value='Canon'])") = 1;
 
-
-i->key()
-i->tag()<< " "
-(tn ? tn : "Unknown")
-i->count()
-i->value()
-
-
-Tables:
-  TagName
-    int id	        (autoincrement)
-    string name         i->key
-    string tagnum short i->tag
-
-  TagValue
-    int id
-    int tagNameId
-    string typename     i->typeName   
-    int count           i->count
-    string value	i->value
-    
-
-Exif.Photo.PixelYDimension                   0xa003 Short       1  3264
-Exif.Photo.InteroperabilityTag               0xa005 Long        1  37414
-Exif.Iop.InteroperabilityIndex               0x0001 Ascii       4  R98
 
 CREATE DATABASE PhotoSelect;
 
@@ -77,28 +53,28 @@ CREATE TABLE PhotoFile (
   FOREIGN KEY(checksumId) REFERENCES Checksum(id)
 ) ENGINE=innodb;
 
-Create Table Project (
+CREATE TABLE Project (
   id   INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(766) UNIQUE KEY NOT NULL
-) Engine=innodb;
+) ENGINE=innodb;
 
-Create Table ProjectPhotoFile (
+CREATE TABLE ProjectPhotoFile (
   id          INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
   projectId   INT,
   photoFileId INT,
   FOREIGN KEY(photoFileId) REFERENCES PhotoFile(id) ON DELETE CASCADE,
   FOREIGN KEY(projectId) REFERENCES Project(id) ON DELETE CASCADE,
   UNIQUE KEY (photoFileId, projectId)
-) Engine=innodb;
+) ENGINE=innodb;
 
-Create Table Time (
+CREATE TABLE Time (
   id	      INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   checksumId  INT NOT NULL,
   originalDateTime DATETIME NOT NULL,
   adjustedDateTime DATETIME NOT NULL,
   KEY(checksumId),
   FOREIGN KEY(checksumId) REFERENCES Checksum(id)
-) Engine=innodb;
+) ENGINE=innodb;
 
 CREATE TABLE Tag (
   id	      INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -126,17 +102,18 @@ CREATE TABLE TagChecksumValue (
   FOREIGN KEY(checksumId) REFERENCES Checksum(id)
 ) ENGINE=innodb;
 
-Drop Table Time;
-DROP Table ExifBlob;
-DROP Table ExifTag;
-DROP Table ExifTagName;
-DROP Table ExifTagValue;
-DROP Table PhotoFile;
-DROP Table ProjectPhotoFile;
-DROP Table Checksum;
+DROP TABLE Time;
+DROP TABLE ExifBlob;
+DROP TABLE ExifTag;
+DROP TABLE ExifTagName;
+DROP TABLE ExifTagValue;
+DROP TABLE PhotoFile;
+DROP TABLE ProjectPhotoFile;
+DROP TABLE Checksum;
 DROP TABLE Project;
-DROP DATABASE PhotoSelect;
 DROP TABLE TagChecksum;
 DROP TABLE TagChecksumValue;
 DROP TABLE Tag;
+
+DROP DATABASE PhotoSelect;
 
