@@ -4,6 +4,7 @@
 #include <gtk/gtk.h>
 #include "PreferencesWindow.h"
 #include "ImportWindow.h"
+#include <boost/foreach.hpp>
 
 class OpenProjectWindow;
 class NewProjectWindow;
@@ -39,10 +40,15 @@ class BaseWindow {
   GtkWidget *view_query_menu_item;
   GtkWidget *notebook;
   PreferencesWindow *preferencesWindow;
+  guint preferencesWindow_handler_id;
+  gpointer preferencesWindow_instance;
   PhotoFileCache *photoFileCache;
 
   static sql::Connection *connection;
   static Preferences* thePreferences;
+
+  std::list<guint> signal_handler_ids;
+  std::list<gpointer> signal_instances;
 
   BaseWindow(sql::Connection *connection, Preferences *thePreferences,
       PhotoFileCache *photoFileCache_) {
@@ -85,7 +91,6 @@ class BaseWindow {
     gtk_window_set_title(GTK_WINDOW(top_level_window), "PhotoSelect");
     gtk_window_set_resizable(GTK_WINDOW(top_level_window), TRUE);
     gtk_widget_show(top_level_window);
-    g_signal_connect(top_level_window, "destroy", G_CALLBACK(quit_cb), NULL);
     WindowRegistry<BaseWindow>::setWindow(top_level_window, this);
 
 
@@ -152,7 +157,6 @@ class BaseWindow {
     file_import_menu_item = gtk_menu_item_new_with_label("Import...");
     gtk_container_add(GTK_CONTAINER(file_menu), file_import_menu_item);
     gtk_widget_show(file_import_menu_item);
-    g_signal_connect(file_import_menu_item, "activate", G_CALLBACK(file_import_activate_cb), NULL);
 
     // Put a menu (file_project_menu) into file_project_menu_item
     file_project_menu = gtk_menu_new();
@@ -163,15 +167,11 @@ class BaseWindow {
     file_project_open_menu_item = gtk_menu_item_new_with_label("Open Project...");
     gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_open_menu_item);
     gtk_widget_show(file_project_open_menu_item);
-    g_signal_connect(file_project_open_menu_item, "activate",
-        G_CALLBACK(file_project_open_activate_cb), NULL);
 
     // Put a menuitem (file_project_new_menuitem) into file_project_menu
     file_project_new_menu_item = gtk_menu_item_new_with_label("New Project...");
     gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_new_menu_item);
     gtk_widget_show(file_project_new_menu_item);
-    g_signal_connect(file_project_new_menu_item, "activate",
-        G_CALLBACK(file_project_new_activate_cb), NULL);
 
     // Put a menuitem (file_project_add_to_menuitem) into file_project_menu
     file_project_add_to_menu_item = gtk_menu_item_new_with_label("Add To Project...");
@@ -187,39 +187,32 @@ class BaseWindow {
     file_project_rename_menu_item = gtk_menu_item_new_with_label("Rename Project...");
     gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_rename_menu_item);
     gtk_widget_show(file_project_rename_menu_item);
-    g_signal_connect(file_project_rename_menu_item, "activate",
-        G_CALLBACK(file_project_rename_activate_cb), NULL);
 
     // Put a menuitem (file_project_delete_menuitem) into file_project_menu
     file_project_delete_menu_item = gtk_menu_item_new_with_label("Delete Project...");
     gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_delete_menu_item);
     gtk_widget_show(file_project_delete_menu_item);
-    g_signal_connect(file_project_delete_menu_item, "activate",
-        G_CALLBACK(file_project_delete_activate_cb), NULL);
 
     // Put an imagemenuitem (file_quit_menu_item) into file_menu
     file_quit_menu_item = gtk_menu_item_new_with_label("Quit");
     gtk_container_add(GTK_CONTAINER(file_menu), file_quit_menu_item);
     gtk_widget_show(file_quit_menu_item);
-    g_signal_connect(file_quit_menu_item, "activate", G_CALLBACK(quit_cb), NULL);
 
     // Put a menuitem (edit_preferences_menu_item) into edit_menu
     edit_preferences_menu_item = gtk_menu_item_new_with_label("Preferences");
     gtk_container_add(GTK_CONTAINER(edit_menu), edit_preferences_menu_item);
     gtk_widget_show(edit_preferences_menu_item);
-    g_signal_connect(edit_preferences_menu_item, "activate", G_CALLBACK(edit_preferences_activate_cb), NULL);
 
     // Put a menuitem (view_query_menu_item) into view_menu
     view_query_menu_item = gtk_menu_item_new_with_label("Query");
     gtk_container_add(GTK_CONTAINER(view_menu), view_query_menu_item);
     gtk_widget_show(view_query_menu_item);
-    g_signal_connect(view_query_menu_item, "activate", G_CALLBACK(view_query_activate_cb), NULL);
 
     // Put a notebook (notebook) into top_level_vbox
     gtk_box_pack_start(GTK_BOX(top_level_vbox), notebook, TRUE, TRUE, 0);
-    g_signal_connect(notebook, "create-window", G_CALLBACK(create_window_cb), NULL);
-    g_signal_connect(notebook, "page-removed", G_CALLBACK(page_removed_cb), NULL);
     gtk_widget_show(notebook);
+
+    connect_signals();
   }
 
   void view_query_activate();
@@ -269,8 +262,7 @@ class BaseWindow {
     if (NULL == preferencesWindow) {
       preferencesWindow = new PreferencesWindow(thePreferences);
       preferencesWindow->run();
-      g_signal_connect(preferencesWindow->window, "destroy",
-        G_CALLBACK(preferences_window_destroy_cb), (gpointer) this);
+      g_signal_connect(preferencesWindow->window, "destroy", G_CALLBACK(preferences_window_destroy_cb), (gpointer) this);
     } else {
       preferencesWindow->highlight();
     }
@@ -282,10 +274,18 @@ class BaseWindow {
     importWindow->run();
   }
 
+  void
+  preferences_window_destroy() {
+    g_signal_handler_disconnect(preferencesWindow_instance, preferencesWindow_handler_id);
+    preferencesWindow = NULL;
+    preferencesWindow_instance = NULL;
+    preferencesWindow_handler_id = 0;
+  }
+
   static void
   preferences_window_destroy_cb(GtkWidget *widget, gpointer user_data) {
     BaseWindow *baseWindow = (BaseWindow *)user_data;
-    baseWindow->preferencesWindow = NULL;
+    baseWindow->preferences_window_destroy();
   }
 
   static GtkNotebook *
@@ -297,18 +297,26 @@ class BaseWindow {
 
   void
   page_removed(GtkNotebook *notebook, GtkWidget *child, guint page_num, gpointer user_data) {
+    std::cout << "page_removed entered" << std::endl;
     gint n_pages = gtk_notebook_get_n_pages(notebook);
     if (0 == n_pages) {
+      std::cout << "page_removed calling quit" << std::endl;
       quit();
+      std::cout << "page_removed returning from quit" << std::endl;
     }
+    std::cout << "page_removed returning" << std::endl;
   }
 
   static void
   page_removed_cb(GtkNotebook *notebook, GtkWidget *child, guint page_num, gpointer user_data) {
+    std::cout << "page_removed_cb entered" << std::endl;
     BaseWindow *base_window = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(notebook));
     if (NULL != base_window) {
+      std::cout << "page_removed_cb calling page_removed" << std::endl;
       base_window->page_removed(notebook, child, page_num, user_data);
+      std::cout << "page_removed_cb returning from page_removed" << std::endl;
     }
+    std::cout << "page_removed_cb returning" << std::endl;
   }
 
   GtkNotebook *
@@ -321,22 +329,76 @@ class BaseWindow {
 
   void
   quit() {
+    std::cout << "quit entered" << std::endl;
+    std::cout << "quit calling disconnect signals" << std::endl;
+    disconnect_signals();
     // If we are the last BaseWindow, then stop the event loop
     long n_base_windows =  WindowRegistry<BaseWindow>::count();
+    std::cout << "quit n_base_windows = " << n_base_windows << std::endl;
     if (1 == n_base_windows) {
+      std::cout << "quit calling gtk_main_quit" << std::endl;
       gtk_main_quit();
+      std::cout << "quit returning from gtk_main_quit" << std::endl;
     }
+    std::cout << "quit calling gtk_widget_destroy" << std::endl;
     gtk_widget_destroy(top_level_window);
+    std::cout << "quit returning from gtk_widget_destroy" << std::endl;
+    std::cout << "quit calling delete this" << std::endl;
     delete this;
+    std::cout << "quit return from delete this" << std::endl;
+    std::cout << "quit returning" << std::endl;
   }
 
   static void
   quit_cb(GtkWidget *widget, gpointer user_data) {
+    std::cout << "quit_cb entered" << std::endl;
     BaseWindow *base_window = WindowRegistry<BaseWindow>::getWindow(widget);
-    base_window->quit();
+    std::cout << "quit_cb base_window = " << (long) base_window << std::endl;
+    if (NULL != base_window) {
+      std::cout << "quit_cb calling quit" << std::endl;
+      base_window->quit();
+      std::cout << "quit_cb returning from quit" << std::endl;
+    }
+    std::cout << "quit_cb returning" << std::endl;
   }
     
+  void connect_signals() {
+    connect_signal(top_level_window, "destroy", G_CALLBACK(quit_cb), NULL);
+    connect_signal(file_import_menu_item, "activate", G_CALLBACK(file_import_activate_cb), NULL);
+    connect_signal(file_project_open_menu_item, "activate",
+        G_CALLBACK(file_project_open_activate_cb), NULL);
+    connect_signal(file_project_new_menu_item, "activate",
+        G_CALLBACK(file_project_new_activate_cb), NULL);
+    connect_signal(file_project_rename_menu_item, "activate",
+        G_CALLBACK(file_project_rename_activate_cb), NULL);
+    connect_signal(file_project_delete_menu_item, "activate",
+        G_CALLBACK(file_project_delete_activate_cb), NULL);
+    connect_signal(file_quit_menu_item, "activate", G_CALLBACK(quit_cb), NULL);
+    connect_signal(edit_preferences_menu_item, "activate",
+        G_CALLBACK(edit_preferences_activate_cb), NULL);
+    connect_signal(view_query_menu_item, "activate", G_CALLBACK(view_query_activate_cb), NULL);
+    connect_signal(notebook, "create-window", G_CALLBACK(create_window_cb), NULL);
+    connect_signal(notebook, "page-removed", G_CALLBACK(page_removed_cb), NULL);
+  }
 
+  void connect_signal(
+      gpointer instance, const gchar *detailed_signal, GCallback c_handler, gpointer data) {
+    glong signal_handler_id = g_signal_connect(instance, detailed_signal, c_handler, data);
+    signal_handler_ids.push_back(signal_handler_id);
+    signal_instances.push_back(instance);
+  }
+
+  void disconnect_signals() {
+    std::list<gpointer>::iterator signal_instances_it = signal_instances.begin();
+    BOOST_FOREACH(gulong signal_handler_id, signal_handler_ids) {
+      gpointer instance = *signal_instances_it;
+      ++signal_instances_it;
+      g_signal_handler_disconnect(instance, signal_handler_id);
+    }
+    if (NULL != preferencesWindow) {
+      g_signal_handler_disconnect(preferencesWindow_instance, preferencesWindow_handler_id);
+    }
+  }
 };
 
 #include "BaseWindow.h"
