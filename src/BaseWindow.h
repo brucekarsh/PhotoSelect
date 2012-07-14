@@ -37,6 +37,7 @@ class BaseWindow {
   GtkWidget *file_quit_menu_item;
   GtkWidget *edit_preferences_menu_item;
   GtkWidget *view_tags_menu_item;
+  std::list<GtkWidget *> view_tags_menu_items;
   GtkWidget *view_tags_menu;
   GtkWidget *notebook;
   PreferencesWindow *preferencesWindow;
@@ -221,6 +222,7 @@ class BaseWindow {
     std::string view_tags_menu_item_labels[] = { "none", "left", "right", "top", "bottom"};
     BOOST_FOREACH(std::string label, view_tags_menu_item_labels) {
       GtkWidget *item = gtk_radio_menu_item_new_with_label(group, label.c_str());
+      view_tags_menu_items.push_back(item);
       group = gtk_radio_menu_item_get_group (GTK_RADIO_MENU_ITEM (item));
       gtk_container_add(GTK_CONTAINER(view_tags_menu), item);
       gtk_widget_show(item);
@@ -372,6 +374,18 @@ class BaseWindow {
     }
     std::cout << "quit_cb returning" << std::endl;
   }
+
+  void
+  view_tags_toggled(GtkCheckMenuItem *checkmenuitem) {
+    std::cout << gtk_menu_item_get_label(GTK_MENU_ITEM(checkmenuitem))
+        << " " << gtk_check_menu_item_get_active(checkmenuitem) << std::endl;
+  }
+
+  static void
+  view_tags_toggled_cb(GtkCheckMenuItem *checkmenuitem, gpointer user_data) {
+    BaseWindow *base_window = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(checkmenuitem));
+    base_window->view_tags_toggled(checkmenuitem);
+  }
     
   void connect_signals() {
     connect_signal(top_level_window, "destroy", G_CALLBACK(quit_cb), NULL);
@@ -389,6 +403,9 @@ class BaseWindow {
         G_CALLBACK(edit_preferences_activate_cb), NULL);
     connect_signal(notebook, "create-window", G_CALLBACK(create_window_cb), NULL);
     connect_signal(notebook, "page-removed", G_CALLBACK(page_removed_cb), NULL);
+    BOOST_FOREACH(GtkWidget *item, view_tags_menu_items) {
+      connect_signal(item, "toggled", G_CALLBACK(view_tags_toggled_cb), NULL);
+    }
   }
 
   void connect_signal(
