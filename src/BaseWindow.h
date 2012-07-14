@@ -85,7 +85,10 @@ class BaseWindow {
   }
 
   void run(GtkWidget *notebook_) {
+    // Remember the notebook and make it a part of a group
     notebook = notebook_;
+    gtk_notebook_set_group_name(GTK_NOTEBOOK(notebook), "BaseWindowNotebook");
+
     // Make a GtkWindow (top_level_window)
     top_level_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(top_level_window), "PhotoSelect");
