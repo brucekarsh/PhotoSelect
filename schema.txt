@@ -102,6 +102,17 @@ CREATE TABLE TagChecksumValue (
   FOREIGN KEY(checksumId) REFERENCES Checksum(id)
 ) ENGINE=innodb;
 
+CREATE TABLE ProjectTag (
+  id	      INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tagId        INT NOT NULL,
+  projectId    INT NOT NULL,
+  hasValue	BOOL NOT NULL,		
+  KEY(tagId),
+  KEY(projectId),
+  FOREIGN KEY(tagId) REFERENCES Tag(id),
+  FOREIGN KEY(projectId) REFERENCES Project(id)
+) ENGINE=innodb;
+
 DROP TABLE Time;
 DROP TABLE ExifBlob;
 DROP TABLE ExifTag;
@@ -113,6 +124,8 @@ DROP TABLE Checksum;
 DROP TABLE Project;
 DROP TABLE TagChecksum;
 DROP TABLE TagChecksumValue;
+DROP TABLE ProjectTag;
+
 DROP TABLE Tag;
 
 DROP DATABASE PhotoSelect;
