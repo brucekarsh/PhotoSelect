@@ -48,8 +48,9 @@ main(int argc, char **argv)
   photoFilenameList1.push_back("/home/bruce/Tanzania2012/AW100/DSCN0651.JPG");
   photoFilenameList1.push_back("/home/bruce/Tanzania2012/AW100/DSCN0551.JPG");
   photoFilenameList1.push_back("/home/bruce/Tanzania2012/D7000-6/DSC_8557.JPG");
+  std::string project_name = "startup-project";
   PhotoSelectPage photoSelectPage(connection, &photoFileCache);
-  photoSelectPage.setup(photoFilenameList1, &preferences);
+  photoSelectPage.setup(photoFilenameList1, project_name, &preferences);
 
   baseWindow->add_page(photoSelectPage.get_tab_label(), photoSelectPage.get_notebook_page());
 

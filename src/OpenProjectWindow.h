@@ -185,7 +185,7 @@ OpenProjectWindow::accept() {
   }
 
   PhotoSelectPage *photoSelectPage = new PhotoSelectPage(connection, photoFileCache);
-  photoSelectPage->setup(photoFilenameList, preferences);
+  photoSelectPage->setup(photoFilenameList, project_name, preferences);
   baseWindow->add_page(photoSelectPage->get_tab_label(), photoSelectPage->get_notebook_page());
   quit();
 }

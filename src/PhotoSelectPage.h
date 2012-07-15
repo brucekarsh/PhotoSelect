@@ -4,6 +4,7 @@
 #include "PageRegistry.h"
 #include "Preferences.h"
 #include <list>
+#include <set>
 #include <stdio.h>
 #include "ConversionEngine.h"
 #include "PreferencesWindow.h"
@@ -20,9 +21,11 @@ class PhotoSelectPage {
     int rotation;
     ConversionEngine conversionEngine;
     std::list<std::string> photoFilenameList;
+    std::string project_name;
     sql::Connection *connection;
     PhotoFileCache *photoFileCache;
 
+    GtkWidget *page_hbox;
     GtkWidget *page_vbox;
     GtkWidget *drawing_area;
     GtkWidget *button_hbox;
@@ -39,6 +42,7 @@ class PhotoSelectPage {
     GtkWidget *tab_label_hbox;
     GtkWidget *tab_label_label;
     GtkWidget *tab_label_button;
+    GtkWidget *tag_view_box;
     float Dx, Dy; // displacement of the current image in screen coordinates
     float M;      // magnification of the current image (screen_size = m * image_size)
     bool drag_is_active;
@@ -52,12 +56,12 @@ class PhotoSelectPage {
       conversionEngine(photoFileCache_), 
       rotation(0), drawing_area(0), thePreferences((Preferences*)0),
       connection(connection_), photoFileCache(photoFileCache_), M(1.0), Dx(0),
-      Dy(0), drag_is_active(false), calculated_initial_scaling(false) {
+      Dy(0), drag_is_active(false), calculated_initial_scaling(false), tag_view_box(0) {
   }
 
   GtkWidget *
   get_notebook_page() {
-    return page_vbox;
+    return page_hbox;
   }
 
   GtkWidget *
@@ -99,9 +103,16 @@ class PhotoSelectPage {
     gtk_box_pack_start(GTK_BOX(tab_label_hbox), tab_label_label, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(tab_label_hbox), tab_label_button, FALSE, FALSE, 0);
 
+    // make a hbox to hold the page (page_hbox)
+    page_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_show(page_hbox);
+
     // make a vbox to hold the page (page_vbox)
     page_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(page_vbox);
+
+    // add the page_vbox to the page_hbox
+    gtk_box_pack_start(GTK_BOX(page_hbox), page_vbox, TRUE, TRUE, 0);
 
     // add a drawing area (drawing_area) to page_vbox
     drawing_area = gtk_drawing_area_new();
@@ -182,11 +193,89 @@ class PhotoSelectPage {
     gtk_entry_set_width_chars(GTK_ENTRY(position_entry), 10);
     gtk_widget_show(position_entry);
     gtk_box_pack_end(GTK_BOX(button_hbox), position_entry, FALSE, FALSE, 0);
+    add_tag_view("Right");
     g_signal_connect(position_entry, "activate", G_CALLBACK(position_entry_activate_cb), 0);
   }
 
-  void setup(std::list<std::string> photoFilenameList_, Preferences *thePreferences) {
-    this -> thePreferences = thePreferences;
+  std::set<std::string> get_photo_tags() {
+    std::set<std::string> tags;
+    std::string sql = "SELECT Tag.name FROM Tag "
+        "INNER JOIN ProjectTag ON (Tag.id = ProjectTag.tagId) "
+        "INNER JOIN Project ON (ProjectTag.projectId = Project.id) "
+        "INNER JOIN TagChecksum ON (TagChecksum.tagId = Tag.id) "
+        "INNER JOIN PhotoFile ON (TagChecksum.checksumId = PhotoFile.checksumId) "
+        "WHERE (Project.name = ? and PhotoFile.filePath = ?)";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setString(1, project_name);
+    std::string file_name = conversionEngine.getPhotoFilePath();
+    prepared_statement->setString(2, file_name);
+    std::cout << "Project name " << project_name << " file_name " << file_name << std::endl;
+    sql::ResultSet *rs = prepared_statement->executeQuery();
+    while (rs->next()) {
+      std::string name = rs->getString(1);
+      std::cout << "found photo tag named " << name << std::endl;
+      tags.insert(name);
+    }
+    return tags;
+  }
+
+  std::list<std::string> get_project_tags() {
+    std::list<std::string> tags;
+    std::string sql = "SELECT Tag.name FROM Tag "
+        "INNER JOIN ProjectTag ON (Tag.id = ProjectTag.tagId) "
+        "INNER JOIN Project ON (ProjectTag.projectId = Project.id) "
+        "WHERE (Project.name = ?)";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setString(1, project_name);
+    sql::ResultSet *rs = prepared_statement->executeQuery();
+    while (rs->next()) {
+      std::string name = rs->getString(1);
+      std::cout << "found project tag named " << name << std::endl;
+      tags.push_back(name);
+    }
+    return tags;
+  }
+
+  void add_tag_view(std::string position) {
+    GtkWidget *tag_view_scrolled_window = NULL;
+    GtkWidget *tag_view_tags_box = NULL;
+
+    if (NULL != tag_view_box) {
+      gtk_widget_destroy(tag_view_box);
+      tag_view_box = NULL;
+    }
+
+    std::set<std::string> photo_tags = get_photo_tags();
+    
+    tag_view_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_show(tag_view_box);
+    tag_view_scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(tag_view_scrolled_window),
+        GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_widget_show(tag_view_scrolled_window);
+    tag_view_tags_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_show(tag_view_tags_box);
+
+    std::list<std::string> tags = get_project_tags();
+    BOOST_FOREACH(std::string name, tags) {
+      std::cout << "found tag named " << name << std::endl;
+      GtkWidget *button = gtk_check_button_new_with_label(name.c_str());
+      if (1 == photo_tags.count(name)) {
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), true);
+      }
+      gtk_box_pack_start(GTK_BOX(tag_view_tags_box), button, FALSE, FALSE, 0);
+      gtk_widget_show(button);
+    }
+    gtk_box_pack_start(GTK_BOX(tag_view_box), tag_view_scrolled_window, TRUE, TRUE, 0);
+    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(tag_view_scrolled_window),
+        tag_view_tags_box);
+    gtk_box_pack_start(GTK_BOX(page_hbox), tag_view_box, FALSE, FALSE, 0);
+  }
+
+  void setup(std::list<std::string> photoFilenameList_, std::string project_name_,
+      Preferences *thePreferences) {
+    this->thePreferences = thePreferences;
+    this->project_name = project_name_;
     photoFilenameList = photoFilenameList_;
 
     // Set up a conversion engine.
@@ -196,7 +285,7 @@ class PhotoSelectPage {
     build_page();
 
     // Add it to the registry so we can find this object when we get a callback
-    PageRegistry<PhotoSelectPage>::setPage(page_vbox, this);
+    PageRegistry<PhotoSelectPage>::setPage(page_hbox, this);
 
     // Set up the of_label
     char ofstring[20];
@@ -432,6 +521,7 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> keep();
+      photoSelectPage->add_tag_view("Right");
       photoSelectPage -> redraw_image();
     }
   }
@@ -440,6 +530,7 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> drop();
+      photoSelectPage->add_tag_view("Right");
       photoSelectPage -> redraw_image();
     }
   }
@@ -449,7 +540,8 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> next();
-      photoSelectPage -> redraw_image();
+      photoSelectPage->add_tag_view("Right");
+      photoSelectPage->redraw_image();
     }
   }
 
@@ -458,7 +550,8 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> back();
-      photoSelectPage -> redraw_image();
+      photoSelectPage->add_tag_view("Right");
+      photoSelectPage->redraw_image();
     }
   }
 
@@ -467,7 +560,7 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> rotate();
-      photoSelectPage -> redraw_image();
+      photoSelectPage->redraw_image();
     }
   }
 
@@ -495,6 +588,7 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->position_entry_activate();
+      photoSelectPage->add_tag_view("Right");
       photoSelectPage -> redraw_image();
     }
   }
@@ -534,7 +628,7 @@ class PhotoSelectPage {
   inline void PhotoSelectPage::quit() {
     BaseWindow *baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(drawing_area));
     if (NULL != baseWindow) {
-      baseWindow->remove_page(page_vbox);
+      baseWindow->remove_page(page_hbox);
     }
   }
 
