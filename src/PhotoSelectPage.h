@@ -240,35 +240,50 @@ class PhotoSelectPage {
     GtkWidget *tag_view_scrolled_window = NULL;
     GtkWidget *tag_view_tags_box = NULL;
 
+    // Destroy any existing tag_view_box
     if (NULL != tag_view_box) {
       gtk_widget_destroy(tag_view_box);
       tag_view_box = NULL;
     }
 
+    // Get all the tags for this photo
     std::set<std::string> photo_tags = get_photo_tags();
+
+    // Get all the tags for this project
+    std::list<std::string> tags = get_project_tags();
     
+    // Make a box (tag_view_box) for the tag_view
     tag_view_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(tag_view_box);
+
+    // Make a scrolled window (tag_view_scrolled_window) to scroll the tag list
     tag_view_scrolled_window = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(tag_view_scrolled_window),
         GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_widget_show(tag_view_scrolled_window);
+
+    // Make a box (tag_view_tags_box) to go into the scrolled window
     tag_view_tags_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(tag_view_tags_box);
 
-    std::list<std::string> tags = get_project_tags();
+    // Put check buttons in tag_view_tags_box, one for each tag in the project
     BOOST_FOREACH(std::string name, tags) {
       std::cout << "found tag named " << name << std::endl;
       GtkWidget *button = gtk_check_button_new_with_label(name.c_str());
+      // If the tag is set for this picture, activate its check button.
       if (1 == photo_tags.count(name)) {
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), true);
       }
       gtk_box_pack_start(GTK_BOX(tag_view_tags_box), button, FALSE, FALSE, 0);
       gtk_widget_show(button);
     }
+
+    // Put the tag_view_scrolled_window into the tag_view_box.
     gtk_box_pack_start(GTK_BOX(tag_view_box), tag_view_scrolled_window, TRUE, TRUE, 0);
     gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(tag_view_scrolled_window),
         tag_view_tags_box);
+
+    // Put the tag_view_box into the page_hbox.
     gtk_box_pack_start(GTK_BOX(page_hbox), tag_view_box, FALSE, FALSE, 0);
   }
 
