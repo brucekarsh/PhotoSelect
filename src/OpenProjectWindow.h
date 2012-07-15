@@ -45,7 +45,7 @@ class OpenProjectWindow {
     WindowRegistry<OpenProjectWindow>::forgetWindow(window);
   }
 
-  void accept();
+  void apply();
   void submit();
 
   void
@@ -56,13 +56,19 @@ class OpenProjectWindow {
   static void
   accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
     OpenProjectWindow *openProjectWindow = WindowRegistry<OpenProjectWindow>::getWindow(widget);
-    openProjectWindow->accept();
+    openProjectWindow->accept_button_clicked();
   }
 
   static void
   quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
     OpenProjectWindow *openProjectWindow = WindowRegistry<OpenProjectWindow>::getWindow(widget);
     openProjectWindow->quit();
+  }
+
+  static void
+  apply_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
+    OpenProjectWindow *openProjectWindow = WindowRegistry<OpenProjectWindow>::getWindow(widget);
+    openProjectWindow->apply_button_clicked();
   }
 
   void
@@ -89,16 +95,19 @@ class OpenProjectWindow {
     gtk_widget_show(GTK_WIDGET(scrolled_vbox));
     gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window), scrolled_vbox);
 
-    // Make some buttons (quit_button, accept_button) and put them in an hbox (button_hbox) and
-    // put the hbox in windowBox
+    // Make some buttons (apply_button, quit_button, accept_button) and put them in an
+    // hbox (button_hbox) and put the hbox in windowBox
 
     GtkWidget *quit_button = gtk_button_new_with_label("Quit");
     GtkWidget *accept_button = gtk_button_new_with_label("Accept");
+    GtkWidget *apply_button = gtk_button_new_with_label("Apply");
     GtkWidget *button_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_show(GTK_WIDGET(quit_button));
     gtk_widget_show(GTK_WIDGET(accept_button));
+    gtk_widget_show(GTK_WIDGET(apply_button));
     gtk_widget_show(GTK_WIDGET(button_hbox));
     gtk_box_pack_start(GTK_BOX(windowBox), button_hbox, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(button_hbox), apply_button, FALSE, FALSE, 0);
     gtk_box_pack_end(GTK_BOX(button_hbox), accept_button, FALSE, FALSE, 0);
     gtk_box_pack_end(GTK_BOX(button_hbox), quit_button, FALSE, FALSE, 0);
 
@@ -124,6 +133,7 @@ class OpenProjectWindow {
     g_signal_connect(window, "destroy", G_CALLBACK(quit_button_clicked_cb), NULL);
     g_signal_connect(quit_button, "clicked", G_CALLBACK(quit_button_clicked_cb), NULL);
     g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
+    g_signal_connect(apply_button, "clicked", G_CALLBACK(apply_button_clicked_cb), NULL);
 
     GtkRequisition minimum_size;
     GtkRequisition natural_size;
@@ -155,15 +165,26 @@ class OpenProjectWindow {
     }
     return "";
   }
-  
+
+  void
+  accept_button_clicked() {
+    apply();
+    quit();
+  }
+
+  void
+  apply_button_clicked() {
+    apply();
+  }
 };
 
 #include "BaseWindow.h"
 #include "PhotoSelectPage.h"
 
 
+
 inline  void
-OpenProjectWindow::accept() {
+OpenProjectWindow::apply() {
   std::string project_name = get_project_name();
   if (0 == project_name.size()) {
     return;
@@ -187,6 +208,5 @@ OpenProjectWindow::accept() {
   PhotoSelectPage *photoSelectPage = new PhotoSelectPage(connection, photoFileCache);
   photoSelectPage->setup(photoFilenameList, project_name, preferences);
   baseWindow->add_page(photoSelectPage->get_tab_label(), photoSelectPage->get_notebook_page());
-  quit();
 }
 #endif // OPENPROJECTWINDOW_H__
