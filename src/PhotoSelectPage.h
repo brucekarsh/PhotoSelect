@@ -256,6 +256,12 @@ class PhotoSelectPage {
     tag_view_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(tag_view_box);
 
+    // Put a label (tag_view_label) into the tag_view_box
+    GtkWidget *tag_view_label = gtk_label_new("Tags");
+    gtk_widget_show(tag_view_label);
+    gtk_box_pack_start(GTK_BOX(tag_view_box), tag_view_label, FALSE, FALSE, 0);
+    
+
     // Make a scrolled window (tag_view_scrolled_window) to scroll the tag list
     tag_view_scrolled_window = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(tag_view_scrolled_window),
@@ -276,6 +282,7 @@ class PhotoSelectPage {
       }
       gtk_box_pack_start(GTK_BOX(tag_view_tags_box), button, FALSE, FALSE, 0);
       gtk_widget_show(button);
+      g_signal_connect(button, "toggled", G_CALLBACK(tag_button_clicked_cb), NULL);
     }
 
     // Put the tag_view_scrolled_window into the tag_view_box.
@@ -635,6 +642,54 @@ class PhotoSelectPage {
     if (0 != photoSelectPage) {
       photoSelectPage->drawing_area_motion_notify(event);
     }
+  }
+
+  static void
+  tag_button_clicked_cb(GtkToggleButton *togglebutton, gpointer user_data) {
+    PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(
+        GTK_WIDGET(togglebutton));
+    if (0 != photoSelectPage) {
+      photoSelectPage->tag_button_clicked(togglebutton);
+    }
+  }
+
+  void
+  tag_button_clicked(GtkToggleButton *togglebutton) {
+    std::string tag_name = gtk_button_get_label(GTK_BUTTON(togglebutton));
+    bool active = gtk_toggle_button_get_active(togglebutton);
+    std::string file_name = conversionEngine.getPhotoFilePath();
+    if (active) {
+      add_tag(tag_name, file_name);
+    } else {
+      remove_tag(tag_name, file_name);
+    }
+  }
+
+  void
+  add_tag(std::string tag_name, std::string file_name) {
+    std::string sql = "INSERT INTO TagChecksum (tagId, checksumId) "
+        "SELECT DISTINCT Tag.id as tagId, Checksum.id as checksumId "
+        "FROM Tag, Checksum, PhotoFile "
+        "WHERE Tag.name = ? AND PhotoFile.filePath = ? AND Checksum.id = PhotoFile.checksumId";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setString(1, tag_name);
+    prepared_statement->setString(2, file_name);
+    prepared_statement->execute();
+    connection->commit();
+  }
+
+  void
+  remove_tag(std::string tag_name, std::string file_name) {
+    std::string sql = "DELETE FROM TagChecksum "
+        "USING Tag, Checksum, PhotoFile, TagChecksum "
+        "WHERE Tag.name = ? AND PhotoFile.filePath = ? "
+        "AND Checksum.id = PhotoFile.checksumId AND TagChecksum.checksumId=Checksum.id "
+        "AND TagChecksum.tagId=Tag.id";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setString(1, tag_name);
+    prepared_statement->setString(2, file_name);
+    prepared_statement->execute();
+    connection->commit();
   }
 };
 
