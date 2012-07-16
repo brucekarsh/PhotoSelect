@@ -81,7 +81,7 @@ class PhotoSelectPage {
   build_page() {
     // Make a label for the notebook tab
     tab_label_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL,0);
-    tab_label_label = gtk_label_new("tab");
+    tab_label_label = gtk_label_new(project_name.c_str());
     tab_label_button = gtk_button_new();
     g_signal_connect(tab_label_button, "clicked", G_CALLBACK(tab_label_button_clicked_cb),
         (gpointer)this);
