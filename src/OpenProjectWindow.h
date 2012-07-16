@@ -207,6 +207,7 @@ OpenProjectWindow::apply() {
 
   PhotoSelectPage *photoSelectPage = new PhotoSelectPage(connection, photoFileCache);
   photoSelectPage->setup(photoFilenameList, project_name, preferences);
-  baseWindow->add_page(photoSelectPage->get_tab_label(), photoSelectPage->get_notebook_page());
+  baseWindow->add_page(photoSelectPage->get_tab_label(),
+      photoSelectPage->get_notebook_page(), project_name);
 }
 #endif // OPENPROJECTWINDOW_H__

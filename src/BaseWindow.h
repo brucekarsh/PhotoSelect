@@ -66,8 +66,10 @@ class BaseWindow {
   }
 
   void
-  add_page(GtkWidget* label, GtkWidget* page) {
-    gint page_num = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), page, label);
+  add_page(GtkWidget* label, GtkWidget* page, std::string project_name) {
+    GtkWidget *page_menu_label = gtk_label_new(project_name.c_str());
+    gint page_num = gtk_notebook_append_page_menu(GTK_NOTEBOOK(notebook),
+        page, label, page_menu_label);
     gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), page_num);
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(notebook), page, true);
     gtk_notebook_set_tab_detachable(GTK_NOTEBOOK(notebook), page, true);
@@ -91,6 +93,8 @@ class BaseWindow {
     // Remember the notebook and make it a part of a group
     notebook = notebook_;
     gtk_notebook_set_group_name(GTK_NOTEBOOK(notebook), "BaseWindowNotebook");
+
+    gtk_notebook_popup_enable(GTK_NOTEBOOK(notebook));
 
     // Make a GtkWindow (top_level_window)
     top_level_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);

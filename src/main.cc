@@ -52,7 +52,8 @@ main(int argc, char **argv)
   PhotoSelectPage photoSelectPage(connection, &photoFileCache);
   photoSelectPage.setup(photoFilenameList1, project_name, &preferences);
 
-  baseWindow->add_page(photoSelectPage.get_tab_label(), photoSelectPage.get_notebook_page());
+  baseWindow->add_page(photoSelectPage.get_tab_label(),
+      photoSelectPage.get_notebook_page(), project_name);
 
 
   //list<string> photoFilenameList2;
