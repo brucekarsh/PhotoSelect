@@ -39,6 +39,7 @@ class BaseWindow {
   GtkWidget *file_quit_menu_item;
   GtkWidget *edit_preferences_menu_item;
   GtkWidget *view_tags_menu_item;
+  GtkWidget *view_clone_menu_item;
   std::list<GtkWidget *> view_tags_menu_items;
   GtkWidget *view_tags_menu;
   GtkWidget *notebook;
@@ -215,6 +216,11 @@ class BaseWindow {
     gtk_container_add(GTK_CONTAINER(edit_menu), edit_preferences_menu_item);
     gtk_widget_show(edit_preferences_menu_item);
 
+    // Put a menuitem (view_clone_menu_item) into view_menu
+    view_clone_menu_item = gtk_menu_item_new_with_label("Clone");
+    gtk_container_add(GTK_CONTAINER(view_menu), view_clone_menu_item);
+    gtk_widget_show(view_clone_menu_item);
+
     // Put a menuitem (view_tags_menu_item) into view_menu
     view_tags_menu_item = gtk_menu_item_new_with_label("Tags");
     gtk_container_add(GTK_CONTAINER(view_menu), view_tags_menu_item);
@@ -252,6 +258,7 @@ class BaseWindow {
   void file_project_rename_activate();
   void file_project_delete_activate();
   void view_tags_toggled(GtkCheckMenuItem *checkmenuitem);
+  void clone_activate();
 
   static void
   file_project_open_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
@@ -298,6 +305,12 @@ class BaseWindow {
   file_import_activate_cb() {
     ImportWindow *importWindow = new ImportWindow(thePreferences, connection);
     importWindow->run();
+  }
+
+  static void
+  clone_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
+    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
+    baseWindow->clone_activate();
   }
 
   void
@@ -390,6 +403,7 @@ class BaseWindow {
         G_CALLBACK(edit_preferences_activate_cb), NULL);
     connect_signal(notebook, "create-window", G_CALLBACK(create_window_cb), NULL);
     connect_signal(notebook, "page-removed", G_CALLBACK(page_removed_cb), NULL);
+    connect_signal(view_clone_menu_item, "activate", G_CALLBACK(clone_activate_cb), NULL);
     BOOST_FOREACH(GtkWidget *item, view_tags_menu_items) {
       connect_signal(item, "toggled", G_CALLBACK(view_tags_toggled_cb), NULL);
     }
@@ -461,5 +475,15 @@ BaseWindow::view_tags_toggled(GtkCheckMenuItem *checkmenuitem) {
   PhotoSelectPage *photo_select_page = PageRegistry<PhotoSelectPage>::getPage(page);
   std::string position = gtk_menu_item_get_label(GTK_MENU_ITEM(checkmenuitem));
   photo_select_page->set_tags_position(position);
+}
+
+inline void
+BaseWindow::clone_activate() {
+  gint pagenum = gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
+  PhotoSelectPage *photo_select_page = PageRegistry<PhotoSelectPage>::getPage(page);
+  PhotoSelectPage *cloned_photo_select_page = photo_select_page->clone();
+  add_page(cloned_photo_select_page->get_tab_label(),
+      cloned_photo_select_page->get_notebook_page(), cloned_photo_select_page->project_name);
 }
 #endif // BASEWINDOW_H__

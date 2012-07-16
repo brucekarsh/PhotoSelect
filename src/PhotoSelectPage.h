@@ -61,6 +61,13 @@ class PhotoSelectPage {
       tags_position("right") {
   }
 
+  PhotoSelectPage *clone() {
+    PhotoSelectPage *cloned_photo_select_page = new PhotoSelectPage(connection, photoFileCache);
+    cloned_photo_select_page->setup(photoFilenameList, project_name, thePreferences);
+    cloned_photo_select_page->set_tags_position(tags_position);
+    return cloned_photo_select_page;
+  }
+
   GtkWidget *
   get_notebook_page() {
     return page_hbox;
@@ -724,5 +731,4 @@ class PhotoSelectPage {
       baseWindow->remove_page(page_hbox);
     }
   }
-
 #endif  // PHOTOSELECTPAGE_H__
