@@ -108,8 +108,8 @@ class PhotoSelectPage {
     gtk_widget_show(tab_label_button);
     gtk_widget_show(tab_label_label);
     gtk_widget_show(tab_label_hbox);
-    gtk_box_pack_start(GTK_BOX(tab_label_hbox), tab_label_label, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(tab_label_hbox), tab_label_button, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(tab_label_hbox), tab_label_label, FALSE, FALSE, 0);
 
     // make a hbox to hold the page (page_hbox)
     page_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
