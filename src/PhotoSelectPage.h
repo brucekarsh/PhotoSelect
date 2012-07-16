@@ -49,6 +49,7 @@ class PhotoSelectPage {
     int drag_start_x;
     int drag_start_y;
     boolean calculated_initial_scaling;
+    std::string tags_position;
 
     static const float ZOOMRATIO = 1.18920711500272106671;  // 2^(1/4)
 
@@ -56,7 +57,8 @@ class PhotoSelectPage {
       conversionEngine(photoFileCache_), 
       rotation(0), drawing_area(0), thePreferences((Preferences*)0),
       connection(connection_), photoFileCache(photoFileCache_), M(1.0), Dx(0),
-      Dy(0), drag_is_active(false), calculated_initial_scaling(false), tag_view_box(0) {
+      Dy(0), drag_is_active(false), calculated_initial_scaling(false), tag_view_box(0),
+      tags_position("right") {
   }
 
   GtkWidget *
@@ -67,6 +69,12 @@ class PhotoSelectPage {
   GtkWidget *
   get_tab_label() {
     return tab_label_hbox;
+  }
+
+  void
+  set_tags_position(const std::string position) {
+    tags_position = position;
+    add_tag_view();
   }
 
   void
@@ -193,7 +201,7 @@ class PhotoSelectPage {
     gtk_entry_set_width_chars(GTK_ENTRY(position_entry), 10);
     gtk_widget_show(position_entry);
     gtk_box_pack_end(GTK_BOX(button_hbox), position_entry, FALSE, FALSE, 0);
-    add_tag_view("Right");
+    add_tag_view();
     g_signal_connect(position_entry, "activate", G_CALLBACK(position_entry_activate_cb), 0);
   }
 
@@ -236,7 +244,7 @@ class PhotoSelectPage {
     return tags;
   }
 
-  void add_tag_view(std::string position) {
+  void add_tag_view() {
     GtkWidget *tag_view_scrolled_window = NULL;
     GtkWidget *tag_view_tags_box = NULL;
 
@@ -244,6 +252,11 @@ class PhotoSelectPage {
     if (NULL != tag_view_box) {
       gtk_widget_destroy(tag_view_box);
       tag_view_box = NULL;
+    }
+
+    // Don't do anything if the tag view is turned off
+    if (tags_position == "none") {
+      return;
     }
 
     // Get all the tags for this photo
@@ -291,7 +304,17 @@ class PhotoSelectPage {
         tag_view_tags_box);
 
     // Put the tag_view_box into the page_hbox.
-    gtk_box_pack_start(GTK_BOX(page_hbox), tag_view_box, FALSE, FALSE, 0);
+    if (tags_position == "left") {
+      gtk_box_pack_start(GTK_BOX(page_hbox), tag_view_box, FALSE, FALSE, 0);
+      gtk_box_reorder_child(GTK_BOX(page_hbox), tag_view_box, 0);
+    } else if (tags_position == "right") {
+      gtk_box_pack_start(GTK_BOX(page_hbox), tag_view_box, FALSE, FALSE, 0);
+    } else if (tags_position == "top") {
+      gtk_box_pack_start(GTK_BOX(page_vbox), tag_view_box, FALSE, FALSE, 0);
+      gtk_box_reorder_child(GTK_BOX(page_vbox), tag_view_box, 0);
+    } else if (tags_position == "bottom") {
+      gtk_box_pack_start(GTK_BOX(page_vbox), tag_view_box, FALSE, FALSE, 0);
+    }
   }
 
   void setup(std::list<std::string> photoFilenameList_, std::string project_name_,
@@ -543,7 +566,7 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> keep();
-      photoSelectPage->add_tag_view("Right");
+      photoSelectPage->add_tag_view();
       photoSelectPage -> redraw_image();
     }
   }
@@ -552,7 +575,7 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> drop();
-      photoSelectPage->add_tag_view("Right");
+      photoSelectPage->add_tag_view();
       photoSelectPage -> redraw_image();
     }
   }
@@ -562,7 +585,7 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> next();
-      photoSelectPage->add_tag_view("Right");
+      photoSelectPage->add_tag_view();
       photoSelectPage->redraw_image();
     }
   }
@@ -572,7 +595,7 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> back();
-      photoSelectPage->add_tag_view("Right");
+      photoSelectPage->add_tag_view();
       photoSelectPage->redraw_image();
     }
   }
@@ -610,7 +633,7 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->position_entry_activate();
-      photoSelectPage->add_tag_view("Right");
+      photoSelectPage->add_tag_view();
       photoSelectPage -> redraw_image();
     }
   }

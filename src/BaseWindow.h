@@ -5,6 +5,8 @@
 #include "PreferencesWindow.h"
 #include "ImportWindow.h"
 #include <boost/foreach.hpp>
+#include "WindowRegistry.h"
+#include "PageRegistry.h"
 
 class OpenProjectWindow;
 class NewProjectWindow;
@@ -224,6 +226,9 @@ class BaseWindow {
     std::string view_tags_menu_item_labels[] = { "none", "left", "right", "top", "bottom"};
     BOOST_FOREACH(std::string label, view_tags_menu_item_labels) {
       GtkWidget *item = gtk_radio_menu_item_new_with_label(group, label.c_str());
+      if (label == "right") {
+        gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item), true);
+      }
       view_tags_menu_items.push_back(item);
       group = gtk_radio_menu_item_get_group (GTK_RADIO_MENU_ITEM (item));
       gtk_container_add(GTK_CONTAINER(view_tags_menu), item);
@@ -237,10 +242,12 @@ class BaseWindow {
     connect_signals();
   }
 
+  // Forward references
   void file_project_new_activate();
   void file_project_open_activate();
   void file_project_rename_activate();
   void file_project_delete_activate();
+  void view_tags_toggled(GtkCheckMenuItem *checkmenuitem);
 
   static void
   file_project_open_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
@@ -380,12 +387,6 @@ class BaseWindow {
     std::cout << "quit_cb returning" << std::endl;
   }
 
-  void
-  view_tags_toggled(GtkCheckMenuItem *checkmenuitem) {
-    std::cout << gtk_menu_item_get_label(GTK_MENU_ITEM(checkmenuitem))
-        << " " << gtk_check_menu_item_get_active(checkmenuitem) << std::endl;
-  }
-
   static void
   view_tags_toggled_cb(GtkCheckMenuItem *checkmenuitem, gpointer user_data) {
     BaseWindow *base_window = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(checkmenuitem));
@@ -438,8 +439,9 @@ class BaseWindow {
 #include "NewProjectWindow.h"
 #include "DeleteProjectWindow.h"
 #include "RenameProjectWindow.h"
+#include "PhotoSelectPage.h"
 
-inline  void
+inline void
 BaseWindow::file_project_open_activate() {
   OpenProjectWindow* openProjectWindow =
       new OpenProjectWindow(connection, thePreferences, photoFileCache, this);
@@ -447,7 +449,7 @@ BaseWindow::file_project_open_activate() {
   // TODO make sure that openProjectWindow gets destroyed eventually.
 }
 
-inline  void
+inline void
 BaseWindow::file_project_new_activate() {
   NewProjectWindow* newProjectWindow =
       new NewProjectWindow(connection, thePreferences, photoFileCache, this);
@@ -455,7 +457,7 @@ BaseWindow::file_project_new_activate() {
   // TODO make sure that newProjectWindow gets destroyed eventually.
 }
 
-inline  void
+inline void
 BaseWindow::file_project_rename_activate() {
   RenameProjectWindow* renameProjectWindow =
       new RenameProjectWindow(connection, thePreferences, this);
@@ -463,11 +465,20 @@ BaseWindow::file_project_rename_activate() {
   // TODO make sure that RenameProjectWindow gets destroyed eventually.
 }
 
-inline  void
+inline void
 BaseWindow::file_project_delete_activate() {
   DeleteProjectWindow* deleteProjectWindow =
       new DeleteProjectWindow(connection, thePreferences, this);
   deleteProjectWindow->run();
   // TODO make sure that deleteProjectWindow gets destroyed eventually.
+}
+
+inline void
+BaseWindow::view_tags_toggled(GtkCheckMenuItem *checkmenuitem) {
+  gint pagenum = gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
+  PhotoSelectPage *photo_select_page = PageRegistry<PhotoSelectPage>::getPage(page);
+  std::string position = gtk_menu_item_get_label(GTK_MENU_ITEM(checkmenuitem));
+  photo_select_page->set_tags_position(position);
 }
 #endif // BASEWINDOW_H__
