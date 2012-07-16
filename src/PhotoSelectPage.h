@@ -4,7 +4,7 @@
 #include "PageRegistry.h"
 #include "Preferences.h"
 #include <list>
-#include <set>
+#include <map>
 #include <stdio.h>
 #include "ConversionEngine.h"
 #include "PreferencesWindow.h"
@@ -212,13 +212,21 @@ class PhotoSelectPage {
     g_signal_connect(position_entry, "activate", G_CALLBACK(position_entry_activate_cb), 0);
   }
 
-  std::set<std::string> get_photo_tags() {
-    std::set<std::string> tags;
-    std::string sql = "SELECT Tag.name FROM Tag "
+  struct photo_tag_s {
+    bool has_value;
+    std::string value;
+    bool value_is_null;
+  };
+
+  std::map<std::string, photo_tag_s> get_photo_tags() {
+    std::map<std::string, photo_tag_s> tags;
+    std::string sql = "SELECT Tag.name, ProjectTag.hasValue, TagChecksumValue.value FROM Tag "
         "INNER JOIN ProjectTag ON (Tag.id = ProjectTag.tagId) "
         "INNER JOIN Project ON (ProjectTag.projectId = Project.id) "
         "INNER JOIN TagChecksum ON (TagChecksum.tagId = Tag.id) "
         "INNER JOIN PhotoFile ON (TagChecksum.checksumId = PhotoFile.checksumId) "
+        "LEFT JOIN TagChecksumValue ON (TagChecksumValue.tagId = Tag.id "
+        "AND TagChecksumValue.checksumId = PhotoFile.checksumId) "
         "WHERE (Project.name = ? and PhotoFile.filePath = ?)";
     sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
     prepared_statement->setString(1, project_name);
@@ -227,16 +235,24 @@ class PhotoSelectPage {
     std::cout << "Project name " << project_name << " file_name " << file_name << std::endl;
     sql::ResultSet *rs = prepared_statement->executeQuery();
     while (rs->next()) {
+      photo_tag_s tag;
       std::string name = rs->getString(1);
-      std::cout << "found photo tag named " << name << std::endl;
-      tags.insert(name);
+      tag.has_value = rs->getBoolean(2);
+      tag.value = rs->getString(3);
+      tag.value_is_null = rs->wasNull();
+      tags[name] = tag;
     }
     return tags;
   }
 
-  std::list<std::string> get_project_tags() {
-    std::list<std::string> tags;
-    std::string sql = "SELECT Tag.name FROM Tag "
+  struct project_tag_s {
+    std::string tag_name;
+    bool has_value;
+  };
+
+  std::list<project_tag_s> get_project_tags() {
+    std::list<project_tag_s> tags;
+    std::string sql = "SELECT Tag.name, ProjectTag.hasValue FROM Tag "
         "INNER JOIN ProjectTag ON (Tag.id = ProjectTag.tagId) "
         "INNER JOIN Project ON (ProjectTag.projectId = Project.id) "
         "WHERE (Project.name = ?)";
@@ -244,9 +260,12 @@ class PhotoSelectPage {
     prepared_statement->setString(1, project_name);
     sql::ResultSet *rs = prepared_statement->executeQuery();
     while (rs->next()) {
+      project_tag_s tag;
       std::string name = rs->getString(1);
-      std::cout << "found project tag named " << name << std::endl;
-      tags.push_back(name);
+      bool has_value = rs->getBoolean(2);
+      tag.tag_name = name;
+      tag.has_value = has_value;
+      tags.push_back(tag);
     }
     return tags;
   }
@@ -267,10 +286,10 @@ class PhotoSelectPage {
     }
 
     // Get all the tags for this photo
-    std::set<std::string> photo_tags = get_photo_tags();
+    std::map<std::string, photo_tag_s> photo_tags = get_photo_tags();
 
     // Get all the tags for this project
-    std::list<std::string> tags = get_project_tags();
+    std::list<project_tag_s> tags = get_project_tags();
     
     // Make a box (tag_view_box) for the tag_view
     tag_view_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -293,15 +312,20 @@ class PhotoSelectPage {
     gtk_widget_show(tag_view_tags_box);
 
     // Put check buttons in tag_view_tags_box, one for each tag in the project
-    BOOST_FOREACH(std::string name, tags) {
-      std::cout << "found tag named " << name << std::endl;
-      GtkWidget *button = gtk_check_button_new_with_label(name.c_str());
+    BOOST_FOREACH(project_tag_s project_tag, tags) {
+      std::cout << "found tag named " << project_tag.tag_name << std::endl;
+      GtkWidget *button = gtk_check_button_new_with_label(project_tag.tag_name.c_str());
       // If the tag is set for this picture, activate its check button.
-      if (1 == photo_tags.count(name)) {
+      if (1 == photo_tags.count(project_tag.tag_name)) {
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), true);
       }
       gtk_box_pack_start(GTK_BOX(tag_view_tags_box), button, FALSE, FALSE, 0);
       gtk_widget_show(button);
+      if (true == project_tag.has_value) {
+	GtkWidget *entry = gtk_entry_new();
+	gtk_widget_show(entry);
+	gtk_box_pack_start(GTK_BOX(tag_view_tags_box), entry, FALSE, FALSE, 0);
+      }
       g_signal_connect(button, "toggled", G_CALLBACK(tag_button_clicked_cb), NULL);
     }
 
