@@ -319,26 +319,18 @@ class BaseWindow {
 
   void
   page_removed(GtkNotebook *notebook, GtkWidget *child, guint page_num, gpointer user_data) {
-    std::cout << "page_removed entered" << std::endl;
     gint n_pages = gtk_notebook_get_n_pages(notebook);
     if (0 == n_pages) {
-      std::cout << "page_removed calling quit" << std::endl;
       quit();
-      std::cout << "page_removed returning from quit" << std::endl;
     }
-    std::cout << "page_removed returning" << std::endl;
   }
 
   static void
   page_removed_cb(GtkNotebook *notebook, GtkWidget *child, guint page_num, gpointer user_data) {
-    std::cout << "page_removed_cb entered" << std::endl;
     BaseWindow *base_window = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(notebook));
     if (NULL != base_window) {
-      std::cout << "page_removed_cb calling page_removed" << std::endl;
       base_window->page_removed(notebook, child, page_num, user_data);
-      std::cout << "page_removed_cb returning from page_removed" << std::endl;
     }
-    std::cout << "page_removed_cb returning" << std::endl;
   }
 
   GtkNotebook *
@@ -354,37 +346,22 @@ class BaseWindow {
 
   void
   quit() {
-    std::cout << "quit entered" << std::endl;
-    std::cout << "quit calling disconnect signals" << std::endl;
     disconnect_signals();
     // If we are the last BaseWindow, then stop the event loop
     long n_base_windows =  WindowRegistry<BaseWindow>::count();
-    std::cout << "quit n_base_windows = " << n_base_windows << std::endl;
     if (1 == n_base_windows) {
-      std::cout << "quit calling gtk_main_quit" << std::endl;
       gtk_main_quit();
-      std::cout << "quit returning from gtk_main_quit" << std::endl;
     }
-    std::cout << "quit calling gtk_widget_destroy" << std::endl;
     gtk_widget_destroy(top_level_window);
-    std::cout << "quit returning from gtk_widget_destroy" << std::endl;
-    std::cout << "quit calling delete this" << std::endl;
     delete this;
-    std::cout << "quit return from delete this" << std::endl;
-    std::cout << "quit returning" << std::endl;
   }
 
   static void
   quit_cb(GtkWidget *widget, gpointer user_data) {
-    std::cout << "quit_cb entered" << std::endl;
     BaseWindow *base_window = WindowRegistry<BaseWindow>::getWindow(widget);
-    std::cout << "quit_cb base_window = " << (long) base_window << std::endl;
     if (NULL != base_window) {
-      std::cout << "quit_cb calling quit" << std::endl;
       base_window->quit();
-      std::cout << "quit_cb returning from quit" << std::endl;
     }
-    std::cout << "quit_cb returning" << std::endl;
   }
 
   static void
