@@ -196,7 +196,7 @@ OpenProjectWindow::apply() {
       "INNER JOIN PhotoFile ON (ProjectPhotoFile.photoFileId = PhotoFile.id) "
       "INNER JOIN Time ON (PhotoFile.checksumId = Time.checksumId) "
       "WHERE Project.name = ? "
-      "ORDER by Time.adjustedDateTime ";
+      "ORDER by Time.adjustedDateTime, filePath ";
   sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
   prepared_statement->setString(1, project_name);
   sql::ResultSet *rs = prepared_statement->executeQuery();
