@@ -323,6 +323,10 @@ class PhotoSelectPage {
       gtk_widget_show(button);
       if (true == project_tag.has_value) {
 	GtkWidget *entry = gtk_entry_new();
+        photo_tag_s photo_tag = photo_tags[project_tag.tag_name];
+        if (false == photo_tag.value_is_null) {
+	  gtk_entry_set_text(GTK_ENTRY(entry), photo_tag.value.c_str());
+        }
 	gtk_widget_show(entry);
 	gtk_box_pack_start(GTK_BOX(tag_view_tags_box), entry, FALSE, FALSE, 0);
       }
