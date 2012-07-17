@@ -38,6 +38,7 @@ class BaseWindow {
   GtkWidget *file_project_delete_menu_item;
   GtkWidget *file_quit_menu_item;
   GtkWidget *edit_preferences_menu_item;
+  GtkWidget *edit_tags_menu_item;
   GtkWidget *view_tags_menu_item;
   GtkWidget *view_clone_menu_item;
   std::list<GtkWidget *> view_tags_menu_items;
@@ -212,9 +213,14 @@ class BaseWindow {
     gtk_widget_show(file_quit_menu_item);
 
     // Put a menuitem (edit_preferences_menu_item) into edit_menu
-    edit_preferences_menu_item = gtk_menu_item_new_with_label("Preferences");
+    edit_preferences_menu_item = gtk_menu_item_new_with_label("Preferences...");
     gtk_container_add(GTK_CONTAINER(edit_menu), edit_preferences_menu_item);
     gtk_widget_show(edit_preferences_menu_item);
+
+    // Put a menuitem (edit_tags_menu_item) into edit_menu
+    edit_tags_menu_item = gtk_menu_item_new_with_label("Tags...");
+    gtk_container_add(GTK_CONTAINER(edit_menu), edit_tags_menu_item);
+    gtk_widget_show(edit_tags_menu_item);
 
     // Put a menuitem (view_clone_menu_item) into view_menu
     view_clone_menu_item = gtk_menu_item_new_with_label("Clone");
@@ -290,6 +296,12 @@ class BaseWindow {
     baseWindow->preferences_activate();
   }
 
+  static void
+  edit_tags_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
+    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
+    baseWindow->tags_activate();
+  }
+
   void
   preferences_activate() {
     if (NULL == preferencesWindow) {
@@ -299,6 +311,11 @@ class BaseWindow {
     } else {
       preferencesWindow->highlight();
     }
+  }
+
+  void
+  tags_activate() {
+    std::cout << "tags_activate entered" << std::endl;
   }
 
   static void
@@ -401,6 +418,8 @@ class BaseWindow {
     connect_signal(file_quit_menu_item, "activate", G_CALLBACK(quit_cb), NULL);
     connect_signal(edit_preferences_menu_item, "activate",
         G_CALLBACK(edit_preferences_activate_cb), NULL);
+    connect_signal(edit_tags_menu_item, "activate",
+        G_CALLBACK(edit_tags_activate_cb), NULL);
     connect_signal(notebook, "create-window", G_CALLBACK(create_window_cb), NULL);
     connect_signal(notebook, "page-removed", G_CALLBACK(page_removed_cb), NULL);
     connect_signal(view_clone_menu_item, "activate", G_CALLBACK(clone_activate_cb), NULL);
