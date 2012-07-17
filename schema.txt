@@ -98,6 +98,7 @@ CREATE TABLE TagChecksumValue (
   value	      VARCHAR(766),
   KEY(tagId),
   KEY(checksumId),
+  UNIQUE KEY(tagId, checksumId),
   FOREIGN KEY(tagId) REFERENCES Tag(id),
   FOREIGN KEY(checksumId) REFERENCES Checksum(id)
 ) ENGINE=innodb;
