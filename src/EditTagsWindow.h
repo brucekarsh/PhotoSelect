@@ -78,15 +78,51 @@ class EditTagsWindow {
     gtk_widget_show(GTK_WIDGET(title_label));
     gtk_box_pack_start(GTK_BOX(windowBox), title_label, FALSE, FALSE, 0);
 
-    // Make a ScrolledWindow (scrolled_window) and put it in the windowBox
-    GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
-    gtk_widget_show(GTK_WIDGET(scrolled_window));
-    gtk_box_pack_start(GTK_BOX(windowBox), scrolled_window, TRUE, TRUE, 0);
+    // Make an hbox to hold the lists and put it in windowBox
+    GtkWidget *lists_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    gtk_widget_show(lists_hbox);
+    gtk_box_pack_start(GTK_BOX(windowBox), lists_hbox, TRUE, TRUE, 0);
 
+    // Make a vbox to hold the left list and put it in the lists_hbox
+    GtkWidget *left_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_show(left_vbox);
+    gtk_box_pack_start(GTK_BOX(lists_hbox), left_vbox, TRUE, TRUE, 0);
+
+    // Make a vbox to hold the right list and put it in the lists_hbox
+    GtkWidget *right_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_show(right_vbox);
+    gtk_box_pack_start(GTK_BOX(lists_hbox), right_vbox, TRUE, TRUE, 0);
+
+    // Add a title label to the left vbox
+    GtkWidget *left_vbox_label = gtk_label_new("Known Tags");
+    gtk_widget_show(left_vbox_label);
+    gtk_box_pack_start(GTK_BOX(left_vbox), left_vbox_label, FALSE, FALSE, 0);
+
+    // Add a title label to the right vbox
+    GtkWidget *right_vbox_label = gtk_label_new("Project Tags");
+    gtk_widget_show(right_vbox_label);
+    gtk_box_pack_start(GTK_BOX(right_vbox), right_vbox_label, FALSE, FALSE, 0);
+
+    // Make a ScrolledWindow (left_scrolled_window) and put it in the left_vbox
+    GtkWidget *left_scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(left_scrolled_window),
+        GTK_SHADOW_ETCHED_IN);
+    gtk_widget_show(GTK_WIDGET(left_scrolled_window));
+    gtk_box_pack_start(GTK_BOX(left_vbox), left_scrolled_window, TRUE, TRUE, 0);
+
+    // Make a ScrolledWindow (right_scrolled_window) and put it in the right_vbox
+    GtkWidget *right_scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(right_scrolled_window),
+        GTK_SHADOW_ETCHED_OUT);
+    gtk_widget_show(GTK_WIDGET(right_scrolled_window));
+    gtk_box_pack_start(GTK_BOX(right_vbox), right_scrolled_window, TRUE, TRUE, 0);
+
+#ifdef LATER
     // Make a vbox (scrolled_vbox) and put it in the scrolled_window
     GtkWidget *scrolled_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(GTK_WIDGET(scrolled_vbox));
     gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window), scrolled_vbox);
+#endif //LATER
 
     // Make some buttons (quit_button, accept_button) and put them in an hbox (button_hbox) and
     // put the hbox in windowBox
@@ -105,6 +141,7 @@ class EditTagsWindow {
     g_signal_connect(quit_button, "clicked", G_CALLBACK(quit_button_clicked_cb), NULL);
     g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
 
+#ifdef LATER
     GtkRequisition minimum_size;
     GtkRequisition natural_size;
     gtk_widget_get_preferred_size(scrolled_vbox, &minimum_size, &natural_size);
@@ -117,6 +154,7 @@ class EditTagsWindow {
     if (width > max_width) width = max_width;
     if (height > max_height) height = max_height;
     gtk_widget_set_size_request(scrolled_window, width, height);
+#endif //LATER
 
     gtk_widget_show(window);
   }
