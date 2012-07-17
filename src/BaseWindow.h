@@ -12,6 +12,7 @@ class OpenProjectWindow;
 class NewProjectWindow;
 class RenameProjectWindow;
 class DeleteProjectWindow;
+class EditTagsWindow;
 class PhotoFileCache;
 
 class BaseWindow {
@@ -265,6 +266,7 @@ class BaseWindow {
   void file_project_delete_activate();
   void view_tags_toggled(GtkCheckMenuItem *checkmenuitem);
   void clone_activate();
+  void edit_tags_activate();
 
   static void
   file_project_open_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
@@ -299,7 +301,7 @@ class BaseWindow {
   static void
   edit_tags_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
-    baseWindow->tags_activate();
+    baseWindow->edit_tags_activate();
   }
 
   void
@@ -311,11 +313,6 @@ class BaseWindow {
     } else {
       preferencesWindow->highlight();
     }
-  }
-
-  void
-  tags_activate() {
-    std::cout << "tags_activate entered" << std::endl;
   }
 
   static void
@@ -452,6 +449,7 @@ class BaseWindow {
 #include "OpenProjectWindow.h"
 #include "NewProjectWindow.h"
 #include "DeleteProjectWindow.h"
+#include "EditTagsWindow.h"
 #include "RenameProjectWindow.h"
 #include "PhotoSelectPage.h"
 
@@ -485,6 +483,14 @@ BaseWindow::file_project_delete_activate() {
       new DeleteProjectWindow(connection, thePreferences, this);
   deleteProjectWindow->run();
   // TODO make sure that deleteProjectWindow gets destroyed eventually.
+}
+
+inline void
+BaseWindow::edit_tags_activate() {
+  std::cout << "tags_activate entered" << std::endl;
+  EditTagsWindow *edit_tags_window = new EditTagsWindow(connection, thePreferences, this);
+  edit_tags_window->run();
+// TODO make sure that edit_tags_window gets destroyed eventually.
 }
 
 inline void
