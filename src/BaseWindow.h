@@ -488,7 +488,17 @@ BaseWindow::file_project_delete_activate() {
 inline void
 BaseWindow::edit_tags_activate() {
   std::cout << "tags_activate entered" << std::endl;
-  EditTagsWindow *edit_tags_window = new EditTagsWindow(connection, thePreferences, this);
+  // Find the project_name from the current notebook page.
+  // Go away if there's no current notebook page. (Presumably the notebook is empty)
+  gint pagenum = gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
+  if (-1 == pagenum) {
+    return;
+  }
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
+  PhotoSelectPage *photo_select_page = PageRegistry<PhotoSelectPage>::getPage(page);
+  std::string project_name = photo_select_page->project_name;
+  EditTagsWindow *edit_tags_window =
+      new EditTagsWindow(connection, thePreferences, this, project_name);
   edit_tags_window->run();
 // TODO make sure that edit_tags_window gets destroyed eventually.
 }

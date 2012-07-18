@@ -32,11 +32,12 @@ class EditTagsWindow {
   sql::Connection *connection;
   Preferences *preferences;
   BaseWindow *baseWindow;
+  std::string project_name;
 
   EditTagsWindow(sql::Connection *connection_, Preferences *preferences_,
-      BaseWindow* baseWindow_) :
+      BaseWindow* baseWindow_, std::string project_name_) :
       connection(connection_), preferences(preferences_),
-      baseWindow(baseWindow_) {
+      baseWindow(baseWindow_), project_name(project_name_) {
   }
 
   ~EditTagsWindow() {
@@ -117,12 +118,26 @@ class EditTagsWindow {
     gtk_widget_show(GTK_WIDGET(right_scrolled_window));
     gtk_box_pack_start(GTK_BOX(right_vbox), right_scrolled_window, TRUE, TRUE, 0);
 
-#ifdef LATER
-    // Make a vbox (scrolled_vbox) and put it in the scrolled_window
-    GtkWidget *scrolled_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_show(GTK_WIDGET(scrolled_vbox));
-    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window), scrolled_vbox);
-#endif //LATER
+    // Make a vbox (right_scrolled_vbox) and put it the right_scrolled_window
+    GtkWidget *right_scrolled_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_show(GTK_WIDGET(right_scrolled_vbox));
+    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(right_scrolled_window), right_scrolled_vbox);
+
+    // Put the project tags in the right_scrolled_vbox
+    std::cout << "Getting project tags for " << project_name << std::endl;
+    std::map<std::string, Utils::project_tag_s> project_tags = Utils::get_project_tags(connection, project_name);
+    typedef std::pair<std::string, Utils::project_tag_s> map_entry_t;
+std::cout << "Begin packing buttons" << std::endl;
+    BOOST_FOREACH(map_entry_t map_entry, project_tags) {
+      std::string name = map_entry.first;
+      Utils::project_tag_s project_tag = map_entry.second;
+std::cout << "Project Tag " << name << std::endl;
+      // Make a button, pack it, show it and connect it.
+      GtkWidget *button = gtk_check_button_new_with_label(name.c_str());
+      gtk_box_pack_start(GTK_BOX(right_scrolled_vbox), button, FALSE, FALSE, 0);
+      gtk_widget_show(button);
+    }
+std::cout << "Done packing buttons" << std::endl;
 
     // Make some buttons (quit_button, accept_button) and put them in an hbox (button_hbox) and
     // put the hbox in windowBox
@@ -141,20 +156,20 @@ class EditTagsWindow {
     g_signal_connect(quit_button, "clicked", G_CALLBACK(quit_button_clicked_cb), NULL);
     g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
 
-#ifdef LATER
     GtkRequisition minimum_size;
     GtkRequisition natural_size;
-    gtk_widget_get_preferred_size(scrolled_vbox, &minimum_size, &natural_size);
-    gint width = minimum_size.width;
-    gint height = minimum_size.width;
+    gtk_widget_get_preferred_size(right_scrolled_vbox, &minimum_size, &natural_size);
+    std::cout << "minimum size " << minimum_size.width << "X" << minimum_size.height << std::endl;
+    std::cout << "natural size " << natural_size.width << "X" << natural_size.height << std::endl;
+    gint width = minimum_size.width + 5;
+    gint height = minimum_size.height + 5;
     const gint max_width = 400;
     const gint max_height = 400;
     if (width < natural_size.width) width = natural_size.width;
     if (height < natural_size.height) height = natural_size.height;
     if (width > max_width) width = max_width;
     if (height > max_height) height = max_height;
-    gtk_widget_set_size_request(scrolled_window, width, height);
-#endif //LATER
+    gtk_widget_set_size_request(right_scrolled_window, width, height);
 
     gtk_widget_show(window);
   }
