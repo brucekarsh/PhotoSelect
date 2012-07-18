@@ -98,6 +98,23 @@ class Utils {
     }
   }
 
+  static inline void delete_project_tag(sql::Connection *connection, std::string tag_name,
+      std::string project_name) {
+    std::string sql = "DELETE FROM ProjectTag USING Tag, Project, ProjectTag "
+        "WHERE Tag.name=? "
+        "AND Project.name=? "
+        "AND ProjectTag.projectId = Project.id "
+        "AND ProjectTag.tagId = Tag.id";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setString(1,tag_name);
+    prepared_statement->setString(2,project_name);
+    try {
+        prepared_statement->execute();
+	connection->commit();
+    } catch (sql::SQLException &ex) {
+    }
+  }
+
   static inline void insert_project_tag(sql::Connection *connection, std::string tag_name,
       std::string project_name) {
     std::string sql = "INSERT INTO ProjectTag(tagId, projectId) "

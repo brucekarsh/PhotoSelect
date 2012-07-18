@@ -149,9 +149,12 @@ class EditTagsWindow {
     
 
     // Make a button (delete_tag_button), and put it in right_vbox
-    GtkWidget *delete_tags_button = gtk_button_new_with_label("Delete Selected Project Tags");
-    gtk_widget_show(delete_tags_button);
-    gtk_box_pack_start(GTK_BOX(right_vbox), delete_tags_button, FALSE, FALSE, 0);
+    GtkWidget *delete_project_tags_button =
+        gtk_button_new_with_label("Delete Selected Project Tags");
+    gtk_widget_show(delete_project_tags_button);
+    gtk_box_pack_start(GTK_BOX(right_vbox), delete_project_tags_button, FALSE, FALSE, 0);
+    g_signal_connect(delete_project_tags_button, "clicked",
+        G_CALLBACK(delete_project_tags_button_clicked_cb), NULL);
 
     // Make some buttons (quit_button, accept_button) and put them in an hbox (button_hbox) and
     // put the hbox in windowBox
@@ -269,16 +272,33 @@ class EditTagsWindow {
     }
   }
 
+  static void delete_project_tags_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
+    EditTagsWindow *edit_tags_window = WindowRegistry<EditTagsWindow>::getWindow(widget);
+    if (NULL != edit_tags_window) {
+      edit_tags_window->delete_project_tags_button_clicked();
+    }
+  }
+
   void add_tags_button_clicked() {
     std::list<std::string> activated_known_tags = get_activated_known_tags();
       BOOST_FOREACH(std::string tag_name, activated_known_tags) {
-      // Put the project tag into the database
+        // Put the project tag into the database
         Utils::insert_project_tag(connection, tag_name, project_name);
-        // Rebuild the project tags display in the UI
-        rebuild_right_scrolled_vbox();
-        // Rebuild the all tags display in the UI (because we want them to be deactivated)
-        rebuild_left_scrolled_vbox();
       }
+      // Rebuild the project tags display in the UI
+      rebuild_right_scrolled_vbox();
+      // Rebuild the all tags display in the UI (because we want them to be deactivated)
+      rebuild_left_scrolled_vbox();
+  }
+
+  void delete_project_tags_button_clicked() {
+    std::list<std::string> activated_project_tags = get_activated_project_tags();
+      BOOST_FOREACH(std::string tag_name, activated_project_tags) {
+        Utils::delete_project_tag(connection, tag_name, project_name);
+        std::cout << "Delete project tag " << tag_name << " project " << project_name << std::endl;
+      }
+      // Rebuild the project tags display in the UI
+      rebuild_right_scrolled_vbox();
   }
 
   std::list<std::string> get_activated_known_tags() {
@@ -293,6 +313,20 @@ class EditTagsWindow {
       }
     }
     return activated_known_tags;
+  }
+
+  std::list<std::string> get_activated_project_tags() {
+    std::list<std::string> activated_project_tags;
+    GList *buttons = gtk_container_get_children(GTK_CONTAINER(right_scrolled_vbox));
+    for (GList *button_entry = buttons; button_entry != NULL; button_entry = button_entry->next) {
+      GtkWidget *button = GTK_WIDGET(button_entry->data);
+      if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) {
+        std::string tag_name = gtk_button_get_label(GTK_BUTTON(button));
+	activated_project_tags.push_back(tag_name);
+      } else {
+      }
+    }
+    return activated_project_tags;
   }
 
   bool valid_tag_name(std::string tag_name) {
