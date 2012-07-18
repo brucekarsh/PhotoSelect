@@ -138,8 +138,8 @@ class OpenProjectWindow {
     GtkRequisition minimum_size;
     GtkRequisition natural_size;
     gtk_widget_get_preferred_size(scrolled_vbox, &minimum_size, &natural_size);
-    gint width = minimum_size.width;
-    gint height = minimum_size.width;
+    gint width = minimum_size.width + 5;
+    gint height = minimum_size.height + 5;
     const gint max_width = 400;
     const gint max_height = 400;
     if (width < natural_size.width) width = natural_size.width;
