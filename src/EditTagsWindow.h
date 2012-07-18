@@ -80,7 +80,9 @@ class EditTagsWindow {
     gtk_container_add(GTK_CONTAINER(window), windowBox);
 
     // Make a label (title_label) and put it in windowBox
-    GtkWidget *title_label = gtk_label_new("Edit Project Tags");
+    std::string title = "Edit Project Tags - ";
+    title += project_name;
+    GtkWidget *title_label = gtk_label_new(title.c_str());
     gtk_widget_show(GTK_WIDGET(title_label));
     gtk_box_pack_start(GTK_BOX(windowBox), title_label, FALSE, FALSE, 0);
 
@@ -148,13 +150,22 @@ class EditTagsWindow {
     g_signal_connect(add_tags_button, "clicked", G_CALLBACK(add_tags_button_clicked_cb), NULL);
     
 
-    // Make a button (delete_tag_button), and put it in right_vbox
+    // Make a button (delete_project_tag_button), and put it in right_vbox
     GtkWidget *delete_project_tags_button =
         gtk_button_new_with_label("Delete Selected Project Tags");
     gtk_widget_show(delete_project_tags_button);
     gtk_box_pack_start(GTK_BOX(right_vbox), delete_project_tags_button, FALSE, FALSE, 0);
     g_signal_connect(delete_project_tags_button, "clicked",
         G_CALLBACK(delete_project_tags_button_clicked_cb), NULL);
+
+    // Make a button (toggle_tag_has_value_button), and put it in right_vbox
+    GtkWidget *toggle_tag_has_value_button =
+        gtk_button_new_with_label("Change whether tag has value");
+    gtk_widget_show(toggle_tag_has_value_button);
+    gtk_box_pack_start(GTK_BOX(right_vbox), toggle_tag_has_value_button, FALSE, FALSE, 0);
+    g_signal_connect(toggle_tag_has_value_button, "clicked",
+        G_CALLBACK(toggle_tag_has_value_button_clicked_cb), NULL);
+
 
     // Make some buttons (quit_button, accept_button) and put them in an hbox (button_hbox) and
     // put the hbox in windowBox
@@ -277,6 +288,17 @@ class EditTagsWindow {
     if (NULL != edit_tags_window) {
       edit_tags_window->delete_project_tags_button_clicked();
     }
+  }
+
+  static void toggle_tag_has_value_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
+    EditTagsWindow *edit_tags_window = WindowRegistry<EditTagsWindow>::getWindow(widget);
+    if (NULL != edit_tags_window) {
+      edit_tags_window->toggle_tag_has_value_button_clicked();
+    }
+  }
+
+  void toggle_tag_has_value_button_clicked() {
+    std::cout << "toggle_tag_has_value_button_clicked called" << std::endl;
   }
 
   void add_tags_button_clicked() {
