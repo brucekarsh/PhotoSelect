@@ -31,6 +31,8 @@ class EditTagsWindow {
   GtkWidget *first_radio_button;
   GtkWidget *left_scrolled_window;
   GtkWidget *left_scrolled_vbox;
+  GtkWidget *right_scrolled_vbox;
+  GtkWidget *right_scrolled_window;
   sql::Connection *connection;
   Preferences *preferences;
   BaseWindow *baseWindow;
@@ -40,7 +42,7 @@ class EditTagsWindow {
       BaseWindow* baseWindow_, std::string project_name_) :
       connection(connection_), preferences(preferences_),
       baseWindow(baseWindow_), project_name(project_name_),
-      left_scrolled_vbox(NULL) {
+      left_scrolled_vbox(NULL), right_scrolled_vbox(NULL) {
   }
 
   ~EditTagsWindow() {
@@ -115,38 +117,17 @@ class EditTagsWindow {
     gtk_box_pack_start(GTK_BOX(left_vbox), left_scrolled_window, TRUE, TRUE, 0);
 
     // Make a ScrolledWindow (right_scrolled_window) and put it in the right_vbox
-    GtkWidget *right_scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    right_scrolled_window = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(right_scrolled_window),
         GTK_SHADOW_ETCHED_OUT);
     gtk_widget_show(GTK_WIDGET(right_scrolled_window));
     gtk_box_pack_start(GTK_BOX(right_vbox), right_scrolled_window, TRUE, TRUE, 0);
 
-    // Make a vbox (right_scrolled_vbox) and put it the right_scrolled_window
-    GtkWidget *right_scrolled_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_show(GTK_WIDGET(right_scrolled_vbox));
-    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(right_scrolled_window),
-        right_scrolled_vbox);
-
-    // Put the project tags in the right_scrolled_vbox
-    std::cout << "Getting project tags for " << project_name << std::endl;
-    std::map<std::string, Utils::project_tag_s> project_tags
-        = Utils::get_project_tags(connection, project_name);
-    typedef std::pair<std::string, Utils::project_tag_s> map_entry_t;
-std::cout << "Begin packing buttons" << std::endl;
-    BOOST_FOREACH(map_entry_t map_entry, project_tags) {
-      std::string name = map_entry.first;
-      Utils::project_tag_s project_tag = map_entry.second;
-std::cout << "Project Tag " << name << std::endl;
-      // Make a button, pack it, show it and connect it.
-      GtkWidget *button = gtk_check_button_new_with_label(name.c_str());
-      gtk_box_pack_start(GTK_BOX(right_scrolled_vbox), button, FALSE, FALSE, 0);
-      gtk_widget_show(button);
-    }
-std::cout << "Done packing buttons" << std::endl;
 
     rebuild_left_scrolled_vbox();
+    rebuild_right_scrolled_vbox();
 
-    // Make and entry and a button (create_tag_entry, create_tag_button), put them in an hbox
+    // Make an entry and a button (create_tag_entry, create_tag_button), put them in an hbox
     // (create_tag_hbox) and put that in left_vbox
     GtkWidget *create_tag_entry = gtk_entry_new();
     GtkWidget *create_tag_button = gtk_button_new_with_label("Create Tag");
@@ -164,6 +145,7 @@ std::cout << "Done packing buttons" << std::endl;
     GtkWidget *add_tags_button = gtk_button_new_with_label("Add Selected Tags To Project Tags");
     gtk_widget_show(add_tags_button);
     gtk_box_pack_start(GTK_BOX(left_vbox), add_tags_button, FALSE, FALSE, 0);
+    g_signal_connect(add_tags_button, "clicked", G_CALLBACK(add_tags_button_clicked_cb), NULL);
     
 
     // Make a button (delete_tag_button), and put it in right_vbox
@@ -216,6 +198,32 @@ std::cout << "Done packing buttons" << std::endl;
     }
   }
 
+  void rebuild_right_scrolled_vbox() {
+    // Destroy the left_scrolled_vbox if it already exists
+    if (NULL != right_scrolled_vbox) {
+      gtk_widget_destroy(right_scrolled_vbox);
+    }
+
+    // Make a vbox (right_scrolled_vbox) and put it the right_scrolled_window
+    right_scrolled_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_show(GTK_WIDGET(right_scrolled_vbox));
+    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(right_scrolled_window),
+        right_scrolled_vbox);
+
+    // Put the project tags in the right_scrolled_vbox
+    std::map<std::string, Utils::project_tag_s> project_tags
+        = Utils::get_project_tags(connection, project_name);
+    typedef std::pair<std::string, Utils::project_tag_s> map_entry_t;
+    BOOST_FOREACH(map_entry_t map_entry, project_tags) {
+      std::string name = map_entry.first;
+      Utils::project_tag_s project_tag = map_entry.second;
+      // Make a button, pack it, show it and connect it.
+      GtkWidget *button = gtk_check_button_new_with_label(name.c_str());
+      gtk_box_pack_start(GTK_BOX(right_scrolled_vbox), button, FALSE, FALSE, 0);
+      gtk_widget_show(button);
+    }
+  }
+
   void adjust_size(GtkWidget *scrolled_vbox, GtkWidget *scrolled_window) {
     GtkRequisition minimum_size;
     GtkRequisition natural_size;
@@ -252,6 +260,39 @@ std::cout << "Done packing buttons" << std::endl;
       // Rebuild the all tags display in the UI
       rebuild_left_scrolled_vbox();
     }
+  }
+
+  static void add_tags_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
+    EditTagsWindow *edit_tags_window = WindowRegistry<EditTagsWindow>::getWindow(widget);
+    if (NULL != edit_tags_window) {
+      edit_tags_window->add_tags_button_clicked();
+    }
+  }
+
+  void add_tags_button_clicked() {
+    std::list<std::string> activated_known_tags = get_activated_known_tags();
+      BOOST_FOREACH(std::string tag_name, activated_known_tags) {
+      // Put the project tag into the database
+        Utils::insert_project_tag(connection, tag_name, project_name);
+        // Rebuild the project tags display in the UI
+        rebuild_right_scrolled_vbox();
+        // Rebuild the all tags display in the UI (because we want them to be deactivated)
+        rebuild_left_scrolled_vbox();
+      }
+  }
+
+  std::list<std::string> get_activated_known_tags() {
+    std::list<std::string> activated_known_tags;
+    GList *buttons = gtk_container_get_children(GTK_CONTAINER(left_scrolled_vbox));
+    for (GList *button_entry = buttons; button_entry != NULL; button_entry = button_entry->next) {
+      GtkWidget *button = GTK_WIDGET(button_entry->data);
+      if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) {
+        std::string tag_name = gtk_button_get_label(GTK_BUTTON(button));
+	activated_known_tags.push_back(tag_name);
+      } else {
+      }
+    }
+    return activated_known_tags;
   }
 
   bool valid_tag_name(std::string tag_name) {

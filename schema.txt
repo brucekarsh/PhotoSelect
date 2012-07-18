@@ -110,6 +110,7 @@ CREATE TABLE ProjectTag (
   hasValue	BOOL NOT NULL,		
   KEY(tagId),
   KEY(projectId),
+  UNIQUE KEY(tagId, projectId),
   FOREIGN KEY(tagId) REFERENCES Tag(id),
   FOREIGN KEY(projectId) REFERENCES Project(id)
 ) ENGINE=innodb;
