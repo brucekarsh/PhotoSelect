@@ -53,16 +53,16 @@ class EditTagsWindow {
 
   static void
   accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    EditTagsWindow *renameProjectWindow =
+    EditTagsWindow *editTagsWindow =
         WindowRegistry<EditTagsWindow>::getWindow(widget);
-    renameProjectWindow->accept();
+    editTagsWindow->accept();
   }
 
   static void
   quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    EditTagsWindow *renameProjectWindow =
+    EditTagsWindow *editTagsWindow =
         WindowRegistry<EditTagsWindow>::getWindow(widget);
-    renameProjectWindow->quit();
+    editTagsWindow->quit();
   }
 
   void
@@ -160,6 +160,8 @@ std::cout << "Done packing buttons" << std::endl;
     // (create_tag_hbox) and put that in left_vbox
     GtkWidget *create_tag_entry = gtk_entry_new();
     GtkWidget *create_tag_button = gtk_button_new_with_label("Create Tag");
+    g_signal_connect(create_tag_button, "clicked", G_CALLBACK(create_tag_button_clicked_cb),
+        (gpointer)create_tag_entry);
     GtkWidget *create_tag_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_show(create_tag_entry);
     gtk_widget_show(create_tag_button);
@@ -217,6 +219,40 @@ std::cout << "Done packing buttons" << std::endl;
     if (width > max_width) width = max_width;
     if (height > max_height) height = max_height;
     gtk_widget_set_size_request(scrolled_window, width, height);
+  }
+
+  static void create_tag_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
+    EditTagsWindow *edit_tags_window = WindowRegistry<EditTagsWindow>::getWindow(widget);
+    GtkWidget *create_tag_entry = GTK_WIDGET(callback_data);
+    if (NULL != edit_tags_window && NULL != create_tag_entry) {
+      std::string new_tag_name = gtk_entry_get_text(GTK_ENTRY(create_tag_entry));
+      edit_tags_window->create_tag_button_clicked(new_tag_name);
+    }
+  }
+
+  void create_tag_button_clicked(std::string tag_name) {
+    // TODO need to report invalid tag names to user
+    // TODO need to scroll to duplicate tag and highlight it
+    // TODO need to redraw tag display with new tag highlighted
+    if (valid_tag_name(tag_name)) {
+      Utils::insert_tag(connection, tag_name);
+    }
+  }
+
+  bool valid_tag_name(std::string tag_name) {
+    // Require tags to be 1 to 24 characters long.
+    if (0 == tag_name.size() || 24 < tag_name.size()) {
+      return false;
+    }
+
+    // Require tags to be composed of a limited set of characters
+    std::string valid_tag_chars =
+        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
+    size_t pos = tag_name.find_first_not_of(valid_tag_chars);
+    if (std::string::npos != pos) {
+      return false;
+    }
+    return true;
   }
 
 };

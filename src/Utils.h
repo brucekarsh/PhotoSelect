@@ -86,6 +86,17 @@ class Utils {
     }
     return tags;
   }
+
+  static inline void insert_tag(sql::Connection *connection, std::string tag_name) {
+    std::string sql = "INSERT INTO Tag(name) VALUE(?)";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setString(1, tag_name);
+    try {
+        prepared_statement->execute();
+	connection->commit();
+    } catch (sql::SQLException &ex) {
+    }
+  }
 };
 
 #endif // UTILS_H__
