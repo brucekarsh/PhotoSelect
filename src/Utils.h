@@ -13,6 +13,7 @@
 #include <warning.h>
 
 #include <map>
+#include <set>
 
 //! A class to hold some commonly used procedures.
 
@@ -71,6 +72,18 @@ class Utils {
       tag.has_value = has_value;
       tags[name]=tag;
     } 
+    return tags;
+  }
+
+  static inline std::set<std::string> get_all_tags(sql::Connection *connection) {
+    std::set<std::string> tags;
+    std::string sql = "SELECT DISTINCT Tag.name FROM Tag";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    sql::ResultSet *rs = prepared_statement->executeQuery();
+    while (rs->next()) {
+      std::string name = rs->getString(1);
+      tags.insert(name);
+    }
     return tags;
   }
 };
