@@ -156,9 +156,31 @@ std::cout << "Done packing buttons" << std::endl;
       gtk_widget_show(button);
     }
 
+    // Make and entry and a button (create_tag_entry, create_tag_button), put them in an hbox
+    // (create_tag_hbox) and put that in left_vbox
+    GtkWidget *create_tag_entry = gtk_entry_new();
+    GtkWidget *create_tag_button = gtk_button_new_with_label("Create Tag");
+    GtkWidget *create_tag_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_show(create_tag_entry);
+    gtk_widget_show(create_tag_button);
+    gtk_widget_show(create_tag_hbox);
+    gtk_box_pack_start(GTK_BOX(create_tag_hbox), create_tag_entry, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(create_tag_hbox), create_tag_button, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(left_vbox), create_tag_hbox, FALSE, FALSE, 0);
+
+    // Make a button (add_tag_button) and put it in left_vbox
+    GtkWidget *add_tags_button = gtk_button_new_with_label("Add Selected Tags To Project Tags");
+    gtk_widget_show(add_tags_button);
+    gtk_box_pack_start(GTK_BOX(left_vbox), add_tags_button, FALSE, FALSE, 0);
+    
+
+    // Make a button (delete_tag_button), and put it in right_vbox
+    GtkWidget *delete_tags_button = gtk_button_new_with_label("Delete Selected Project Tags");
+    gtk_widget_show(delete_tags_button);
+    gtk_box_pack_start(GTK_BOX(right_vbox), delete_tags_button, FALSE, FALSE, 0);
+
     // Make some buttons (quit_button, accept_button) and put them in an hbox (button_hbox) and
     // put the hbox in windowBox
-
     GtkWidget *quit_button = gtk_button_new_with_label("Quit");
     GtkWidget *accept_button = gtk_button_new_with_label("Accept");
     GtkWidget *button_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
