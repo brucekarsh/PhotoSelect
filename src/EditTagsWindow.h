@@ -29,6 +29,8 @@ class EditTagsWindow {
   GtkWidget *window;
   GtkWidget *windowBox;
   GtkWidget *first_radio_button;
+  GtkWidget *left_scrolled_window;
+  GtkWidget *left_scrolled_vbox;
   sql::Connection *connection;
   Preferences *preferences;
   BaseWindow *baseWindow;
@@ -37,7 +39,8 @@ class EditTagsWindow {
   EditTagsWindow(sql::Connection *connection_, Preferences *preferences_,
       BaseWindow* baseWindow_, std::string project_name_) :
       connection(connection_), preferences(preferences_),
-      baseWindow(baseWindow_), project_name(project_name_) {
+      baseWindow(baseWindow_), project_name(project_name_),
+      left_scrolled_vbox(NULL) {
   }
 
   ~EditTagsWindow() {
@@ -105,7 +108,7 @@ class EditTagsWindow {
     gtk_box_pack_start(GTK_BOX(right_vbox), right_vbox_label, FALSE, FALSE, 0);
 
     // Make a ScrolledWindow (left_scrolled_window) and put it in the left_vbox
-    GtkWidget *left_scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    left_scrolled_window = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(left_scrolled_window),
         GTK_SHADOW_ETCHED_IN);
     gtk_widget_show(GTK_WIDGET(left_scrolled_window));
@@ -117,12 +120,6 @@ class EditTagsWindow {
         GTK_SHADOW_ETCHED_OUT);
     gtk_widget_show(GTK_WIDGET(right_scrolled_window));
     gtk_box_pack_start(GTK_BOX(right_vbox), right_scrolled_window, TRUE, TRUE, 0);
-
-    // Make a vbox (left_scrolled_vbox) and put it the left_scrolled_window
-    GtkWidget *left_scrolled_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_show(GTK_WIDGET(left_scrolled_vbox));
-    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(left_scrolled_window),
-        left_scrolled_vbox);
 
     // Make a vbox (right_scrolled_vbox) and put it the right_scrolled_window
     GtkWidget *right_scrolled_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -147,14 +144,7 @@ std::cout << "Project Tag " << name << std::endl;
     }
 std::cout << "Done packing buttons" << std::endl;
 
-    // Put all known tags in the left_scrolled_vbox
-    std::set<std::string> all_tags = Utils::get_all_tags(connection);
-    BOOST_FOREACH(std::string name, all_tags) {
-      // Make a button, pack it, show it and connect it.
-      GtkWidget *button = gtk_check_button_new_with_label(name.c_str());
-      gtk_box_pack_start(GTK_BOX(left_scrolled_vbox), button, FALSE, FALSE, 0);
-      gtk_widget_show(button);
-    }
+    rebuild_left_scrolled_vbox();
 
     // Make and entry and a button (create_tag_entry, create_tag_button), put them in an hbox
     // (create_tag_hbox) and put that in left_vbox
@@ -204,6 +194,28 @@ std::cout << "Done packing buttons" << std::endl;
     gtk_widget_show(window);
   }
 
+  void rebuild_left_scrolled_vbox() {
+    // Destroy the left_scrolled_vbox if it already exists
+    if (NULL != left_scrolled_vbox) {
+      gtk_widget_destroy(left_scrolled_vbox);
+    }
+
+    // Make a vbox (left_scrolled_vbox) and put it the left_scrolled_window
+    left_scrolled_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_show(GTK_WIDGET(left_scrolled_vbox));
+    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(left_scrolled_window),
+        left_scrolled_vbox);
+
+    // Put all known tags in the left_scrolled_vbox
+    std::set<std::string> all_tags = Utils::get_all_tags(connection);
+    BOOST_FOREACH(std::string name, all_tags) {
+      // Make a button, pack it, show it and connect it.
+      GtkWidget *button = gtk_check_button_new_with_label(name.c_str());
+      gtk_box_pack_start(GTK_BOX(left_scrolled_vbox), button, FALSE, FALSE, 0);
+      gtk_widget_show(button);
+    }
+  }
+
   void adjust_size(GtkWidget *scrolled_vbox, GtkWidget *scrolled_window) {
     GtkRequisition minimum_size;
     GtkRequisition natural_size;
@@ -211,7 +223,7 @@ std::cout << "Done packing buttons" << std::endl;
     std::cout << "minimum size " << minimum_size.width << "X" << minimum_size.height << std::endl;
     std::cout << "natural size " << natural_size.width << "X" << natural_size.height << std::endl;
     gint width = minimum_size.width + 5;
-    gint height = minimum_size.height + 5;
+    gint height = minimum_size.height + 20; // leave extra room so that a new tag will be visible
     const gint max_width = 400;
     const gint max_height = 400;
     if (width < natural_size.width) width = natural_size.width;
@@ -233,9 +245,12 @@ std::cout << "Done packing buttons" << std::endl;
   void create_tag_button_clicked(std::string tag_name) {
     // TODO need to report invalid tag names to user
     // TODO need to scroll to duplicate tag and highlight it
-    // TODO need to redraw tag display with new tag highlighted
+    // TODO need to highlighted new tag
     if (valid_tag_name(tag_name)) {
+      // Put the tag into the database
       Utils::insert_tag(connection, tag_name);
+      // Rebuild the all tags display in the UI
+      rebuild_left_scrolled_vbox();
     }
   }
 
