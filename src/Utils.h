@@ -117,6 +117,42 @@ class Utils {
     } catch (sql::SQLException &ex) {
     }
   }
+
+  static inline int get_rotation(sql::Connection *connection, std::string photoFileName) {
+    int angle = 0;
+    std::string sql = 
+        "SELECT Rotation.angle "
+        "FROM Rotation INNER JOIN Checksum on (Checksum.id = Rotation.checksumId) "
+        "INNER JOIN PhotoFile ON (Checksum.id=PhotoFile.checksumId) "
+        "WHERE PhotoFile.filePath=?";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setString(1, photoFileName);
+    try {
+        sql::ResultSet *rs = prepared_statement->executeQuery();
+        if (rs->next()) {
+          angle = rs->getDouble(1);
+        }
+    } catch (sql::SQLException &ex) {
+    }
+    return angle;
+  }
+
+  static inline void set_rotation(sql::Connection *connection, std::string photoFileName, int rotation) {
+    std::string sql = "INSERT INTO Rotation (checksumId, angle) "
+        "SELECT Checksum.id, ? "
+        "FROM Checksum INNER JOIN PhotoFile ON (Checksum.id=PhotoFile.checksumId) "
+        "WHERE PhotoFile.filePath=? "
+        "ON DUPLICATE KEY UPDATE angle=?";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setDouble(1, rotation);
+    prepared_statement->setString(2, photoFileName);
+    prepared_statement->setDouble(3, rotation);
+    try {
+        prepared_statement->execute();
+	connection->commit();
+    } catch (sql::SQLException &ex) {
+    }
+  }
 };
 
 #endif // UTILS_H__

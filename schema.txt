@@ -28,6 +28,13 @@ CREATE TABLE Checksum (
   checksum CHAR(40) UNIQUE KEY NOT NULL
 ) ENGINE=innodb;
 
+CREATE TABLE Rotation (
+  id	INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  checksumId	 INT NOT NULL UNIQUE KEY,
+  angle	FLOAT NOT NULL,
+  FOREIGN KEY(checksumId) REFERENCES Checksum(id)
+) ENGINE=innodb;
+
 CREATE TABLE ExifBlob (
   id             INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   checksumId	 INT NOT NULL UNIQUE KEY,

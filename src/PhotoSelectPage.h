@@ -411,7 +411,7 @@ class PhotoSelectPage {
       val = siz;
     }
     conversionEngine.go_to(val-1);   
-    rotation = 0;
+    rotation = Utils::get_rotation(connection, conversionEngine.getPhotoFilePath());
     calculate_initial_scaling();
     set_position_entry();
   }
@@ -515,15 +515,15 @@ class PhotoSelectPage {
   }
 
   void next() {
-    rotation = 0;
     conversionEngine.next();   
+    rotation = Utils::get_rotation(connection, conversionEngine.getPhotoFilePath());
     calculate_initial_scaling();
     set_position_entry();
   }
 
   void back() {
-    rotation = 0;
     conversionEngine.back();   
+    rotation = Utils::get_rotation(connection, conversionEngine.getPhotoFilePath());
     calculate_initial_scaling();
     set_position_entry();
   }
@@ -533,6 +533,7 @@ class PhotoSelectPage {
     if (rotation == 4) {
       rotation = 0;
     }
+    Utils::set_rotation(connection, conversionEngine.getPhotoFilePath(), rotation);
   }
 
   void gimp() {
