@@ -10,6 +10,7 @@
 
 class OpenProjectWindow;
 class NewProjectWindow;
+class AddToProjectWindow;
 class RenameProjectWindow;
 class DeleteProjectWindow;
 class EditTagsWindow;
@@ -261,6 +262,7 @@ class BaseWindow {
 
   // Forward references
   void file_project_new_activate();
+  void file_project_add_to_activate();
   void file_project_open_activate();
   void file_project_rename_activate();
   void file_project_delete_activate();
@@ -278,6 +280,12 @@ class BaseWindow {
   file_project_new_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
     baseWindow->file_project_new_activate();
+  }
+
+  static void
+  file_project_add_to_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
+    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
+    baseWindow->file_project_add_to_activate();
   }
 
   static void
@@ -408,6 +416,8 @@ class BaseWindow {
         G_CALLBACK(file_project_open_activate_cb), NULL);
     connect_signal(file_project_new_menu_item, "activate",
         G_CALLBACK(file_project_new_activate_cb), NULL);
+    connect_signal(file_project_add_to_menu_item, "activate",
+        G_CALLBACK(file_project_add_to_activate_cb), NULL);
     connect_signal(file_project_rename_menu_item, "activate",
         G_CALLBACK(file_project_rename_activate_cb), NULL);
     connect_signal(file_project_delete_menu_item, "activate",
@@ -448,6 +458,7 @@ class BaseWindow {
 #include "BaseWindow.h"
 #include "OpenProjectWindow.h"
 #include "NewProjectWindow.h"
+#include "AddToProjectWindow.h"
 #include "DeleteProjectWindow.h"
 #include "EditTagsWindow.h"
 #include "RenameProjectWindow.h"
@@ -467,6 +478,14 @@ BaseWindow::file_project_new_activate() {
       new NewProjectWindow(connection, thePreferences, photoFileCache, this);
   newProjectWindow->run();
   // TODO make sure that newProjectWindow gets destroyed eventually.
+}
+
+inline void
+BaseWindow::file_project_add_to_activate() {
+  AddToProjectWindow* addToProjectWindow =
+      new AddToProjectWindow(connection, thePreferences, photoFileCache, this);
+  addToProjectWindow->run();
+  // TODO make sure that addToProjectWindow gets destroyed eventually.
 }
 
 inline void

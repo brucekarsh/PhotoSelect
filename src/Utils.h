@@ -153,6 +153,63 @@ class Utils {
     } catch (sql::SQLException &ex) {
     }
   }
+
+  static inline long
+  insert_into_project(sql::Connection *connection, std::string project_name) {
+
+    std::string project_insert_sql = "INSERT INTO Project (name) VALUES(?)";
+    sql::PreparedStatement *project_insert_prepared_statement = connection->prepareStatement(
+        project_insert_sql);
+
+    std::string get_last_id_sql = "SELECT LAST_INSERT_ID() as id";
+    sql::PreparedStatement *get_last_id_prepared_statement = connection->prepareStatement(
+      get_last_id_sql);
+
+    long projectId = -1;
+    try {
+      project_insert_prepared_statement->setString(1, project_name);
+      project_insert_prepared_statement->execute();
+      sql::ResultSet *rs = get_last_id_prepared_statement->executeQuery();
+      if (rs->next()) {
+        projectId = rs->getInt64("id");
+      }
+    } catch (sql::SQLException &ex) {
+    }
+    return projectId;
+  }
+
+  static inline long
+  get_project_id(sql::Connection *connection, std::string project_name) {
+
+    std::string project_select_sql = "SELECT id from Project where name = ?";
+    sql::PreparedStatement *project_select_prepared_statement = connection->prepareStatement(
+        project_select_sql);
+
+    long project_id = -1;
+    try {
+      project_select_prepared_statement->setString(1,project_name);
+      sql::ResultSet *rs =
+      project_select_prepared_statement->executeQuery();
+      if (rs->next()) {
+        project_id = rs->getInt64("id");
+      }
+    } catch (sql::SQLException &ex) {
+    }
+    return project_id;
+  }
+
+  //! Add a photo file to a project. Note: does not do a commit. (Because usually this is
+  //! used in a long loop).
+  static inline void
+  add_photo_to_project(sql::Connection *connection, long project_id, long photo_file_id) {
+    std::string sql = "INSERT INTO ProjectPhotoFile (projectId, photoFileId) VALUES(?,?)";
+    sql::PreparedStatement *project_photo_file_insert_prepared_statement =
+        connection->prepareStatement(sql);
+    project_photo_file_insert_prepared_statement->setInt64(1, project_id);
+    project_photo_file_insert_prepared_statement->setInt64(2, photo_file_id);
+    project_photo_file_insert_prepared_statement->execute();
+  }
+
 };
 
 #endif // UTILS_H__
