@@ -27,11 +27,6 @@ class BaseWindow;
 class EditTagsWindow {
   public:
 
-  struct project_tag_widgets_s {
-    GtkWidget *has_value_label;
-    GtkWidget *button;
-  };
-
   GtkWidget *window;
   GtkWidget *windowBox;
   GtkWidget *first_radio_button;
@@ -43,7 +38,6 @@ class EditTagsWindow {
   Preferences *preferences;
   BaseWindow *baseWindow;
   std::string project_name;
-  std::list<project_tag_widgets_s> project_tags_widgets;
 
   EditTagsWindow(sql::Connection *connection_, Preferences *preferences_,
       BaseWindow* baseWindow_, std::string project_name_) :
@@ -56,25 +50,21 @@ class EditTagsWindow {
     WindowRegistry<EditTagsWindow>::forgetWindow(window);
   }
 
-  void accept();
-
   void
-  quit() {
-    gtk_widget_destroy(GTK_WIDGET(window));
+  done() {
+    if (NULL != window) {
+      gtk_widget_destroy(GTK_WIDGET(window));
+      window = 0;
+      delete this;
+    }
   }
 
   static void
-  accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    EditTagsWindow *editTagsWindow =
-        WindowRegistry<EditTagsWindow>::getWindow(widget);
-    editTagsWindow->accept();
-  }
-
-  static void
-  quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    EditTagsWindow *editTagsWindow =
-        WindowRegistry<EditTagsWindow>::getWindow(widget);
-    editTagsWindow->quit();
+  done_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
+    EditTagsWindow *editTagsWindow = WindowRegistry<EditTagsWindow>::getWindow(widget);
+    if (editTagsWindow != 0) {
+      editTagsWindow->done();
+    }
   }
 
   void
@@ -82,6 +72,7 @@ class EditTagsWindow {
     // Make a window with a vertical box (windowBox) in it.
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     WindowRegistry<EditTagsWindow>::setWindow(window, this);
+    g_signal_connect(window, "delete-event", G_CALLBACK(delete_window_cb), NULL);
     windowBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(windowBox);
     gtk_container_add(GTK_CONTAINER(window), windowBox);
@@ -165,30 +156,15 @@ class EditTagsWindow {
     g_signal_connect(delete_project_tags_button, "clicked",
         G_CALLBACK(delete_project_tags_button_clicked_cb), NULL);
 
-    // Make a button (toggle_tag_has_value_button), and put it in right_vbox
-    GtkWidget *toggle_tag_has_value_button =
-        gtk_button_new_with_label("Change whether tag has value");
-    gtk_widget_show(toggle_tag_has_value_button);
-    gtk_box_pack_start(GTK_BOX(right_vbox), toggle_tag_has_value_button, FALSE, FALSE, 0);
-    g_signal_connect(toggle_tag_has_value_button, "clicked",
-        G_CALLBACK(toggle_tag_has_value_button_clicked_cb), NULL);
-
-
-    // Make some buttons (quit_button, accept_button) and put them in an hbox (button_hbox) and
-    // put the hbox in windowBox
-    GtkWidget *quit_button = gtk_button_new_with_label("Quit");
-    GtkWidget *accept_button = gtk_button_new_with_label("Accept");
+    // Make button (done_button) and put it in an hbox (button_hbox) and put the hbox in windowBox
+    GtkWidget *done_button = gtk_button_new_with_label("Done");
     GtkWidget *button_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_show(GTK_WIDGET(quit_button));
-    gtk_widget_show(GTK_WIDGET(accept_button));
+    gtk_widget_show(GTK_WIDGET(done_button));
     gtk_widget_show(GTK_WIDGET(button_hbox));
     gtk_box_pack_start(GTK_BOX(windowBox), button_hbox, FALSE, FALSE, 0);
-    gtk_box_pack_end(GTK_BOX(button_hbox), accept_button, FALSE, FALSE, 0);
-    gtk_box_pack_end(GTK_BOX(button_hbox), quit_button, FALSE, FALSE, 0);
+    gtk_box_pack_end(GTK_BOX(button_hbox), done_button, FALSE, FALSE, 0);
 
-    g_signal_connect(window, "destroy", G_CALLBACK(quit_button_clicked_cb), NULL);
-    g_signal_connect(quit_button, "clicked", G_CALLBACK(quit_button_clicked_cb), NULL);
-    g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
+    g_signal_connect(done_button, "clicked", G_CALLBACK(done_button_clicked_cb), NULL);
 
     adjust_size(right_scrolled_vbox, right_scrolled_window);
     adjust_size(left_scrolled_vbox, left_scrolled_window);
@@ -220,7 +196,6 @@ class EditTagsWindow {
   }
 
   void rebuild_right_scrolled_vbox() {
-    project_tags_widgets.clear();
     // Destroy the left_scrolled_vbox if it already exists
     if (NULL != right_scrolled_vbox) {
       gtk_widget_destroy(right_scrolled_vbox);
@@ -239,27 +214,11 @@ class EditTagsWindow {
     BOOST_FOREACH(map_entry_t map_entry, project_tags) {
       std::string name = map_entry.first;
       Utils::project_tag_s project_tag = map_entry.second;
-      // Make an hbox to hold the has value lable and the button
-      GtkWidget *project_tag_row_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-      gtk_box_pack_start(GTK_BOX(right_scrolled_vbox), project_tag_row_hbox, FALSE, FALSE, 0);
-      gtk_widget_show(project_tag_row_hbox);
-      
-      // Make a label, pack it, show it
-      GtkWidget *has_value_label = gtk_label_new(NULL);
-      gtk_label_set_markup(GTK_LABEL(has_value_label), "<span color=\"dark green\">X</span>");
-      gtk_box_pack_start(GTK_BOX(project_tag_row_hbox), has_value_label, FALSE, FALSE, 0);
-      gtk_widget_show(has_value_label);
 
       // Make a button, pack it, show it and connect it.
       GtkWidget *button = gtk_check_button_new_with_label(name.c_str());
-      gtk_box_pack_start(GTK_BOX(project_tag_row_hbox), button, TRUE, TRUE, 0);
+      gtk_box_pack_start(GTK_BOX(right_scrolled_vbox), button, FALSE, FALSE, 0);
       gtk_widget_show(button);
-
-      // Keep track of it
-      project_tag_widgets_s project_tag_widgets;
-      project_tag_widgets.button = button;
-      project_tag_widgets.has_value_label = has_value_label;
-      project_tags_widgets.push_back(project_tag_widgets);
     }
   }
 
@@ -315,15 +274,15 @@ class EditTagsWindow {
     }
   }
 
-  static void toggle_tag_has_value_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
+  static void delete_window_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     EditTagsWindow *edit_tags_window = WindowRegistry<EditTagsWindow>::getWindow(widget);
     if (NULL != edit_tags_window) {
-      edit_tags_window->toggle_tag_has_value_button_clicked();
+      edit_tags_window->delete_window();
     }
   }
 
-  void toggle_tag_has_value_button_clicked() {
-    std::cout << "toggle_tag_has_value_button_clicked called" << std::endl;
+  void delete_window() {
+    done();
   }
 
   void add_tags_button_clicked() {
@@ -393,13 +352,4 @@ class EditTagsWindow {
   }
 
 };
-
-#include "BaseWindow.h"
-#include "PhotoSelectPage.h"
-
-
-inline  void
-EditTagsWindow::accept() {
-  quit();
-}
 #endif // EDITTAGSWINDOW_H__

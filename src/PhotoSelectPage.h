@@ -274,37 +274,12 @@ class PhotoSelectPage {
       gtk_box_pack_start(GTK_BOX(tag_view_tags_box), button, FALSE, FALSE, 0);
       gtk_widget_show(button);
 
-      // If this tag is supposed to have a value, make an entry, pack it and show it
-      GtkWidget *entry = NULL;
-      if (true == project_tag.has_value) {
-	entry = gtk_entry_new();
-	gtk_widget_show(entry);
-	gtk_box_pack_start(GTK_BOX(tag_view_tags_box), entry, FALSE, FALSE, 0);
-      }
-
       // If the tag is set for this photo, activate its check button.
       if (1 == photo_tags.count(name)) {
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), true);
       }
 
-      // If this tag is supposed to have a value but the tag is not set for this photo,
-      // make its entry non-sensitive.
-      if (NULL != entry && 1 != photo_tags.count(name)) {
-          gtk_widget_set_sensitive(entry, false);
-      }
-        
-      // If this tag is supposed to have a value and the tag is set and it actually has
-      // a value, set the entry to its value. 
-
-      if (NULL != entry && 1 == photo_tags.count(name)) {
-        Utils::photo_tag_s photo_tag = photo_tags[name];
-        if (false == photo_tag.value_is_null) {
-          gtk_entry_set_text(GTK_ENTRY(entry), photo_tag.value.c_str());
-        }
-        g_signal_connect(GTK_EDITABLE(entry), "changed", G_CALLBACK(tag_entry_changed_cb),
-            (gpointer)button);
-      }
-      g_signal_connect(button, "toggled", G_CALLBACK(tag_button_clicked_cb), (gpointer)entry);
+      g_signal_connect(button, "toggled", G_CALLBACK(tag_button_clicked_cb), NULL);
     }
 
     // Put the tag_view_scrolled_window into the tag_view_box.
@@ -692,10 +667,6 @@ class PhotoSelectPage {
     std::string file_name = conversionEngine.getPhotoFilePath();
     project_tags = Utils::get_project_tags(connection, project_name);
     photo_tags = Utils::get_photo_tags(connection, project_name, file_name);
-    GtkWidget *entry = NULL;
-    if (0 != user_data) {
-      entry = GTK_WIDGET(user_data);
-    }
 
     // Ignore this click if it's for a tag that's not in our project
     if (0 == project_tags.count(tag_name)) {
@@ -704,16 +675,8 @@ class PhotoSelectPage {
 
     if (active) {
       add_tag(tag_name, file_name);
-      if (NULL != entry) {
-        gtk_entry_set_text(GTK_ENTRY(entry), photo_tags[tag_name].value.c_str());
-        gtk_widget_set_sensitive(entry, true);
-      }
     } else {
       remove_tag(tag_name, file_name);
-      if (NULL != entry) {
-        gtk_entry_set_text(GTK_ENTRY(entry), "");
-        gtk_widget_set_sensitive(entry, false);
-      }
     }
   }
 
@@ -726,26 +689,6 @@ class PhotoSelectPage {
     sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
     prepared_statement->setString(1, tag_name);
     prepared_statement->setString(2, file_name);
-    prepared_statement->execute();
-    connection->commit();
-  }
-
-  void
-  add_value(std::string tag_name, std::string tag_value, std::string photoFilePath) {
-    std::string sql =
-        "INSERT INTO TagChecksumValue (tagId, checksumId, value) "
-        "SELECT Tag.id, Checksum.id, ? FROM  PhotoFile "
-        "INNER JOIN Checksum ON (PhotoFile.ChecksumId = Checksum.id) "
-        "INNER JOIN TagChecksum ON (TagChecksum.checksumId = Checksum.id) "
-        "INNER JOIN Tag ON (TagChecksum.tagId = Tag.id) "
-        "WHERE Tag.name=? "
-        "AND PhotoFile.filePath=? "
-        "ON DUPLICATE KEY UPDATE TagChecksumValue.value = ?";
-    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
-    prepared_statement->setString(1, tag_value);
-    prepared_statement->setString(2, tag_name);
-    prepared_statement->setString(3, photoFilePath);
-    prepared_statement->setString(4, tag_value);
     prepared_statement->execute();
     connection->commit();
   }
@@ -764,24 +707,6 @@ class PhotoSelectPage {
     connection->commit();
   }
 
-  static void
-  tag_entry_changed_cb(GtkEditable *editable, gpointer user_data) {
-    gchar *chars = gtk_editable_get_chars(editable, 0, -1);
-    std::string tag_value = chars;
-    free(chars);
-    GtkWidget* button = GTK_WIDGET(user_data);
-    std::string tag_name = gtk_button_get_label(GTK_BUTTON(button));
-    
-    PhotoSelectPage *photoSelectPage = PageRegistry<PhotoSelectPage>::getPage(GTK_WIDGET(editable));
-    if (NULL != photoSelectPage) {
-      photoSelectPage->tag_entry_changed(tag_name, tag_value);
-    }
-  }
-
-  void tag_entry_changed(std::string tag_name, std::string tag_value) {
-    std::string photoFilePath = conversionEngine.getPhotoFilePath();
-    add_value(tag_name, tag_value, photoFilePath);
-  }
 };
 
 #include "BaseWindow.h"
