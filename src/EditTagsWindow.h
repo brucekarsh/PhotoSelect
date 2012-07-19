@@ -26,6 +26,12 @@ class BaseWindow;
 
 class EditTagsWindow {
   public:
+
+  struct project_tag_widgets_s {
+    GtkWidget *has_value_label;
+    GtkWidget *button;
+  };
+
   GtkWidget *window;
   GtkWidget *windowBox;
   GtkWidget *first_radio_button;
@@ -37,6 +43,7 @@ class EditTagsWindow {
   Preferences *preferences;
   BaseWindow *baseWindow;
   std::string project_name;
+  std::list<project_tag_widgets_s> project_tags_widgets;
 
   EditTagsWindow(sql::Connection *connection_, Preferences *preferences_,
       BaseWindow* baseWindow_, std::string project_name_) :
@@ -213,6 +220,7 @@ class EditTagsWindow {
   }
 
   void rebuild_right_scrolled_vbox() {
+    project_tags_widgets.clear();
     // Destroy the left_scrolled_vbox if it already exists
     if (NULL != right_scrolled_vbox) {
       gtk_widget_destroy(right_scrolled_vbox);
@@ -231,10 +239,27 @@ class EditTagsWindow {
     BOOST_FOREACH(map_entry_t map_entry, project_tags) {
       std::string name = map_entry.first;
       Utils::project_tag_s project_tag = map_entry.second;
+      // Make an hbox to hold the has value lable and the button
+      GtkWidget *project_tag_row_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+      gtk_box_pack_start(GTK_BOX(right_scrolled_vbox), project_tag_row_hbox, FALSE, FALSE, 0);
+      gtk_widget_show(project_tag_row_hbox);
+      
+      // Make a label, pack it, show it
+      GtkWidget *has_value_label = gtk_label_new(NULL);
+      gtk_label_set_markup(GTK_LABEL(has_value_label), "<span color=\"dark green\">X</span>");
+      gtk_box_pack_start(GTK_BOX(project_tag_row_hbox), has_value_label, FALSE, FALSE, 0);
+      gtk_widget_show(has_value_label);
+
       // Make a button, pack it, show it and connect it.
       GtkWidget *button = gtk_check_button_new_with_label(name.c_str());
-      gtk_box_pack_start(GTK_BOX(right_scrolled_vbox), button, FALSE, FALSE, 0);
+      gtk_box_pack_start(GTK_BOX(project_tag_row_hbox), button, TRUE, TRUE, 0);
       gtk_widget_show(button);
+
+      // Keep track of it
+      project_tag_widgets_s project_tag_widgets;
+      project_tag_widgets.button = button;
+      project_tag_widgets.has_value_label = has_value_label;
+      project_tags_widgets.push_back(project_tag_widgets);
     }
   }
 
