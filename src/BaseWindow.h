@@ -5,8 +5,8 @@
 #include "PreferencesWindow.h"
 #include "ImportWindow.h"
 #include <boost/foreach.hpp>
-#include "WindowRegistry.h"
-#include "PageRegistry.h"
+#include "WidgetRegistry.h"
+#include "WidgetRegistry.h"
 
 class OpenProjectWindow;
 class NewProjectWindow;
@@ -66,7 +66,7 @@ class BaseWindow {
   };
 
   ~BaseWindow() {
-    WindowRegistry<BaseWindow>::forgetWindow(top_level_window);
+    WidgetRegistry<BaseWindow>::forget_widget(top_level_window);
   }
 
   void
@@ -107,7 +107,7 @@ class BaseWindow {
     gtk_window_set_resizable(GTK_WINDOW(top_level_window), TRUE);
     gtk_window_set_default_size(GTK_WINDOW(top_level_window), width, height);
     gtk_widget_show(top_level_window);
-    WindowRegistry<BaseWindow>::setWindow(top_level_window, this);
+    WidgetRegistry<BaseWindow>::set_widget(top_level_window, this);
 
 
     // Put a GtkBox (top_level_vbox) in top_level_window
@@ -272,43 +272,43 @@ class BaseWindow {
 
   static void
   file_project_open_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
+    BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
     baseWindow->file_project_open_activate();
   }
 
   static void
   file_project_new_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
+    BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
     baseWindow->file_project_new_activate();
   }
 
   static void
   file_project_add_to_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
+    BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
     baseWindow->file_project_add_to_activate();
   }
 
   static void
   file_project_rename_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
+    BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
     baseWindow->file_project_rename_activate();
   }
 
   static void
   file_project_delete_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
+    BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
     baseWindow->file_project_delete_activate();
   }
 
   static void
   edit_preferences_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
+    BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
     baseWindow->preferences_activate();
   }
 
   static void
   edit_tags_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
+    BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
     baseWindow->edit_tags_activate();
   }
 
@@ -331,7 +331,7 @@ class BaseWindow {
 
   static void
   clone_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
-    BaseWindow* baseWindow = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(menuItem));
+    BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
     baseWindow->clone_activate();
   }
 
@@ -351,7 +351,7 @@ class BaseWindow {
 
   static GtkNotebook *
   create_window_cb(GtkNotebook *notebook, GtkWidget *page, gint x, gint y, gpointer user_data) {
-    BaseWindow *base_window = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(notebook));
+    BaseWindow *base_window = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(notebook));
     GtkNotebook *new_notebook = base_window->create_window(notebook, page, x, y, user_data);
     return new_notebook;
   }
@@ -366,7 +366,7 @@ class BaseWindow {
 
   static void
   page_removed_cb(GtkNotebook *notebook, GtkWidget *child, guint page_num, gpointer user_data) {
-    BaseWindow *base_window = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(notebook));
+    BaseWindow *base_window = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(notebook));
     if (NULL != base_window) {
       base_window->page_removed(notebook, child, page_num, user_data);
     }
@@ -387,7 +387,7 @@ class BaseWindow {
   quit() {
     disconnect_signals();
     // If we are the last BaseWindow, then stop the event loop
-    long n_base_windows =  WindowRegistry<BaseWindow>::count();
+    long n_base_windows =  WidgetRegistry<BaseWindow>::count();
     if (1 == n_base_windows) {
       gtk_main_quit();
     }
@@ -397,7 +397,7 @@ class BaseWindow {
 
   static void
   quit_cb(GtkWidget *widget, gpointer user_data) {
-    BaseWindow *base_window = WindowRegistry<BaseWindow>::getWindow(widget);
+    BaseWindow *base_window = WidgetRegistry<BaseWindow>::get_object(widget);
     if (NULL != base_window) {
       base_window->quit();
     }
@@ -405,7 +405,7 @@ class BaseWindow {
 
   static void
   view_tags_toggled_cb(GtkCheckMenuItem *checkmenuitem, gpointer user_data) {
-    BaseWindow *base_window = WindowRegistry<BaseWindow>::getWindow(GTK_WIDGET(checkmenuitem));
+    BaseWindow *base_window = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(checkmenuitem));
     base_window->view_tags_toggled(checkmenuitem);
   }
     
@@ -514,7 +514,7 @@ BaseWindow::edit_tags_activate() {
     return;
   }
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
-  PhotoSelectPage *photo_select_page = PageRegistry<PhotoSelectPage>::getPage(page);
+  PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
   std::string project_name = photo_select_page->project_name;
   EditTagsWindow *edit_tags_window =
       new EditTagsWindow(connection, thePreferences, this, project_name);
@@ -526,7 +526,7 @@ inline void
 BaseWindow::view_tags_toggled(GtkCheckMenuItem *checkmenuitem) {
   gint pagenum = gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
-  PhotoSelectPage *photo_select_page = PageRegistry<PhotoSelectPage>::getPage(page);
+  PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
   std::string position = gtk_menu_item_get_label(GTK_MENU_ITEM(checkmenuitem));
   photo_select_page->set_tags_position(position);
 }
@@ -535,7 +535,7 @@ inline void
 BaseWindow::clone_activate() {
   gint pagenum = gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
-  PhotoSelectPage *photo_select_page = PageRegistry<PhotoSelectPage>::getPage(page);
+  PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
   PhotoSelectPage *cloned_photo_select_page = photo_select_page->clone();
   add_page(cloned_photo_select_page->get_tab_label(),
       cloned_photo_select_page->get_notebook_page(), cloned_photo_select_page->project_name);

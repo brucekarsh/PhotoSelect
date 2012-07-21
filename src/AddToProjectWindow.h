@@ -8,7 +8,7 @@
 #include <boost/lexical_cast.hpp>
 #include <json_spirit.h>
 
-#include "WindowRegistry.h"
+#include "WidgetRegistry.h"
 
 /* MySQL Connector/C++ specific headers */
 #include <driver.h>
@@ -64,7 +64,7 @@ class AddToProjectWindow {
   }
 
   ~AddToProjectWindow() {
-    WindowRegistry<AddToProjectWindow>::forgetWindow(window);
+    WidgetRegistry<AddToProjectWindow>::forget_widget(window);
   }
 
   void accept();
@@ -246,19 +246,19 @@ class AddToProjectWindow {
 
   static void
   accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    AddToProjectWindow *addToProjectWindow = WindowRegistry<AddToProjectWindow>::getWindow(widget);
+    AddToProjectWindow *addToProjectWindow = WidgetRegistry<AddToProjectWindow>::get_object(widget);
     addToProjectWindow->accept();
   }
 
   static void
   query_submit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    AddToProjectWindow *addToProjectWindow = WindowRegistry<AddToProjectWindow>::getWindow(widget);
+    AddToProjectWindow *addToProjectWindow = WidgetRegistry<AddToProjectWindow>::get_object(widget);
     addToProjectWindow->submit();
   }
 
   static void
   query_add_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    AddToProjectWindow *addToProjectWindow = WindowRegistry<AddToProjectWindow>::getWindow(widget);
+    AddToProjectWindow *addToProjectWindow = WidgetRegistry<AddToProjectWindow>::get_object(widget);
     AddToProjectWindowRow *qwr = (AddToProjectWindowRow*) callback_data;
     int qwri = addToProjectWindow->get_qwri(qwr);
     AddToProjectWindowRow *new_qwr = addToProjectWindow->make_row();
@@ -270,7 +270,7 @@ class AddToProjectWindow {
 
   static void
   empty_row_add_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    AddToProjectWindow *addToProjectWindow = WindowRegistry<AddToProjectWindow>::getWindow(widget);
+    AddToProjectWindow *addToProjectWindow = WidgetRegistry<AddToProjectWindow>::get_object(widget);
     AddToProjectWindowRow *new_qwr = addToProjectWindow->make_row();
     addToProjectWindow->addToProjectWindowRows.insert(std::pair<GtkWidget*,
         AddToProjectWindowRow*>(new_qwr->hbox, new_qwr));
@@ -281,7 +281,7 @@ class AddToProjectWindow {
 
   static void
   query_remove_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    AddToProjectWindow *addToProjectWindow = WindowRegistry<AddToProjectWindow>::getWindow(widget);
+    AddToProjectWindow *addToProjectWindow = WidgetRegistry<AddToProjectWindow>::get_object(widget);
     AddToProjectWindowRow *qwr = (AddToProjectWindowRow*) callback_data;
       gtk_container_remove(GTK_CONTAINER(addToProjectWindow->verticalBox), qwr->hbox);
       addToProjectWindow->addToProjectWindowRows.erase(qwr->hbox);
@@ -295,7 +295,7 @@ class AddToProjectWindow {
 
   static void
   quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    AddToProjectWindow *addToProjectWindow = WindowRegistry<AddToProjectWindow>::getWindow(widget);
+    AddToProjectWindow *addToProjectWindow = WidgetRegistry<AddToProjectWindow>::get_object(widget);
     addToProjectWindow->quit();
   }
 
@@ -335,7 +335,7 @@ class AddToProjectWindow {
 
     // Make a window with a vertical box (windowBox) in it.
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    WindowRegistry<AddToProjectWindow>::setWindow(window, this);
+    WidgetRegistry<AddToProjectWindow>::set_widget(window, this);
     windowBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(windowBox);
     gtk_container_add(GTK_CONTAINER(window), windowBox);

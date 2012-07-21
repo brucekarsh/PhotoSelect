@@ -8,7 +8,7 @@
 #include <boost/lexical_cast.hpp>
 #include <json_spirit.h>
 
-#include "WindowRegistry.h"
+#include "WidgetRegistry.h"
 
 /* MySQL Connector/C++ specific headers */
 #include <driver.h>
@@ -40,7 +40,7 @@ class DeleteProjectWindow {
   }
 
   ~DeleteProjectWindow() {
-    WindowRegistry<DeleteProjectWindow>::forgetWindow(window);
+    WidgetRegistry<DeleteProjectWindow>::forget_widget(window);
   }
 
   void accept();
@@ -53,14 +53,14 @@ class DeleteProjectWindow {
   static void
   accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
     DeleteProjectWindow *renameProjectWindow =
-        WindowRegistry<DeleteProjectWindow>::getWindow(widget);
+        WidgetRegistry<DeleteProjectWindow>::get_object(widget);
     renameProjectWindow->accept();
   }
 
   static void
   quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
     DeleteProjectWindow *renameProjectWindow =
-        WindowRegistry<DeleteProjectWindow>::getWindow(widget);
+        WidgetRegistry<DeleteProjectWindow>::get_object(widget);
     renameProjectWindow->quit();
   }
 
@@ -68,7 +68,7 @@ class DeleteProjectWindow {
   run() {
     // Make a window with a vertical box (windowBox) in it.
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    WindowRegistry<DeleteProjectWindow>::setWindow(window, this);
+    WidgetRegistry<DeleteProjectWindow>::set_widget(window, this);
     windowBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(windowBox);
     gtk_container_add(GTK_CONTAINER(window), windowBox);

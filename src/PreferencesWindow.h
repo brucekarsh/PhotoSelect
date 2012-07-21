@@ -5,7 +5,7 @@
 #include "ConversionEngine.h"
 #include <gtk/gtk.h>
 #include <cairo-xlib.h>
-#include "WindowRegistry.h"
+#include "WidgetRegistry.h"
 #include "Preferences.h"
 
 class PreferencesWindow {
@@ -26,7 +26,7 @@ class PreferencesWindow {
   }
 
   ~PreferencesWindow() {
-    WindowRegistry<PreferencesWindow>::forgetWindow(window);
+    WidgetRegistry<PreferencesWindow>::forget_widget(window);
   }
 
   void highlight() {
@@ -96,7 +96,7 @@ class PreferencesWindow {
     gtk_entry_set_text(user, thePreferences -> get_user().c_str());
     gtk_entry_set_text(password, thePreferences -> get_password().c_str());
     gtk_entry_set_text(database, thePreferences -> get_database().c_str());
-    WindowRegistry<PreferencesWindow>::setWindow(window, this);
+    WidgetRegistry<PreferencesWindow>::set_widget(window, this);
 
     gtk_builder_connect_signals(builder, NULL);
     g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
@@ -135,19 +135,19 @@ class PreferencesWindow {
 
   static void
   accept_button_clicked_cb(GtkWidget* widget, gpointer callback_data) {
-    PreferencesWindow *preferencesWindow = WindowRegistry<PreferencesWindow>::getWindow(widget);
+    PreferencesWindow *preferencesWindow = WidgetRegistry<PreferencesWindow>::get_object(widget);
     preferencesWindow->accept_button_clicked();
   }
 
   static void
   cancel_button_clicked_cb(GtkWidget* widget, gpointer callback_data) {
-    PreferencesWindow *preferencesWindow = WindowRegistry<PreferencesWindow>::getWindow(widget);
+    PreferencesWindow *preferencesWindow = WidgetRegistry<PreferencesWindow>::get_object(widget);
     preferencesWindow->cancel_button_clicked();
   }
 
   static void
   apply_button_clicked_cb(GtkWidget* widget, gpointer callback_data) {
-    PreferencesWindow *preferencesWindow = WindowRegistry<PreferencesWindow>::getWindow(widget);
+    PreferencesWindow *preferencesWindow = WidgetRegistry<PreferencesWindow>::get_object(widget);
     preferencesWindow->apply_button_clicked();
   }
 };

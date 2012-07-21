@@ -8,7 +8,7 @@
 #include <boost/lexical_cast.hpp>
 #include <json_spirit.h>
 
-#include "WindowRegistry.h"
+#include "WidgetRegistry.h"
 
 /* MySQL Connector/C++ specific headers */
 #include <driver.h>
@@ -47,7 +47,7 @@ class EditTagsWindow {
   }
 
   ~EditTagsWindow() {
-    WindowRegistry<EditTagsWindow>::forgetWindow(window);
+    WidgetRegistry<EditTagsWindow>::forget_widget(window);
   }
 
   void
@@ -61,7 +61,7 @@ class EditTagsWindow {
 
   static void
   done_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    EditTagsWindow *editTagsWindow = WindowRegistry<EditTagsWindow>::getWindow(widget);
+    EditTagsWindow *editTagsWindow = WidgetRegistry<EditTagsWindow>::get_object(widget);
     if (editTagsWindow != 0) {
       editTagsWindow->done();
     }
@@ -71,7 +71,7 @@ class EditTagsWindow {
   run() {
     // Make a window with a vertical box (windowBox) in it.
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    WindowRegistry<EditTagsWindow>::setWindow(window, this);
+    WidgetRegistry<EditTagsWindow>::set_widget(window, this);
     g_signal_connect(window, "delete-event", G_CALLBACK(delete_window_cb), NULL);
     windowBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(windowBox);
@@ -240,7 +240,7 @@ class EditTagsWindow {
   }
 
   static void create_tag_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    EditTagsWindow *edit_tags_window = WindowRegistry<EditTagsWindow>::getWindow(widget);
+    EditTagsWindow *edit_tags_window = WidgetRegistry<EditTagsWindow>::get_object(widget);
     GtkWidget *create_tag_entry = GTK_WIDGET(callback_data);
     if (NULL != edit_tags_window && NULL != create_tag_entry) {
       std::string new_tag_name = gtk_entry_get_text(GTK_ENTRY(create_tag_entry));
@@ -261,21 +261,21 @@ class EditTagsWindow {
   }
 
   static void add_tags_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    EditTagsWindow *edit_tags_window = WindowRegistry<EditTagsWindow>::getWindow(widget);
+    EditTagsWindow *edit_tags_window = WidgetRegistry<EditTagsWindow>::get_object(widget);
     if (NULL != edit_tags_window) {
       edit_tags_window->add_tags_button_clicked();
     }
   }
 
   static void delete_project_tags_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    EditTagsWindow *edit_tags_window = WindowRegistry<EditTagsWindow>::getWindow(widget);
+    EditTagsWindow *edit_tags_window = WidgetRegistry<EditTagsWindow>::get_object(widget);
     if (NULL != edit_tags_window) {
       edit_tags_window->delete_project_tags_button_clicked();
     }
   }
 
   static void delete_window_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    EditTagsWindow *edit_tags_window = WindowRegistry<EditTagsWindow>::getWindow(widget);
+    EditTagsWindow *edit_tags_window = WidgetRegistry<EditTagsWindow>::get_object(widget);
     if (NULL != edit_tags_window) {
       edit_tags_window->delete_window();
     }

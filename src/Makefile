@@ -2,7 +2,7 @@ CSRC =
 COBJ = $(CSRC:%.c=%.o)
 CDEP = $(COBJ:%.c:%.d)
 
-CXXSRC = main.cc GtkCallbackStubs.cc WindowRegistry.cc PageRegistry.cc BaseWindow.cc
+CXXSRC = main.cc GtkCallbackStubs.cc BaseWindow.cc WidgetRegistry.cc
 CXXOBJ = $(CXXSRC:%.cc=%.o)
 CXXDEP = $(CXXSRC:%.cc=%.d)
 
