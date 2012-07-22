@@ -7,8 +7,6 @@
 #include "WidgetRegistry.h"
 #include "QueryView.h"
 
-class Preferences;
-class BaseWindow;
 namespace sql {
   class Connection;
 }
@@ -21,7 +19,7 @@ class AddToProjectWindow {
   GtkWidget *quit_button;
   sql::Connection *connection;
   QueryView query_view;
-  std::string project_name; // Nothing sets this yet.
+  std::string project_name;
 
   AddToProjectWindow(sql::Connection *connection_, std::string project_name_)
       : connection(connection_), project_name(project_name_), query_view(connection_) {
