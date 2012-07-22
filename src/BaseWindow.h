@@ -490,7 +490,7 @@ BaseWindow::file_project_open_activate() {
 inline void
 BaseWindow::file_project_new_activate() {
   NewProjectWindow* newProjectWindow =
-      new NewProjectWindow(connection, thePreferences, photoFileCache, this);
+      new NewProjectWindow(connection, this);
   newProjectWindow->run();
   // TODO make sure that newProjectWindow gets destroyed eventually.
 }
