@@ -20,8 +20,6 @@ class AddToProjectWindow {
   GtkWidget *accept_button;
   GtkWidget *quit_button;
   sql::Connection *connection;
-  std::list<std::string> photoFilenameList;
-  std::list<long> photoFileIdList;
   QueryView query_view;
   std::string project_name; // Nothing sets this yet.
 
@@ -31,19 +29,6 @@ class AddToProjectWindow {
 
   ~AddToProjectWindow() {
     WidgetRegistry<AddToProjectWindow>::forget_widget(window);
-  }
-
-  void accept();
-  void submit();
-
-  std::string translate_field_name(const std::string &fieldName) {
-    if (fieldName == "Path") {
-      return "p.filePath";
-    }
-    if (fieldName == "Date") {
-      return "t.adjustedDateTime";
-    }
-    return fieldName;
   }
 
   void
@@ -87,42 +72,37 @@ class AddToProjectWindow {
 
     gtk_widget_show(window);
   }
+
+  void
+  accept() {
+    // Get the project name
+    if (0 == project_name.length()) {
+      query_view.set_error_label("Missing project name.");
+      return;
+    }
+    // get its project_id
+    long project_id = Utils::get_project_id(connection, project_name);
+    if (project_id == -1) {
+      query_view.set_error_label("Missing project id.");
+      return;
+    }
+
+    std::list<std::string> photoFilenameList;
+    std::list<long> photoFileIdList;
+    photoFilenameList = query_view.getPhotoFilenameList();
+    photoFileIdList = query_view.getPhotoFileIdList();
+    // Add the filenames into the ProjectPhotoFile table
+    std::list<long>::iterator id_iter = photoFileIdList.begin();
+    for (std::list<std::string>::iterator filename_iter = photoFilenameList.begin();
+        filename_iter != photoFilenameList.end();
+        ++filename_iter) {
+      long photo_file_id = *id_iter;
+      std::string photo_file_name = *filename_iter;
+      ++id_iter;
+      Utils::add_photo_to_project(connection, project_id, photo_file_id);
+    }
+    connection->commit();
+    quit();
+  }
 }; // end class AddToProjectWindow
-
-#include "BaseWindow.h"
-#include "PhotoSelectPage.h"
-
-inline  void
-AddToProjectWindow::accept() {
-#ifdef LATER
-  // Get the project name
-  if (0 == project_name.length()) {
-    set_error_label("Missing project name.");
-    return;
-  }
-  // Insert it into the database and get its id
-  long project_id = Utils::insert_into_project(connection, project_name);
-  if (project_id == -1) {
-    set_error_label("Duplicate project name.");
-  }
-
-  if (project_id == -1) {
-    connection->rollback();
-    return;
-  }
-
-  // Add the filenames into the ProjectPhotoFile table
-  std::list<long>::iterator id_iter = photoFileIdList.begin();
-  for (std::list<std::string>::iterator filename_iter = photoFilenameList.begin();
-      filename_iter != photoFilenameList.end();
-      ++filename_iter) {
-    long photo_file_id = *id_iter;
-    ++id_iter;
-    Utils::add_photo_to_project(connection, project_id, photo_file_id);
-  }
-  connection->commit();
-#endif // LATER
-  std::cout << "" << "accept() entered" << std::endl;
-  quit();
-}
 #endif // ADDTOPROJECTWINDOW_H__
