@@ -67,8 +67,6 @@ class QueryView {
   const std::list<std::string> &getPhotoFilenameList() {return photoFilenameList;};
   const std::list<long> &getPhotoFileIdList() {return photoFileIdList;};
 
-  void submit();
-
   std::string
   makeQueryJSON() {
     json_spirit::Array query_rows;
@@ -197,10 +195,6 @@ class QueryView {
     runUI();
 
     return first_part + last_part;
-  }
-
-  void
-  quit() {
   }
 
   QueryViewRow *
@@ -408,11 +402,11 @@ class QueryView {
         ("<span color=\"red\">" + text + "</span>").c_str());
     gtk_widget_show(GTK_WIDGET(error_label));
   }
+  void
+  submit() {
+    std::string queryJSON = makeQueryJSON();
+    queryJSONToQuery(queryJSON);
+  }
 }; // end class QueryView
 
-inline  void
-QueryView::submit() {
-  std::string queryJSON = makeQueryJSON();
-  queryJSONToQuery(queryJSON);
-}
 #endif // QUERYVIEW_H__
