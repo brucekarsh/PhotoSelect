@@ -13,6 +13,7 @@ class OpenProjectWindow;
 class PreferencesWindow;
 class RenameProjectWindow;
 class PhotoSelectPage;
+class QueryView;
 
 template<class T>  std::map<GtkWidget*, T*> WidgetRegistry<T>::widget_map;
 
@@ -26,4 +27,5 @@ template class WidgetRegistry<OpenProjectWindow>;
 template class WidgetRegistry<PreferencesWindow>;
 template class WidgetRegistry<RenameProjectWindow>;
 template class WidgetRegistry<PhotoSelectPage>;
+template class WidgetRegistry<QueryView>;
 

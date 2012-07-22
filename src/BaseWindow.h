@@ -261,6 +261,7 @@ class BaseWindow {
   }
 
   // Forward references
+  std::string get_project_name();
   void file_project_new_activate();
   void file_project_add_to_activate();
   void file_project_open_activate();
@@ -464,6 +465,20 @@ class BaseWindow {
 #include "RenameProjectWindow.h"
 #include "PhotoSelectPage.h"
 
+//! Find the project_name from the current notebook page.
+//! Returns "" if it can't get a project name. (presumably because the notebook is empty).
+inline std::string
+BaseWindow::get_project_name() {
+  std::string project_name("");
+  gint pagenum = gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
+  if (-1 != pagenum) {
+    GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
+    PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
+    project_name = photo_select_page->project_name;
+  }
+  return project_name;
+}
+
 inline void
 BaseWindow::file_project_open_activate() {
   OpenProjectWindow* openProjectWindow =
@@ -482,8 +497,12 @@ BaseWindow::file_project_new_activate() {
 
 inline void
 BaseWindow::file_project_add_to_activate() {
+  std::string project_name = get_project_name();
+  if (0 == project_name.size()) {
+    return;
+  }
   AddToProjectWindow* addToProjectWindow =
-      new AddToProjectWindow(connection, thePreferences, photoFileCache, this);
+      new AddToProjectWindow(connection, project_name);
   addToProjectWindow->run();
   // TODO make sure that addToProjectWindow gets destroyed eventually.
 }
@@ -507,15 +526,10 @@ BaseWindow::file_project_delete_activate() {
 inline void
 BaseWindow::edit_tags_activate() {
   std::cout << "tags_activate entered" << std::endl;
-  // Find the project_name from the current notebook page.
-  // Go away if there's no current notebook page. (Presumably the notebook is empty)
-  gint pagenum = gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
-  if (-1 == pagenum) {
+  std::string project_name = get_project_name();
+  if (0 == project_name.size()) {
     return;
   }
-  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
-  PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
-  std::string project_name = photo_select_page->project_name;
   EditTagsWindow *edit_tags_window =
       new EditTagsWindow(connection, thePreferences, this, project_name);
   edit_tags_window->run();
