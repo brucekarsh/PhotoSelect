@@ -3,33 +3,33 @@
 #include <gtk/gtk.h>
 #include <iostream>
 #include <fstream>
-#include <vector>
-#include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
-#include <json_spirit.h>
 
 #include "WidgetRegistry.h"
 #include "QueryView.h"
 
 /* MySQL Connector/C++ specific headers */
-#include <driver.h>
-#include <connection.h>
-#include <statement.h>
-#include <prepared_statement.h>
-#include <resultset.h>
-#include <metadata.h>
-#include <resultset_metadata.h>
-#include <exception.h>
-#include <warning.h>
+//#include <driver.h>
+//#include <connection.h>
+//#include <statement.h>
+//#include <prepared_statement.h>
+//#include <resultset.h>
+//#include <metadata.h>
+//#include <resultset_metadata.h>
+//#include <exception.h>
+//#include <warning.h>
 
 class Preferences;
 class BaseWindow;
+namespace sql {
+  class Connection;
+}
 
 class AddToProjectWindow {
   public:
   GtkWidget *window;
   GtkWidget *windowBox;
   GtkWidget *accept_button;
+  GtkWidget *quit_button;
   sql::Connection *connection;
   std::list<std::string> photoFilenameList;
   std::list<long> photoFileIdList;
@@ -75,16 +75,12 @@ class AddToProjectWindow {
   }
 
   void
-  runUI() {
-    while (gtk_events_pending ()) {
-      gtk_main_iteration ();
-    }
-  }
-
-  void
   run() {
     // Make a window with a vertical box (windowBox) in it.
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    std::string window_title = "Add To Project ";
+    window_title += project_name;
+    gtk_window_set_title(GTK_WINDOW(window), window_title.c_str());
     WidgetRegistry<AddToProjectWindow>::set_widget(window, this);
     windowBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(windowBox);
@@ -94,8 +90,10 @@ class AddToProjectWindow {
     gtk_container_add(GTK_CONTAINER(windowBox), query_view.get_widget());
     accept_button = query_view.get_accept_button();
     g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
+    quit_button = query_view.get_quit_button();
+    g_signal_connect(quit_button, "clicked", G_CALLBACK(quit_button_clicked_cb), NULL);
 
-    g_signal_connect(window, "destroy", G_CALLBACK(quit_button_clicked_cb), NULL);
+    g_signal_connect(window, "delete-event", G_CALLBACK(quit_button_clicked_cb), NULL);
     g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
 
     gtk_widget_show(window);

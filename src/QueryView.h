@@ -47,6 +47,7 @@ class QueryView {
   GtkWidget *scrollBox;
   GtkWidget *status_label;
   GtkWidget *accept_button;
+  GtkWidget *quitButton;
   sql::Connection *connection;
   std::list<std::string> photoFilenameList;
   std::list<long> photoFileIdList;
@@ -62,6 +63,7 @@ class QueryView {
 
   GtkWidget *get_widget() { return queryViewBox; }
   GtkWidget *get_accept_button() { return accept_button; }
+  GtkWidget *get_quit_button() { return quitButton; }
   const std::list<std::string> &getPhotoFilenameList() {return photoFilenameList;};
   const std::list<long> &getPhotoFileIdList() {return photoFileIdList;};
 
@@ -284,12 +286,6 @@ class QueryView {
     }
   }
 
-  static void
-  quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    QueryView *queryView = WidgetRegistry<QueryView>::get_object(widget);
-    queryView->quit();
-  }
-
   void
   print_child_properties(QueryViewRow *queryViewRow)  {
     guint n_properties;
@@ -320,7 +316,6 @@ class QueryView {
   void
   run() {
     GtkWidget *submitButton;
-    GtkWidget *quitButton;
     GtkWidget *buttonHBox;
     GtkWidget *empty_row_hbox;
     GtkWidget *empty_row_add_button;
@@ -404,7 +399,6 @@ class QueryView {
     gtk_widget_show(scrollTextView);
     gtk_container_add(GTK_CONTAINER(scrollWindow), scrollTextView);
 
-    g_signal_connect(quitButton, "clicked", G_CALLBACK(quit_button_clicked_cb), NULL);
     g_signal_connect(submitButton, "clicked", G_CALLBACK(query_submit_button_clicked_cb), NULL);
   }
 
