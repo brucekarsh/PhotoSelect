@@ -3,26 +3,15 @@
 #include <gtk/gtk.h>
 #include <iostream>
 #include <fstream>
-#include <vector>
 #include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
-#include <json_spirit.h>
 
 #include "WidgetRegistry.h"
 
-/* MySQL Connector/C++ specific headers */
-#include <driver.h>
-#include <connection.h>
-#include <statement.h>
-#include <prepared_statement.h>
-#include <resultset.h>
-#include <metadata.h>
-#include <resultset_metadata.h>
-#include <exception.h>
-#include <warning.h>
-
 class Preferences;
 class BaseWindow;
+namespace sql {
+  class Connection;
+}
 
 class DeleteProjectWindow {
   public:
@@ -101,14 +90,10 @@ class DeleteProjectWindow {
     gtk_box_pack_end(GTK_BOX(button_hbox), accept_button, FALSE, FALSE, 0);
     gtk_box_pack_end(GTK_BOX(button_hbox), quit_button, FALSE, FALSE, 0);
 
-    std::string sql = "SELECT DISTINCT name FROM Project ";
-    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
-    sql::ResultSet *rs = prepared_statement->executeQuery();
-    
+    std::list<std::string>project_names = Utils::get_project_names(connection);
     GtkWidget* radio_button;
     first_radio_button = NULL;
-    while (rs->next()) {
-      std::string project_name = rs->getString(1);
+    BOOST_FOREACH(std::string project_name, project_names) {
       if (NULL == first_radio_button) {
         radio_button = gtk_radio_button_new_with_label(NULL, project_name.c_str());
         first_radio_button = radio_button;
@@ -167,13 +152,7 @@ DeleteProjectWindow::accept() {
   if (0 == project_name.size()) {
     return;
   }
-  std::list<std::string> photoFilenameList;
-  std::string sql = 
-      "DELETE FROM Project WHERE name = ?";
-  sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
-  prepared_statement->setString(1, project_name);
-  prepared_statement->execute();
-  connection->commit();
+  Utils::delete_project(connection, project_name);
   quit();
 }
 #endif // DELETEPROJECTWINDOW_H__

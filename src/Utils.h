@@ -210,6 +210,21 @@ class Utils {
     return project_names;
   }
 
+  static inline bool delete_project(sql::Connection *connection, std::string project_name) {
+    bool result = false;;
+    std::string sql = "DELETE FROM Project WHERE name = ?";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    try {
+      prepared_statement->setString(1, project_name);
+      prepared_statement->execute();
+      connection->commit();
+      result = true;
+    } catch (sql::SQLException &ex) {
+      // Here result is false
+    }
+    return result;
+  }
+
   static inline bool rename_project(sql::Connection *connection, std::string old_project_name,
       std::string new_project_name) {
     bool result = false;
