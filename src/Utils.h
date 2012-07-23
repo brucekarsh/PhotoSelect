@@ -274,6 +274,35 @@ class Utils {
     }
     return project_photo_files;
   }
+
+  //! adds a tag to a checksum given a tag_name and a file_name
+  static inline void
+  add_tag_by_filename(sql::Connection *connection, std::string tag_name, std::string file_name) {
+    std::string sql = "INSERT INTO TagChecksum (tagId, checksumId) "
+        "SELECT DISTINCT Tag.id as tagId, Checksum.id as checksumId "
+        "FROM Tag, Checksum, PhotoFile "
+        "WHERE Tag.name = ? AND PhotoFile.filePath = ? AND Checksum.id = PhotoFile.checksumId";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setString(1, tag_name);
+    prepared_statement->setString(2, file_name);
+    prepared_statement->execute();
+    connection->commit();
+  }
+
+  //! removes a tag to a checksum given a tag_name and a file_name
+  static inline void
+  remove_tag_by_filename(sql::Connection *connection, std::string tag_name, std::string file_name) {
+    std::string sql = "DELETE FROM TagChecksum "
+        "USING Tag, Checksum, PhotoFile, TagChecksum "
+        "WHERE Tag.name = ? AND PhotoFile.filePath = ? "
+        "AND Checksum.id = PhotoFile.checksumId AND TagChecksum.checksumId=Checksum.id "
+        "AND TagChecksum.tagId=Tag.id";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setString(1, tag_name);
+    prepared_statement->setString(2, file_name);
+    prepared_statement->execute();
+    connection->commit();
+  }
 };
 
 #endif // UTILS_H__

@@ -2,13 +2,11 @@
 #define PHOTOSELECTPAGE_H__
 
 #include "WidgetRegistry.h"
-#include "Preferences.h"
 #include <list>
 #include <map>
 #include <stdio.h>
 #include "ConversionEngine.h"
-#include "PreferencesWindow.h"
-#include "ImportWindow.h"
+#include <boost/foreach.hpp>
 #include <gtk/gtk.h>
 #include <cairo-xlib.h>
 #include <boost/lexical_cast.hpp>
@@ -16,6 +14,10 @@
 #include "Utils.h"
 
 class PhotoFileCache;
+class Preferences;
+namespace sql {
+  class Connection;
+}
 
 class PhotoSelectPage {
   public:
@@ -675,39 +677,11 @@ class PhotoSelectPage {
     }
 
     if (active) {
-      add_tag(tag_name, file_name);
+      Utils::add_tag_by_filename(connection, tag_name, file_name);
     } else {
-      remove_tag(tag_name, file_name);
+      Utils::remove_tag_by_filename(connection, tag_name, file_name);
     }
   }
-
-  void
-  add_tag(std::string tag_name, std::string file_name) {
-    std::string sql = "INSERT INTO TagChecksum (tagId, checksumId) "
-        "SELECT DISTINCT Tag.id as tagId, Checksum.id as checksumId "
-        "FROM Tag, Checksum, PhotoFile "
-        "WHERE Tag.name = ? AND PhotoFile.filePath = ? AND Checksum.id = PhotoFile.checksumId";
-    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
-    prepared_statement->setString(1, tag_name);
-    prepared_statement->setString(2, file_name);
-    prepared_statement->execute();
-    connection->commit();
-  }
-
-  void
-  remove_tag(std::string tag_name, std::string file_name) {
-    std::string sql = "DELETE FROM TagChecksum "
-        "USING Tag, Checksum, PhotoFile, TagChecksum "
-        "WHERE Tag.name = ? AND PhotoFile.filePath = ? "
-        "AND Checksum.id = PhotoFile.checksumId AND TagChecksum.checksumId=Checksum.id "
-        "AND TagChecksum.tagId=Tag.id";
-    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
-    prepared_statement->setString(1, tag_name);
-    prepared_statement->setString(2, file_name);
-    prepared_statement->execute();
-    connection->commit();
-  }
-
 };
 
 #include "BaseWindow.h"
