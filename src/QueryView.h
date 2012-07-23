@@ -51,8 +51,11 @@ class QueryView {
   sql::Connection *connection;
   std::list<std::string> photoFilenameList;
   std::list<long> photoFileIdList;
+  bool is_limited_to_a_project;
+  std::string limit_project_name; // Name of the project that the query is limited to
 
-  QueryView(sql::Connection *connection_) : connection(connection_) {
+  QueryView(sql::Connection *connection_) :
+      connection(connection_), is_limited_to_a_project(false), limit_project_name("") {
   }
 
   ~QueryView() {
@@ -66,6 +69,10 @@ class QueryView {
   GtkWidget *get_quit_button() { return quitButton; }
   const std::list<std::string> &getPhotoFilenameList() {return photoFilenameList;};
   const std::list<long> &getPhotoFileIdList() {return photoFileIdList;};
+  void limit_to_a_project(std::string name) {
+    limit_project_name = name;
+    is_limited_to_a_project = true;
+  }
 
   std::string
   makeQueryJSON() {
@@ -140,21 +147,30 @@ class QueryView {
         last_part.append(") ");
       }
     }
+    if (is_limited_to_a_project) {
+      last_part.append("AND (pr.name = ?) ");
+    }
 
     last_part.append("ORDER BY t.adjustedDateTime, filePath ");
 
     std::string first_part =
       "SELECT DISTINCT filePath, p.id FROM PhotoFile p "
       "INNER JOIN Checksum c ON p.checksumId = c.id "
-      "INNER JOIN Time t ON t.checksumId = c.id ";
-      "ORDER BY t.adjustedTime, filePath ";
+      "INNER JOIN Time t ON t.checksumId = c.id "
+      "INNER JOIN ProjectPhotoFile pf ON pf.photoFileId = p.id "
+      "INNER JOIN Project pr on pr.id = pf.projectId ";
 
     std::string sql_statement = first_part + last_part;
 
     gtk_widget_show(scrollBox);
+    std::cout << "Query is " << sql_statement << std::endl;
     sql::PreparedStatement *queryPreparedStatement = connection->prepareStatement( sql_statement);
-    for (int i=0; i<value_vector.size(); i++) {
+    int i;
+    for (i=0; i<value_vector.size(); i++) {
       queryPreparedStatement->setString(i+1,value_vector[i]);
+    }
+    if (is_limited_to_a_project) {
+      queryPreparedStatement->setString(i+1, limit_project_name);
     }
     GtkTextBuffer *scrollTextBuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(scrollTextView));
     std::string txt = "\nIssuing query...\n\n";

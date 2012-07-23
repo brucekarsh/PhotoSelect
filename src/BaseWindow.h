@@ -11,6 +11,7 @@
 class OpenProjectWindow;
 class NewProjectWindow;
 class AddToProjectWindow;
+class RemoveFromProjectWindow;
 class RenameProjectWindow;
 class DeleteProjectWindow;
 class EditTagsWindow;
@@ -36,7 +37,7 @@ class BaseWindow {
   GtkWidget *file_project_new_menu_item;
   GtkWidget *file_project_add_to_menu_item;
   GtkWidget *file_project_rename_menu_item;
-  GtkWidget *file_project_remove_menu_item;
+  GtkWidget *file_project_remove_from_menu_item;
   GtkWidget *file_project_delete_menu_item;
   GtkWidget *file_quit_menu_item;
   GtkWidget *edit_preferences_menu_item;
@@ -194,10 +195,10 @@ class BaseWindow {
     gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_add_to_menu_item);
     gtk_widget_show(file_project_add_to_menu_item);
 
-    // Put a menuitem (file_project_remove_menuitem) into file_project_menu
-    file_project_remove_menu_item = gtk_menu_item_new_with_label("Remove From Project...");
-    gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_remove_menu_item);
-    gtk_widget_show(file_project_remove_menu_item);
+    // Put a menuitem (file_project_remove_from_menu_item) into file_project_menu
+    file_project_remove_from_menu_item = gtk_menu_item_new_with_label("Remove From Project...");
+    gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_remove_from_menu_item);
+    gtk_widget_show(file_project_remove_from_menu_item);
 
     // Put a menuitem (file_project_rename_menuitem) into file_project_menu
     file_project_rename_menu_item = gtk_menu_item_new_with_label("Rename Project...");
@@ -264,6 +265,7 @@ class BaseWindow {
   std::string get_project_name();
   void file_project_new_activate();
   void file_project_add_to_activate();
+  void file_project_remove_from_activate();
   void file_project_open_activate();
   void file_project_rename_activate();
   void file_project_delete_activate();
@@ -287,6 +289,12 @@ class BaseWindow {
   file_project_add_to_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
     baseWindow->file_project_add_to_activate();
+  }
+
+  static void
+  file_project_remove_from_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
+    BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
+    baseWindow->file_project_remove_from_activate();
   }
 
   static void
@@ -419,6 +427,8 @@ class BaseWindow {
         G_CALLBACK(file_project_new_activate_cb), NULL);
     connect_signal(file_project_add_to_menu_item, "activate",
         G_CALLBACK(file_project_add_to_activate_cb), NULL);
+    connect_signal(file_project_remove_from_menu_item, "activate",
+        G_CALLBACK(file_project_remove_from_activate_cb), NULL);
     connect_signal(file_project_rename_menu_item, "activate",
         G_CALLBACK(file_project_rename_activate_cb), NULL);
     connect_signal(file_project_delete_menu_item, "activate",
@@ -460,6 +470,7 @@ class BaseWindow {
 #include "OpenProjectWindow.h"
 #include "NewProjectWindow.h"
 #include "AddToProjectWindow.h"
+#include "RemoveFromProjectWindow.h"
 #include "DeleteProjectWindow.h"
 #include "EditTagsWindow.h"
 #include "RenameProjectWindow.h"
@@ -505,6 +516,18 @@ BaseWindow::file_project_add_to_activate() {
       new AddToProjectWindow(connection, project_name);
   addToProjectWindow->run();
   // TODO make sure that addToProjectWindow gets destroyed eventually.
+}
+
+inline void
+BaseWindow::file_project_remove_from_activate() {
+  std::string project_name = get_project_name();
+  if (0 == project_name.size()) {
+    return;
+  }
+  RemoveFromProjectWindow* removeFromProjectWindow =
+      new RemoveFromProjectWindow(connection, project_name);
+  removeFromProjectWindow->run();
+  // TODO make sure that removeFromProjectWindow gets destroyed eventually.
 }
 
 inline void

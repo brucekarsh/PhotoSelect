@@ -420,6 +420,27 @@ class Utils {
   static inline void set_schema(sql::Connection *connection, std::string database) {
       connection->setSchema(database);
   }
+
+  //! (does not commit).
+  static inline bool remove_photo_from_project(sql::Connection *connection,
+      long project_id, long photo_file_id) {
+    std::cout << "remove photo from project "<< project_id << " " << photo_file_id << std::endl;
+    bool result = false;;
+    std::string sql = "DELETE FROM ProjectPhotoFile "
+        "WHERE (ProjectPhotoFile.projectId = ?) "
+        "AND (ProjectPhotoFile.photoFileId= ?)";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    try {
+      prepared_statement->setInt64(1, project_id);
+      prepared_statement->setInt64(2, photo_file_id);
+      prepared_statement->execute();
+      result = true;
+    } catch (sql::SQLException &ex) {
+      // Here result is false
+    }
+    return result;
+
+  }
 };
 
 #endif // UTILS_H__

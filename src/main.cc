@@ -12,6 +12,9 @@ namespace sql {
   class Connection;
 }
 
+void open_initial_project(sql::Connection *connection, BaseWindow *base_window,
+    Preferences *preferences, PhotoFileCache *photoFileCache);
+std::string get_last_project_name();
 sql::Connection *
 open_database(std::string dbhost, std::string user, std::string password, std::string database);
 
@@ -45,18 +48,47 @@ main(int argc, char **argv)
   BaseWindow *baseWindow = new BaseWindow(connection, &preferences, &photoFileCache);
   baseWindow->run();
 
-  list<string> photoFilenameList1;
-  photoFilenameList1.push_back("/home/bruce/Tanzania2012/AW100/DSCN0651.JPG");
-  photoFilenameList1.push_back("/home/bruce/Tanzania2012/AW100/DSCN0551.JPG");
-  photoFilenameList1.push_back("/home/bruce/Tanzania2012/D7000-6/DSC_8557.JPG");
-  std::string project_name = "startup-project";
-  PhotoSelectPage photoSelectPage(connection, &photoFileCache);
-  photoSelectPage.setup(photoFilenameList1, project_name, &preferences);
-
-  baseWindow->add_page(photoSelectPage.get_tab_label(),
-      photoSelectPage.get_notebook_page(), project_name);
+  open_initial_project(connection, baseWindow, &preferences, &photoFileCache);
 
   gtk_main();
+}
+
+void
+open_initial_project(sql::Connection *connection, BaseWindow *base_window,
+    Preferences *preferences, PhotoFileCache *photoFileCache) {
+  std::string project_name = get_last_project_name();
+  std::cout << "project name " << project_name << std::endl;
+  if (0 == project_name.size()) {
+    return;
+  }
+  std::list<std::string> photoFilenameList = Utils::get_project_photo_files(connection,
+      project_name);
+  PhotoSelectPage *photoSelectPage = new PhotoSelectPage(connection, photoFileCache);
+  photoSelectPage->setup(photoFilenameList, project_name, preferences);
+  base_window->add_page(photoSelectPage->get_tab_label(),
+      photoSelectPage->get_notebook_page(), project_name);
+}
+
+std::string get_last_project_name() {
+  wordexp_t exp_result;
+  wordexp("~/.PhotoSelect.last", &exp_result, 0);
+  std::ifstream infile(exp_result.we_wordv[0], std::ios::in);
+  wordfree(&exp_result);
+  std::string result;
+  if (infile.fail()) {
+    result = "";
+  } else {
+    std::stringstream buffer;
+    buffer << infile.rdbuf();
+    result = buffer.str();
+  }
+  infile.close();
+  // Strip a newline and anything that follows it;
+  size_t f = result.find_first_of("\n\r");
+  if (std::string::npos != f) {
+    result.erase(f);
+  }
+  return result;
 }
 
 sql::Connection *
