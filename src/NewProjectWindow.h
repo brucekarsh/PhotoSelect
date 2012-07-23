@@ -25,10 +25,14 @@ class NewProjectWindow {
   GtkWidget *project_name_entry;
   sql::Connection *connection;
   QueryView query_view;
+  Preferences *preferences;
   BaseWindow *baseWindow;
+  PhotoFileCache *photoFileCache;
 
-  NewProjectWindow(sql::Connection *connection_, BaseWindow* baseWindow_) :
-      connection(connection_), baseWindow(baseWindow_), query_view(connection_) {
+  NewProjectWindow(sql::Connection *connection_, Preferences *preferences_,
+      PhotoFileCache *photoFileCache_, BaseWindow* baseWindow_) :
+      connection(connection_), preferences(preferences_),  photoFileCache(photoFileCache_),
+      baseWindow(baseWindow_), query_view(connection_) {
   }
 
   ~NewProjectWindow() {
@@ -130,6 +134,11 @@ NewProjectWindow::accept() {
     Utils::add_photo_to_project(connection, project_id, photo_file_id);
   }
   connection->commit();
+
+  PhotoSelectPage *photoSelectPage = new PhotoSelectPage(connection, photoFileCache);
+  photoSelectPage->setup(photoFilenameList, project_name, preferences);
+  baseWindow->add_page(photoSelectPage->get_tab_label(),
+      photoSelectPage->get_notebook_page(), project_name);
   quit();
 
 
