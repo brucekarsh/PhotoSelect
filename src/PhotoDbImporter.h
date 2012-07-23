@@ -21,17 +21,6 @@
 #include <boost/foreach.hpp>
 #include <boost/regex.hpp>
 
-/* MySQL Connector/C++ specific headers */
-#include <driver.h>
-#include <connection.h>
-#include <statement.h>
-#include <prepared_statement.h>
-#include <resultset.h>
-#include <metadata.h>
-#include <resultset_metadata.h>
-#include <exception.h>
-#include <warning.h>
-
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/util/XMLString.hpp>
 #include <xercesc/dom/DOM.hpp>
@@ -44,6 +33,9 @@
 XERCES_CPP_NAMESPACE_USE
 
 class ImportWindow;
+namespace sql {
+  class Connection;
+}
 
 /**
  * Adds entries to the PhotoDb database for all files in a directory heirarchy
@@ -67,23 +59,6 @@ class PhotoDbImporter {
         checksum(checksum) {}
 
   };
-
-  // PreparedStatements - a subclass that holds all the prepared statements used by PhotoDbImporter
-  class PreparedStatements {
-    public:
-
-    sql::PreparedStatement *insert_into_PhotoFile;
-    sql::PreparedStatement *get_id_from_PhotoFile;
-
-    void initialize(sql::Connection *connection) {
-std::cout << "A" << std::endl;
-      insert_into_PhotoFile = connection -> prepareStatement(
-          "REPLACE INTO PhotoFile(filePath, checksumId) Values (?,?)");
-std::cout << "D" << std::endl;
-      get_id_from_PhotoFile = connection -> prepareStatement(
-          "SELECT id FROM PhotoFile where filePath = ? and checksumId = ?");
-    }
-  } preparedStatements;
 
   boost::regex re_for_jpg_suffix() {
     return boost::regex(".*\\.jpg$", boost::regex::icase);
@@ -125,7 +100,6 @@ std::cout << "D" << std::endl;
     import_timezone = tzname[now_tm.tm_isdst];
     std::cout << "import_time " << import_time << std::endl;
     std::cout << "import_timezone " << import_timezone << std::endl;
-    preparedStatements.initialize(connection);
   };
 
   void set_dirs_to_process(std::queue<std::string> dirs_to_process) {
@@ -149,7 +123,8 @@ std::cout << "D" << std::endl;
   insert_into_database() {
     BOOST_FOREACH(PhotoDbEntry photoDbEntry, photoDbEntries) {
       int64_t checksum_key = Utils::insert_into_Checksum(connection, photoDbEntry.checksum);
-      int64_t photoFile_key = insert_into_PhotoFile(photoDbEntry.filePath, checksum_key);
+      int64_t photoFile_key = Utils::insert_into_PhotoFile(connection, photoDbEntry.filePath,
+          checksum_key);
 
       insert_into_exif_tables(photoDbEntry.exifEntries, checksum_key);
       photoDbEntry.exifEntries.clear();
@@ -253,43 +228,6 @@ exif_datetime_to_mysql_datetime(const std::string exif_datetime)
     return result;
   }
 
-  int64_t insert_into_PhotoFile(const std::string &filePath, int64_t checksum_key) {
-
-    // If it's already in the database, just return its id
-    int64_t photoFile_key = get_id_from_PhotoFile(filePath, checksum_key);
-    if (photoFile_key != -1) {
-      return photoFile_key;
-    }
-
-    preparedStatements.insert_into_PhotoFile -> setString(1, filePath.c_str());
-    preparedStatements.insert_into_PhotoFile -> setInt64(2, checksum_key);
-    int updateCount = preparedStatements.insert_into_PhotoFile -> executeUpdate();
-
-    photoFile_key = get_id_from_PhotoFile(filePath, checksum_key);
-    return photoFile_key;
-  }
-
-  int64_t get_id_from_PhotoFile(const std::string &filePath, int64_t checksum_key) {
-    preparedStatements.get_id_from_PhotoFile -> setString(1, filePath.c_str());
-    preparedStatements.get_id_from_PhotoFile -> setInt64(2, checksum_key);
-    sql::ResultSet *rs  = preparedStatements.get_id_from_PhotoFile -> executeQuery();
-    bool has_first = rs -> first();
-    if (has_first) {
-      bool is_first = rs->isFirst();
-      bool is_last = rs->isLast();
-      if (!is_first || ! is_last) {
-        std::cout << "More than one key found in results in get_id_from_PhotoFile" << std::endl;
-        std::cout << "isFirst(): " << rs->isFirst() << std::endl;
-        std::cout << "isLast(): " << rs->isLast() << std::endl;
-        exit(1);
-      }
-      int64_t photoFile_key = rs->getInt64("id");
-      return photoFile_key;
-    } else {
-      return -1;
-    }
-  }
-  
   void
   process_photo_file(const std::string &filename)
   {

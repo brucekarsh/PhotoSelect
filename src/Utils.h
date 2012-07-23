@@ -360,6 +360,51 @@ class Utils {
     int64_t checksum_key = rs->getInt64("id");
     return checksum_key;
   }
+
+  static inline int64_t
+  insert_into_PhotoFile(sql::Connection *connection, const std::string &filePath,
+    int64_t checksum_key) {
+
+    // If it's already in the database, just return its id
+    int64_t photoFile_key = Utils::get_id_from_PhotoFile(connection, filePath, checksum_key);
+    if (photoFile_key != -1) {
+      return photoFile_key;
+    }
+
+    std::string sql = "REPLACE INTO PhotoFile(filePath, checksumId) Values (?,?)";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setString(1, filePath.c_str());
+    prepared_statement->setInt64(2, checksum_key);
+    int updateCount = prepared_statement->executeUpdate();
+
+    photoFile_key = get_id_from_PhotoFile(connection, filePath, checksum_key);
+    return photoFile_key;
+  }
+
+  static inline int64_t
+  get_id_from_PhotoFile(sql::Connection *connection, const std::string &filePath,
+      int64_t checksum_key) {
+    std::string sql = "SELECT id FROM PhotoFile where filePath = ? and checksumId = ?";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setString(1, filePath.c_str());
+    prepared_statement->setInt64(2, checksum_key);
+    sql::ResultSet *rs  = prepared_statement->executeQuery();
+    bool has_first = rs -> first();
+    if (has_first) {
+      bool is_first = rs->isFirst();
+      bool is_last = rs->isLast();
+      if (!is_first || ! is_last) {
+        std::cout << "More than one key found in results in get_id_from_PhotoFile" << std::endl;
+        std::cout << "isFirst(): " << rs->isFirst() << std::endl;
+        std::cout << "isLast(): " << rs->isLast() << std::endl;
+        exit(1);
+      }
+      int64_t photoFile_key = rs->getInt64("id");
+      return photoFile_key;
+    } else {
+      return -1;
+    }
+  }
 };
 
 #endif // UTILS_H__
