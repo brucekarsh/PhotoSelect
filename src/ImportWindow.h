@@ -1,22 +1,14 @@
 #ifndef IMPORTWINDOW_H__
 #define IMPORTWINDOW_H__
-#include <list>
+#include <queue>
 #include <stdio.h>
 #include "ConversionEngine.h"
 #include <gtk/gtk.h>
-#include <cairo-xlib.h>
 #include <stdlib.h>
 
-/* MySQL Connector/C++ specific headers */
-#include <driver.h>
-#include <connection.h>
-#include <statement.h>
-#include <prepared_statement.h>
-#include <resultset.h>
-#include <metadata.h>
-#include <resultset_metadata.h>
-#include <exception.h>
-#include <warning.h>
+namespace sql {
+  class Connection;
+}
 
 class ImportWindow {
   public:
