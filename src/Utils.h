@@ -210,6 +210,23 @@ class Utils {
     return project_names;
   }
 
+  static inline bool rename_project(sql::Connection *connection, std::string old_project_name,
+      std::string new_project_name) {
+    bool result = false;
+    std::string sql = "UPDATE Project SET name=? WHERE name=?";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setString(1, new_project_name);
+    prepared_statement->setString(2, old_project_name);
+    try {
+      prepared_statement->execute();
+      connection->commit();
+      result = true;
+    } catch (sql::SQLException &ex) {
+      // result will be false here
+    }
+    return result;
+  }
+
   //! Add a photo file to a project. Note: does not do a commit. (Because usually this is
   //! used in a long loop).
   static inline void

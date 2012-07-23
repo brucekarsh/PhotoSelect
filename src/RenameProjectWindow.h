@@ -233,24 +233,15 @@ RenameProjectWindow::accept() {
     return;
   }
 
-  std::string sql = 
-      "UPDATE Project SET name=? WHERE name=?";
-  sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
-  prepared_statement->setString(1, new_project_name);
-  prepared_statement->setString(2, old_project_name);
-  try {
-    prepared_statement->execute();
-    connection->commit();
-  } catch (sql::SQLException &ex) {
+  bool rename_was_successful = Utils::rename_project(connection,
+      old_project_name, new_project_name);
+  if (!rename_was_successful) {
     if (error_string.length() != 0) error_string += "\n";
     error_string += "Project name already used. Please pick a new name.";
-    error_occurred = true;
-  }
-
-  if (error_occurred) {
     set_error_label(error_string);
     return;
   }
+
   quit();
 }
 #endif // RENAMEPROJECTWINDOW_H__
