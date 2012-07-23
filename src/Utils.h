@@ -407,7 +407,7 @@ class Utils {
   }
 
   static inline sql::Driver *get_driver_instance() {
-    return get_driver_instance();
+    return ::get_driver_instance();
   }
 
   static inline sql::Connection *get_connection(sql::Driver *driver, std::string url, std::string user,
