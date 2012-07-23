@@ -3,27 +3,16 @@
 #include <gtk/gtk.h>
 #include <iostream>
 #include <fstream>
-#include <vector>
 #include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
-#include <json_spirit.h>
 
 #include "Utils.h"
 #include "WidgetRegistry.h"
 
-/* MySQL Connector/C++ specific headers */
-#include <driver.h>
-#include <connection.h>
-#include <statement.h>
-#include <prepared_statement.h>
-#include <resultset.h>
-#include <metadata.h>
-#include <resultset_metadata.h>
-#include <exception.h>
-#include <warning.h>
-
 class Preferences;
 class BaseWindow;
+namespace sql {
+  class Connection;
+}
 
 class OpenProjectWindow {
   public:
@@ -178,8 +167,6 @@ class OpenProjectWindow {
 
 #include "BaseWindow.h"
 #include "PhotoSelectPage.h"
-
-
 
 inline  void
 OpenProjectWindow::apply() {
