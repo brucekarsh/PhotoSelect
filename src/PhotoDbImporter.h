@@ -38,6 +38,7 @@
 #include <xercesc/framework/MemBufFormatTarget.hpp>
 #include <iostream>
 
+#include "Utils.h"
 #include "XStr.h"
 
 XERCES_CPP_NAMESPACE_USE
@@ -75,8 +76,6 @@ class PhotoDbImporter {
     sql::PreparedStatement *get_id_from_Checksum;
     sql::PreparedStatement *insert_into_PhotoFile;
     sql::PreparedStatement *get_id_from_PhotoFile;
-    sql::PreparedStatement *insert_into_ExifBlob;
-    sql::PreparedStatement *insert_into_Time;
 
     void initialize(sql::Connection *connection) {
 std::cout << "A" << std::endl;
@@ -91,15 +90,6 @@ std::cout << "C" << std::endl;
 std::cout << "D" << std::endl;
       get_id_from_PhotoFile = connection -> prepareStatement(
           "SELECT id FROM PhotoFile where filePath = ? and checksumId = ?");
-std::cout << "E" << std::endl;
-      insert_into_ExifBlob = connection -> prepareStatement(
-          "INSERT IGNORE INTO ExifBlob(checksumId, value) Values (?,?)");
-std::cout << "F" << std::endl;
-      insert_into_Time = connection -> prepareStatement(
-          "INSERT IGNORE INTO "
-          "Time(checksumId, originalDateTime, adjustedDateTime ) "
-          "Values(?,?,?)");
-std::cout << "G" << std::endl;
     }
   } preparedStatements;
 
@@ -184,9 +174,7 @@ std::cout << "G" << std::endl;
       int64_t checksum_key) {
     // insert into ExifBlob
     std::string xmlString = make_exif_xml_string(exifEntries);
-    preparedStatements.insert_into_ExifBlob -> setInt64(1, checksum_key);
-    preparedStatements.insert_into_ExifBlob -> setString(2, xmlString.c_str());
-    int updateCount = preparedStatements.insert_into_ExifBlob -> executeUpdate();
+    Utils::insert_into_exifblob(connection, checksum_key, xmlString);
     // find a time from the exif data
     std::list<std::string> fields;
     fields.push_back(std::string("Exif.Image.DateTime"));
@@ -208,14 +196,12 @@ std::cout << "G" << std::endl;
 
     // If we didn't find a time in the exif use import_time.
 
+    // TODO This doesn't set the right times into the database
     if (camera_time == "") {
       camera_time = import_time;
     }
 
-    preparedStatements.insert_into_Time -> setInt64(1, checksum_key);
-    preparedStatements.insert_into_Time -> setString(2, camera_time);
-    preparedStatements.insert_into_Time -> setString(3, camera_time);
-    updateCount = preparedStatements.insert_into_Time -> executeUpdate();
+    Utils::insert_into_time(connection, checksum_key, camera_time, camera_time);
   }
 
 std::string

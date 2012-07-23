@@ -303,6 +303,29 @@ class Utils {
     prepared_statement->execute();
     connection->commit();
   }
+
+  //! inserts an entry into the Time table. (It does not commit).
+  static inline void
+  insert_into_time(sql::Connection *connection, long checksum_id, std::string original_date_time,
+      std::string adjusted_date_time) {
+    std::string sql = "INSERT IGNORE INTO Time(checksumId, originalDateTime, adjustedDateTime ) "
+        "Values(?,?,?)";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setInt64(1, checksum_id);
+    prepared_statement->setString(2, original_date_time);
+    prepared_statement->setString(3, adjusted_date_time);
+    prepared_statement->executeUpdate();
+  }
+
+  //! inserts an entry into the ExifBlob table. (It does not commit).
+  static inline void
+  insert_into_exifblob(sql::Connection *connection, long checksum_id, std::string xml_string) {
+    std::string sql = "INSERT IGNORE INTO ExifBlob(checksumId, value) Values (?,?)";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setInt64(1, checksum_id);
+    prepared_statement->setString(2, xml_string);
+    prepared_statement->executeUpdate();
+  }
 };
 
 #endif // UTILS_H__
