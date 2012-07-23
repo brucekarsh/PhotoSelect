@@ -8,6 +8,7 @@
 #include <boost/lexical_cast.hpp>
 #include <json_spirit.h>
 
+#include "Utils.h"
 #include "WidgetRegistry.h"
 
 /* MySQL Connector/C++ specific headers */
@@ -111,14 +112,11 @@ class OpenProjectWindow {
     gtk_box_pack_end(GTK_BOX(button_hbox), accept_button, FALSE, FALSE, 0);
     gtk_box_pack_end(GTK_BOX(button_hbox), quit_button, FALSE, FALSE, 0);
 
-    std::string sql = "SELECT DISTINCT name FROM Project ";
-    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
-    sql::ResultSet *rs = prepared_statement->executeQuery();
+    std::list<std::string> project_names = Utils::get_project_names(connection);
     
     GtkWidget* radio_button;
     first_radio_button = NULL;
-    while (rs->next()) {
-      std::string project_name = rs->getString(1);
+    BOOST_FOREACH(std::string project_name, project_names) {
       if (NULL == first_radio_button) {
         radio_button = gtk_radio_button_new_with_label(NULL, project_name.c_str());
         first_radio_button = radio_button;
@@ -189,22 +187,8 @@ OpenProjectWindow::apply() {
   if (0 == project_name.size()) {
     return;
   }
-  std::list<std::string> photoFilenameList;
-  std::string sql = 
-      "SELECT DISTINCT filePath FROM Project "
-      "INNER JOIN ProjectPhotoFile ON (ProjectPhotoFile.projectId = Project.id) "
-      "INNER JOIN PhotoFile ON (ProjectPhotoFile.photoFileId = PhotoFile.id) "
-      "INNER JOIN Time ON (PhotoFile.checksumId = Time.checksumId) "
-      "WHERE Project.name = ? "
-      "ORDER by Time.adjustedDateTime, filePath ";
-  sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
-  prepared_statement->setString(1, project_name);
-  sql::ResultSet *rs = prepared_statement->executeQuery();
-  while ( rs->next()) {
-    std::string file_path = rs->getString(1);
-    photoFilenameList.push_back(file_path);
-  }
-
+  std::list<std::string> photoFilenameList = Utils::get_project_photo_files(connection,
+      project_name);
   PhotoSelectPage *photoSelectPage = new PhotoSelectPage(connection, photoFileCache);
   photoSelectPage->setup(photoFilenameList, project_name, preferences);
   baseWindow->add_page(photoSelectPage->get_tab_label(),

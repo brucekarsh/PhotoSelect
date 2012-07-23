@@ -254,6 +254,26 @@ class Utils {
     project_photo_file_insert_prepared_statement->execute();
   }
 
+  //! Get all photo files for a project
+  static inline std::list<std::string> get_project_photo_files(sql::Connection *connection,
+      std::string project_name) {
+    std::list<std::string> project_photo_files;
+    std::string sql =
+        "SELECT DISTINCT filePath FROM Project "
+        "INNER JOIN ProjectPhotoFile ON (ProjectPhotoFile.projectId = Project.id) "
+        "INNER JOIN PhotoFile ON (ProjectPhotoFile.photoFileId = PhotoFile.id) "
+        "INNER JOIN Time ON (PhotoFile.checksumId = Time.checksumId) "
+        "WHERE Project.name = ? "
+        "ORDER by Time.adjustedDateTime, filePath ";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setString(1, project_name);
+    sql::ResultSet *rs = prepared_statement->executeQuery();
+    while ( rs->next()) {
+      std::string file_path = rs->getString(1);
+      project_photo_files.push_back(file_path);
+    }
+    return project_photo_files;
+  }
 };
 
 #endif // UTILS_H__
