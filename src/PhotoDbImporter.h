@@ -72,19 +72,11 @@ class PhotoDbImporter {
   class PreparedStatements {
     public:
 
-    sql::PreparedStatement *insert_into_Checksum;
-    sql::PreparedStatement *get_id_from_Checksum;
     sql::PreparedStatement *insert_into_PhotoFile;
     sql::PreparedStatement *get_id_from_PhotoFile;
 
     void initialize(sql::Connection *connection) {
 std::cout << "A" << std::endl;
-      insert_into_Checksum = connection -> prepareStatement(
-          "INSERT IGNORE INTO Checksum(checksum) Values (?)");
-std::cout << "B" << std::endl;
-      get_id_from_Checksum = connection -> prepareStatement(
-          "SELECT id FROM Checksum where checksum = ?");
-std::cout << "C" << std::endl;
       insert_into_PhotoFile = connection -> prepareStatement(
           "REPLACE INTO PhotoFile(filePath, checksumId) Values (?,?)");
 std::cout << "D" << std::endl;
@@ -156,7 +148,7 @@ std::cout << "D" << std::endl;
   int
   insert_into_database() {
     BOOST_FOREACH(PhotoDbEntry photoDbEntry, photoDbEntries) {
-      int64_t checksum_key = insert_into_Checksum(photoDbEntry.checksum);
+      int64_t checksum_key = Utils::insert_into_Checksum(connection, photoDbEntry.checksum);
       int64_t photoFile_key = insert_into_PhotoFile(photoDbEntry.filePath, checksum_key);
 
       insert_into_exif_tables(photoDbEntry.exifEntries, checksum_key);
@@ -259,35 +251,6 @@ exif_datetime_to_mysql_datetime(const std::string exif_datetime)
     doc->release();
 
     return result;
-  }
-
-  int64_t insert_into_Checksum(const std::string &checksum) {
-
-    preparedStatements.insert_into_Checksum -> setString(1, checksum.c_str());
-    int updateCount = preparedStatements.insert_into_Checksum -> executeUpdate();
-    int64_t checksum_key = get_id_from_Checksum(checksum);
-    return checksum_key;
-  }
-
-  int64_t get_id_from_Checksum(const std::string &checksum) {
-    preparedStatements.get_id_from_Checksum -> setString(1, checksum.c_str());
-    sql::ResultSet *rs  = preparedStatements.get_id_from_Checksum -> executeQuery();
-
-    bool has_first = rs->first();
-    if (!has_first) {
-      std::cout << "Cannot get a result set in insert_into_Checksum" << std::endl;
-      exit(1);
-    }
-    bool is_first = rs->isFirst();
-    bool is_last = rs->isLast();
-    if (!is_first || ! is_last) {
-      std::cout << "More than one key found in results in insert_into_Checksum" << std::endl;
-      std::cout << "isFirst(): " << rs->isFirst() << std::endl;
-      std::cout << "isLast(): " << rs->isLast() << std::endl;
-      exit(1);
-    }
-    int64_t checksum_key = rs->getInt64("id");
-    return checksum_key;
   }
 
   int64_t insert_into_PhotoFile(const std::string &filePath, int64_t checksum_key) {

@@ -326,6 +326,40 @@ class Utils {
     prepared_statement->setString(2, xml_string);
     prepared_statement->executeUpdate();
   }
+
+  static inline int64_t
+  insert_into_Checksum(sql::Connection *connection, const std::string &checksum) {
+    std::string sql = "INSERT IGNORE INTO Checksum(checksum) Values (?)";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setString(1, checksum.c_str());
+    int updateCount = prepared_statement->executeUpdate();
+    int64_t checksum_key = Utils::get_id_from_Checksum(connection, checksum);
+    return checksum_key;
+  }
+
+  static inline int64_t
+  get_id_from_Checksum(sql::Connection *connection, const std::string &checksum) {
+    std::string sql = "SELECT id FROM Checksum where checksum = ?";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setString(1, checksum);
+    sql::ResultSet *rs  = prepared_statement->executeQuery();
+
+    bool has_first = rs->first();
+    if (!has_first) {
+      std::cout << "Cannot get a result set in get_id_from_Checksum" << std::endl;
+      exit(1);
+    }
+    bool is_first = rs->isFirst();
+    bool is_last = rs->isLast();
+    if (!is_first || ! is_last) {
+      std::cout << "More than one key found in results in get_id_from_Checksum" << std::endl;
+      std::cout << "isFirst(): " << rs->isFirst() << std::endl;
+      std::cout << "isLast(): " << rs->isLast() << std::endl;
+      exit(1);
+    }
+    int64_t checksum_key = rs->getInt64("id");
+    return checksum_key;
+  }
 };
 
 #endif // UTILS_H__
