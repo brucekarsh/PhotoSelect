@@ -56,14 +56,6 @@ main(int argc, char **argv)
   baseWindow->add_page(photoSelectPage.get_tab_label(),
       photoSelectPage.get_notebook_page(), project_name);
 
-
-  //list<string> photoFilenameList2;
-  //photoFilenameList2.push_back("/home/bruce/Tanzania2012/AW100/DSCN0351.JPG");
-  //photoFilenameList2.push_back("/home/bruce/Tanzania2012/AW100/DSCN0451.JPG");
-  //PhotoSelectWindow photoSelectWindow2;
-  //photoSelectWindow2.setup(photoFilenameList2);
-  //GtkSettings *default_settings = gtk_settings_get_default();
-  //g_object_set(default_settings, "gtk-button-images", TRUE, NULL);
   gtk_main();
 }
 
