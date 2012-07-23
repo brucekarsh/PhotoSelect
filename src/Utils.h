@@ -198,6 +198,18 @@ class Utils {
     return project_id;
   }
 
+  static inline std::list<std::string> get_project_names(sql::Connection *connection) {
+    std::list<std::string> project_names;
+    std::string sql = "SELECT DISTINCT name FROM Project ";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    sql::ResultSet *rs = prepared_statement->executeQuery();
+    while (rs->next()) {
+      std::string project_name = rs->getString(1);
+      project_names.push_back(project_name);
+    }
+    return project_names;
+  }
+
   //! Add a photo file to a project. Note: does not do a commit. (Because usually this is
   //! used in a long loop).
   static inline void
