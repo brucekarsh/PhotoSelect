@@ -2,14 +2,15 @@
 #include <xercesc/util/XMLString.hpp>
 #include <gtk/gtk.h>
 
-/* MySQL Connector/C++ specific headers */
-#include <driver.h>
-#include <connection.h>
-
 #include "BaseWindow.h"
 #include "PhotoSelectPage.h"
 #include "Preferences.h"
 #include "PhotoFileCache.h"
+
+namespace sql {
+  class Driver;
+  class Connection;
+}
 
 sql::Connection *
 open_database(std::string dbhost, std::string user, std::string password, std::string database);
@@ -70,22 +71,21 @@ sql::Connection *
 open_database(std::string dbhost, std::string user, std::string password, std::string database) {
 
   /* initiate url, user, password and database variables */
-  sql::Driver *driver = get_driver_instance();
+  sql::Driver *driver = Utils::get_driver_instance();
   if (0 == driver) {
     std::cerr <<  "get_driver_instance() failed.\n" << std::endl;
     exit(1);
   }
 
   std::string url;
-  sql::Connection *connection = driver -> connect(url, user, password);
+  sql::Connection *connection = Utils::get_connection(driver, url, user, password);
   if (NULL == connection) {
     std::cerr << "driver -> connect() failed\n" << std::endl;
     exit(1);
     // TODO handle db open failure.
   }
 
-  connection -> setAutoCommit(0);
-  connection -> setSchema(database);
+  Utils::set_schema(connection, database);
 
   return connection;
 }

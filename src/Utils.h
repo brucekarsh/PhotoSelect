@@ -405,6 +405,21 @@ class Utils {
       return -1;
     }
   }
+
+  static inline sql::Driver *get_driver_instance() {
+    return get_driver_instance();
+  }
+
+  static inline sql::Connection *get_connection(sql::Driver *driver, std::string url, std::string user,
+      std::string password) {
+    sql::Connection *connection = driver->connect(url, user, password);
+    connection->setAutoCommit(0);
+    return connection;
+  }
+
+  static inline void set_schema(sql::Connection *connection, std::string database) {
+      connection->setSchema(database);
+  }
 };
 
 #endif // UTILS_H__
