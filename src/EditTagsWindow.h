@@ -23,6 +23,7 @@ class EditTagsWindow {
   GtkWidget *left_scrolled_vbox;
   GtkWidget *right_scrolled_vbox;
   GtkWidget *right_scrolled_window;
+  GtkWidget *really_delete_known_tags_button;
   sql::Connection *connection;
   Preferences *preferences;
   BaseWindow *baseWindow;
@@ -136,7 +137,20 @@ class EditTagsWindow {
     gtk_box_pack_start(GTK_BOX(left_vbox), add_tags_button, FALSE, FALSE, 0);
     g_signal_connect(add_tags_button, "clicked", G_CALLBACK(add_tags_button_clicked_cb), NULL);
     
+    // Make a button (delete_global_tag_button) and put it in left_vbox
+    GtkWidget *delete_known_tags_button = gtk_button_new_with_label("Delete Selected Known Tags");
+    gtk_widget_show(delete_known_tags_button);
+    gtk_box_pack_start(GTK_BOX(left_vbox), delete_known_tags_button, FALSE, FALSE, 0);
+    g_signal_connect(delete_known_tags_button, "clicked",
+        G_CALLBACK(delete_known_tags_button_clicked_cb), NULL);
 
+    // Make a button (really_delete_global_tag_button) and put it in left_vbox
+    really_delete_known_tags_button =
+       gtk_button_new_with_label("Really ?? Delete Selected Known Tags?");
+    gtk_box_pack_start(GTK_BOX(left_vbox), really_delete_known_tags_button, FALSE, FALSE, 0);
+    g_signal_connect(really_delete_known_tags_button, "clicked",
+        G_CALLBACK(really_delete_known_tags_button_clicked_cb), NULL);
+    
     // Make a button (delete_project_tag_button), and put it in right_vbox
     GtkWidget *delete_project_tags_button =
         gtk_button_new_with_label("Delete Selected Project Tags");
@@ -256,6 +270,21 @@ class EditTagsWindow {
     }
   }
 
+  static void delete_known_tags_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
+    EditTagsWindow *edit_tags_window = WidgetRegistry<EditTagsWindow>::get_object(widget);
+    if (NULL != edit_tags_window) {
+      edit_tags_window->delete_known_tags_button_clicked();
+    }
+  }
+
+  static void really_delete_known_tags_button_clicked_cb(GtkWidget *widget,
+      gpointer callback_data) {
+    EditTagsWindow *edit_tags_window = WidgetRegistry<EditTagsWindow>::get_object(widget);
+    if (NULL != edit_tags_window) {
+      edit_tags_window->really_delete_known_tags_button_clicked();
+    }
+  }
+
   static void delete_project_tags_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
     EditTagsWindow *edit_tags_window = WidgetRegistry<EditTagsWindow>::get_object(widget);
     if (NULL != edit_tags_window) {
@@ -284,6 +313,22 @@ class EditTagsWindow {
       rebuild_right_scrolled_vbox();
       // Rebuild the all tags display in the UI (because we want them to be deactivated)
       rebuild_left_scrolled_vbox();
+  }
+
+  void delete_known_tags_button_clicked() {
+    gtk_widget_show(really_delete_known_tags_button);
+  }
+
+  void really_delete_known_tags_button_clicked() {
+    std::list<std::string> activated_known_tags = get_activated_known_tags();
+    BOOST_FOREACH(std::string tag_name, activated_known_tags) {
+      std::cout << "Delete known tag " << tag_name << std::endl;
+    }
+    // Rebuild the project tags display in the UI
+    rebuild_right_scrolled_vbox();
+    // Rebuild the all tags display in the UI (because we want them to be deactivated)
+    rebuild_left_scrolled_vbox();
+    gtk_widget_hide(really_delete_known_tags_button);
   }
 
   void delete_project_tags_button_clicked() {

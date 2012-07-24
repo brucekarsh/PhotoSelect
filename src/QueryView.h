@@ -156,9 +156,13 @@ class QueryView {
     std::string first_part =
       "SELECT DISTINCT filePath, p.id FROM PhotoFile p "
       "INNER JOIN Checksum c ON p.checksumId = c.id "
-      "INNER JOIN Time t ON t.checksumId = c.id "
-      "INNER JOIN ProjectPhotoFile pf ON pf.photoFileId = p.id "
-      "INNER JOIN Project pr on pr.id = pf.projectId ";
+      "INNER JOIN Time t ON t.checksumId = c.id ";
+
+    if (is_limited_to_a_project) {
+      first_part.append(
+          "INNER JOIN ProjectPhotoFile pf ON pf.photoFileId = p.id "
+          "INNER JOIN Project pr on pr.id = pf.projectId ");
+    }
 
     std::string sql_statement = first_part + last_part;
 
