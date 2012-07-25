@@ -272,6 +272,7 @@ class BaseWindow {
   void view_tags_toggled(GtkCheckMenuItem *checkmenuitem);
   void clone_activate();
   void edit_tags_activate();
+  void rebuild_all_tag_views();
 
   static void
   file_project_open_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
@@ -464,6 +465,7 @@ class BaseWindow {
       g_signal_handler_disconnect(preferencesWindow_instance, preferencesWindow_handler_id);
     }
   }
+
 };
 
 #include "BaseWindow.h"
@@ -576,5 +578,15 @@ BaseWindow::clone_activate() {
   PhotoSelectPage *cloned_photo_select_page = photo_select_page->clone();
   add_page(cloned_photo_select_page->get_tab_label(),
       cloned_photo_select_page->get_notebook_page(), cloned_photo_select_page->project_name);
+}
+
+inline void
+BaseWindow::rebuild_all_tag_views() {
+  gint n_pages = gtk_notebook_get_n_pages(GTK_NOTEBOOK(notebook));
+  for (gint pagenum = 0; pagenum < n_pages; pagenum++) {
+    GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
+    PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
+    photo_select_page->rebuild_tag_view();
+  }
 }
 #endif // BASEWINDOW_H__

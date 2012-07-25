@@ -260,6 +260,8 @@ class EditTagsWindow {
       Utils::insert_tag(connection, tag_name);
       // Rebuild the all tags display in the UI
       rebuild_left_scrolled_vbox();
+      // Rebuild the tag views on the notebook pages
+      rebuild_all_tag_views();
     }
   }
 
@@ -313,6 +315,8 @@ class EditTagsWindow {
       rebuild_right_scrolled_vbox();
       // Rebuild the all tags display in the UI (because we want them to be deactivated)
       rebuild_left_scrolled_vbox();
+      // Rebuild the tag views on the notebook pages
+      rebuild_all_tag_views();
   }
 
   void delete_known_tags_button_clicked() {
@@ -323,11 +327,14 @@ class EditTagsWindow {
     std::list<std::string> activated_known_tags = get_activated_known_tags();
     BOOST_FOREACH(std::string tag_name, activated_known_tags) {
       std::cout << "Delete known tag " << tag_name << std::endl;
+      Utils::delete_known_tag(connection, tag_name);
     }
     // Rebuild the project tags display in the UI
     rebuild_right_scrolled_vbox();
     // Rebuild the all tags display in the UI (because we want them to be deactivated)
     rebuild_left_scrolled_vbox();
+    // Rebuild the tag views on the notebook pages
+    rebuild_all_tag_views();
     gtk_widget_hide(really_delete_known_tags_button);
   }
 
@@ -339,6 +346,8 @@ class EditTagsWindow {
       }
       // Rebuild the project tags display in the UI
       rebuild_right_scrolled_vbox();
+      // Rebuild the tag views on the notebook pages
+      rebuild_all_tag_views();
   }
 
   std::list<std::string> get_activated_known_tags() {
@@ -383,6 +392,14 @@ class EditTagsWindow {
       return false;
     }
     return true;
+  }
+
+  void rebuild_all_tag_views() {
+    static std::list<BaseWindow *> base_windows =  WidgetRegistry<BaseWindow>::get_objects();
+    std::cout << "rebuild_all_tag_views got " << base_windows.size() << " BaseWindows" << std::endl;
+    BOOST_FOREACH(BaseWindow *base_window, base_windows) {
+      base_window->rebuild_all_tag_views();
+    }
   }
 
 };

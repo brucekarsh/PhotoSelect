@@ -441,6 +441,17 @@ class Utils {
     return result;
 
   }
+
+  static inline void delete_known_tag(sql::Connection *connection, std::string tag_name) {
+    std::string sql = "DELETE FROM Tag WHERE Tag.name=? ";
+    sql::PreparedStatement *prepared_statement = connection->prepareStatement(sql);
+    prepared_statement->setString(1,tag_name);
+    try {
+        prepared_statement->execute();
+	connection->commit();
+    } catch (sql::SQLException &ex) {
+    }
+  }
 };
 
 #endif // UTILS_H__

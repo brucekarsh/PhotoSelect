@@ -88,7 +88,7 @@ class PhotoSelectPage {
   void
   set_tags_position(const std::string position) {
     tags_position = position;
-    add_tag_view();
+    rebuild_tag_view();
   }
 
   void
@@ -215,7 +215,7 @@ class PhotoSelectPage {
     gtk_entry_set_width_chars(GTK_ENTRY(position_entry), 10);
     gtk_widget_show(position_entry);
     gtk_box_pack_end(GTK_BOX(button_hbox), position_entry, FALSE, FALSE, 0);
-    add_tag_view();
+    rebuild_tag_view();
     g_signal_connect(position_entry, "activate", G_CALLBACK(position_entry_activate_cb), 0);
   }
 
@@ -224,7 +224,7 @@ class PhotoSelectPage {
   // menubar menu.
   // Additionally, it sets up a map (photo_tags) of the tags for the current photo and a
   // list (project_tags) of tags for the current project.
-  void add_tag_view() {
+  void rebuild_tag_view() {
     GtkWidget *tag_view_scrolled_window = NULL;
     GtkWidget *tag_view_tags_box = NULL;
 
@@ -553,7 +553,7 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> keep();
-      photoSelectPage->add_tag_view();
+      photoSelectPage->rebuild_tag_view();
       photoSelectPage -> redraw_image();
     }
   }
@@ -562,7 +562,7 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> drop();
-      photoSelectPage->add_tag_view();
+      photoSelectPage->rebuild_tag_view();
       photoSelectPage -> redraw_image();
     }
   }
@@ -572,7 +572,7 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> next();
-      photoSelectPage->add_tag_view();
+      photoSelectPage->rebuild_tag_view();
       photoSelectPage->redraw_image();
     }
   }
@@ -582,7 +582,7 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> back();
-      photoSelectPage->add_tag_view();
+      photoSelectPage->rebuild_tag_view();
       photoSelectPage->redraw_image();
     }
   }
@@ -620,7 +620,7 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->position_entry_activate();
-      photoSelectPage->add_tag_view();
+      photoSelectPage->rebuild_tag_view();
       photoSelectPage -> redraw_image();
     }
   }

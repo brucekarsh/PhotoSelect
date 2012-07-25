@@ -3,7 +3,9 @@
 
 #include <iostream>
 #include <gtk/gtk.h>
+#include <list>
 #include <map>
+#include <boost/foreach.hpp>
 
 template <class C> class WidgetRegistry {
   public:
@@ -26,6 +28,15 @@ template <class C> class WidgetRegistry {
     C *x;
     widget_map.erase(widget);
   };
+
+  static std::list<C * > get_objects() {
+    typedef std::pair<GtkWidget*, C*> entry_t;
+    std::list<C * > result;
+    BOOST_FOREACH(entry_t map_entry, widget_map) {
+      result.push_back(map_entry.second);
+    }
+    return result;
+  }
 
   static long count() {
     return widget_map.size();
