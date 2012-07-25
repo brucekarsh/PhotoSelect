@@ -1,0 +1,11 @@
+#!/bin/bash -x
+
+# Does all the steps of building the application
+
+touch NEWS README AUTHORS ChangeLog
+aclocal
+automake -a
+automake
+autoconf
+./configure
+make
