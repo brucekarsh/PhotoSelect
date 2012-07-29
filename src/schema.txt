@@ -1,5 +1,4 @@
 (Some example selects)
-mysql -p -D PhotoSelect -e 'SELECT DISTINCT    ExifTagName.name,ExifTagValue.value  FROM    ExifTag, ExifTagName, ExifTagValue  where ExifTag.exifTagNameId=ExifTagName.id and ExifTag.exifTagValueId=ExifTagValue.id order by ExifTagName.name'
 
 select count(filePath) from PhotoFile, Checksum, ExifBlob where PhotoFile.checksumId=Checksum.id and ExifBlob.checksumId=Checksum.id and ExtractValue(ExifBlob.value, "count(/exif/t[@name='Exif.Image.Make' and @value='Canon'])") = 1;
 
@@ -8,21 +7,6 @@ CREATE DATABASE PhotoSelect;
 
 USE PhotoSelect;
  
-CREATE TABLE ExifTagName (
-  id   INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(766) UNIQUE KEY NOT NULL,
-  nUpdates	INT NOT NULL
-) ENGINE=innodb;
-
-CREATE TABLE ExifTagValue (
-  id            INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  typename      MEDIUMBLOB,
-  count         INT,
-  value         BLOB,
-  sha		CHAR(40) UNIQUE KEY NOT NULL,
-  nUpdates	INT NOT NULL
-) ENGINE=innodb;
-
 CREATE TABLE Checksum (
   id       INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   checksum CHAR(40) UNIQUE KEY NOT NULL
@@ -39,17 +23,6 @@ CREATE TABLE ExifBlob (
   id             INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   checksumId	 INT NOT NULL UNIQUE KEY,
   value		 LONGBLOB,
-  FOREIGN KEY(checksumId) REFERENCES Checksum(id)
-) ENGINE=innodb;
-
-# Join table for joining ExifTagName and ExifTagValue
-CREATE TABLE ExifTag (
-  id             INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  exifTagNameId  INT NOT NULL,
-  exifTagValueId INT NOT NULL,
-  checksumId	 INT NOT NULL,
-  FOREIGN KEY(exifTagNameId) REFERENCES ExifTagName(id),
-  FOREIGN KEY(exifTagValueId) REFERENCES ExifTagValue(id),
   FOREIGN KEY(checksumId) REFERENCES Checksum(id)
 ) ENGINE=innodb;
 
@@ -112,9 +85,6 @@ CREATE TABLE ProjectTag (
 
 DROP TABLE Time;
 DROP TABLE ExifBlob;
-DROP TABLE ExifTag;
-DROP TABLE ExifTagName;
-DROP TABLE ExifTagValue;
 DROP TABLE PhotoFile;
 DROP TABLE ProjectPhotoFile;
 DROP TABLE Checksum;
