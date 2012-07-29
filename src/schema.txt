@@ -52,7 +52,7 @@ CREATE TABLE Time (
   checksumId  INT NOT NULL,
   originalDateTime DATETIME NOT NULL,
   adjustedDateTime DATETIME NOT NULL,
-  KEY(checksumId),
+  UNIQUE KEY(checksumId),
   FOREIGN KEY(checksumId) REFERENCES Checksum(id)
 ) ENGINE=innodb;
 
