@@ -8,4 +8,4 @@ automake -a
 automake
 autoconf
 ./configure
-make -j4
+make -j2
