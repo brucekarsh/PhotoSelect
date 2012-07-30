@@ -82,11 +82,13 @@ class PhotoDbImporter {
   static std::string DEFAULT_DATABASE() { return "PhotoSelect";};
 
   PhotoDbImporter(sql::Connection *connection_) : connection(connection_)  {
+    // Get import_time, the current UTC time. We attribute this time to a photo if we can't 
+    // get the time from the photo's exif.
     struct timeb now_timeb;
     ftime(&now_timeb); 
     time_t now_time_t = now_timeb.time;
     struct tm now_tm;
-    localtime_r(&now_time_t, &now_tm);
+    gmtime_r(&now_time_t, &now_tm);
     char buf[20];
     snprintf(buf, 20, "%04d-%02d-%02d %02d:%02d:%02d",
         1900+now_tm.tm_year,
@@ -157,6 +159,7 @@ class PhotoDbImporter {
 	std::string mysql_datetime = exif_datetime_to_mysql_datetime(exif_datetime);
         std::cout << "exif_datetime " << exif_datetime << " mysql_datetime " <<
             mysql_datetime << std::endl;
+        camera_time = mysql_datetime;
 	break;
       }
     }
