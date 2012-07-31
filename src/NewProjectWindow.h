@@ -83,7 +83,7 @@ class NewProjectWindow {
     gtk_box_pack_start(GTK_BOX(project_name_box), project_name_entry, FALSE, FALSE, 0);
 
     query_view.run();
-    gtk_container_add(GTK_CONTAINER(windowBox), query_view.get_widget());
+    gtk_box_pack_start(GTK_BOX(windowBox), query_view.get_widget(), TRUE, TRUE, 0);
     accept_button = query_view.get_accept_button();
     g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
     quit_button = query_view.get_quit_button();

@@ -60,7 +60,7 @@ class RemoveFromProjectWindow {
 
     query_view.run();
     query_view.limit_to_a_project(project_name);
-    gtk_container_add(GTK_CONTAINER(windowBox), query_view.get_widget());
+    gtk_box_pack_start(GTK_BOX(windowBox), query_view.get_widget(), TRUE, TRUE, 0);
     accept_button = query_view.get_accept_button();
     g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
     quit_button = query_view.get_quit_button();
