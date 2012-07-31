@@ -110,6 +110,9 @@ class BaseWindow {
     gtk_widget_show(top_level_window);
     WidgetRegistry<BaseWindow>::set_widget(top_level_window, this);
 
+    // Capture unhandled key presses to the top level window. We use these to make
+    // shortcuts. (I.e., n = Next, b = Back, etc.)
+    g_signal_connect_after(top_level_window, "key-press-event", G_CALLBACK(keypress_cb), NULL);
 
     // Put a GtkBox (top_level_vbox) in top_level_window
     top_level_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -273,6 +276,7 @@ class BaseWindow {
   void clone_activate();
   void edit_tags_activate();
   void rebuild_all_tag_views();
+  bool keypress(guint keyval);
 
   static void
   file_project_open_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
@@ -466,6 +470,16 @@ class BaseWindow {
     }
   }
 
+  static inline boolean keypress_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    bool ret = FALSE;
+    guint keyval = ((GdkEventKey *)event)->keyval;
+
+    BaseWindow *base_window = WidgetRegistry<BaseWindow>::get_object(widget);
+    if (NULL != base_window) {
+      ret = base_window->keypress(keyval);
+    }
+    return ret;
+  }
 };
 
 #include "BaseWindow.h"
@@ -588,5 +602,26 @@ BaseWindow::rebuild_all_tag_views() {
     PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
     photo_select_page->rebuild_tag_view();
   }
+}
+
+inline bool
+BaseWindow::keypress(guint keyval) {
+  gint pagenum = gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
+  PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
+  switch (keyval) {
+    case 'n':
+      photo_select_page->next();
+      break;
+    case 'b':
+      photo_select_page->back();
+      break;
+    case 'r':
+      photo_select_page->rotate();
+      break;
+    default:
+      break;
+  }
+  return false;
 }
 #endif // BASEWINDOW_H__

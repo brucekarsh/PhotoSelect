@@ -416,6 +416,7 @@ class PhotoSelectPage {
     rotation = Utils::get_rotation(connection, conversionEngine.getPhotoFilePath());
     calculate_initial_scaling();
     set_position_entry();
+    gtk_widget_grab_focus(next_button);
   }
 
   void
@@ -509,11 +510,15 @@ class PhotoSelectPage {
   }
 
   void keep() {
+    rebuild_tag_view();
+    redraw_image();
     // TODO WRITEME or DELETEME
   }
 
   void drop() {
     // TODO WRITEME or DELETEME
+    rebuild_tag_view();
+    redraw_image();
   }
 
   void next() {
@@ -521,6 +526,8 @@ class PhotoSelectPage {
     rotation = Utils::get_rotation(connection, conversionEngine.getPhotoFilePath());
     calculate_initial_scaling();
     set_position_entry();
+    rebuild_tag_view();
+    redraw_image();
   }
 
   void back() {
@@ -528,6 +535,8 @@ class PhotoSelectPage {
     rotation = Utils::get_rotation(connection, conversionEngine.getPhotoFilePath());
     calculate_initial_scaling();
     set_position_entry();
+    rebuild_tag_view();
+    redraw_image();
   }
 
   void rotate() {
@@ -536,10 +545,14 @@ class PhotoSelectPage {
       rotation = 0;
     }
     Utils::set_rotation(connection, conversionEngine.getPhotoFilePath(), rotation);
+    rebuild_tag_view();
+    redraw_image();
   }
 
   void gimp() {
     // TODO WRITEME or DELETEME
+    rebuild_tag_view();
+    redraw_image();
   }
 
   static void tab_label_button_clicked_cb(GtkWidget *widget, gpointer data) {
@@ -553,8 +566,6 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> keep();
-      photoSelectPage->rebuild_tag_view();
-      photoSelectPage -> redraw_image();
     }
   }
 
@@ -562,8 +573,6 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> drop();
-      photoSelectPage->rebuild_tag_view();
-      photoSelectPage -> redraw_image();
     }
   }
 
@@ -572,8 +581,6 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> next();
-      photoSelectPage->rebuild_tag_view();
-      photoSelectPage->redraw_image();
     }
   }
 
@@ -582,8 +589,6 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> back();
-      photoSelectPage->rebuild_tag_view();
-      photoSelectPage->redraw_image();
     }
   }
 
@@ -592,7 +597,6 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> rotate();
-      photoSelectPage->redraw_image();
     }
   }
 
@@ -601,7 +605,6 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> gimp();
-      photoSelectPage -> redraw_image();
     }
   }
 
