@@ -2,7 +2,6 @@
 
 # Does all the steps of building the application
 
-touch NEWS README AUTHORS ChangeLog
 aclocal
 automake -a
 automake

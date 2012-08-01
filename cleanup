@@ -3,4 +3,22 @@
 # Get rid of any remaining auto-generated files
 
 make maintainer-clean || true
-rm -rf aclocal.m4 AUTHORS autom4te.cache bin ChangeLog ChangeLog~ config.log config.rpath config.status configure configure.ac~ COPYING depcomp INSTALL install-sh ltmain.sh m4 missing NEWS po README Makefile.in Makefile.in~ Makefile src/Makefile.in src/configure.ac
+
+rm -rf \
+    aclocal.m4 \
+    autom4te.cache \
+    bin \
+    ChangeLog~ \
+    config.log \
+    config.rpath \
+    config.status \
+    configure \
+    configure.ac~ \
+    ltmain.sh \
+    m4 \
+    Makefile \
+    Makefile.in~ \
+    Makefile.in \
+    po \
+    src/configure.ac \
+    src/Makefile.in
