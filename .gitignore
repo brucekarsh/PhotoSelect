@@ -1,0 +1,7 @@
+*.o
+config.log
+config.status
+configure
+configure.ac
+Makefile
+Makefile.in
