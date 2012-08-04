@@ -140,19 +140,19 @@ class PreferencesWindow {
     gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
         dbhost_label,   0, 1, 0, 1, GTK_FILL, GTK_FILL, 0, 0);
     gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
-        dbhost,         1, 2, 0, 1, GTK_FILL, GTK_FILL, 0, 0);
+        dbhost,         1, 2, 0, 1, (GtkAttachOptions)(GTK_FILL | GTK_EXPAND), GTK_FILL, 0, 0);
     gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
         user_label,     0, 1, 1, 2, GTK_FILL, GTK_FILL, 0, 0);
     gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
-        user,           1, 2, 1, 2, GTK_FILL, GTK_FILL, 0, 0);
+        user,           1, 2, 1, 2, (GtkAttachOptions)(GTK_FILL | GTK_EXPAND), GTK_FILL, 0, 0);
     gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
         password_label, 0, 1, 2, 3, GTK_FILL, GTK_FILL, 0, 0);
     gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
-        password,       1, 2, 2, 3, GTK_FILL, GTK_FILL, 0, 0);
+        password,       1, 2, 2, 3, (GtkAttachOptions)(GTK_FILL | GTK_EXPAND), GTK_FILL, 0, 0);
     gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
         database_label, 0, 1, 3, 4, GTK_FILL, GTK_FILL, 0, 0);
     gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
-        database,       1, 2, 3, 4, GTK_FILL, GTK_FILL, 0, 0);
+        database,       1, 2, 3, 4, (GtkAttachOptions)(GTK_FILL | GTK_EXPAND), GTK_FILL, 0, 0);
 
     g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
     g_signal_connect(cancel_button, "clicked", G_CALLBACK(cancel_button_clicked_cb), NULL);
