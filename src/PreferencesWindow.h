@@ -124,12 +124,16 @@ class PreferencesWindow {
 
    // Make labels for the GtkEntrys
     GtkWidget *dbhost_label = gtk_label_new("DbHost[localhost]");
+    gtk_misc_set_alignment(GTK_MISC(dbhost_label), 1.0, 0.5);
     gtk_widget_show(dbhost_label);
     GtkWidget *user_label = gtk_label_new("User");
+    gtk_misc_set_alignment(GTK_MISC(user_label), 1.0, 0.5);
     gtk_widget_show(user_label);
     GtkWidget *password_label = gtk_label_new("Password");
+    gtk_misc_set_alignment(GTK_MISC(password_label), 1.0, 0.5);
     gtk_widget_show(password_label);
     GtkWidget *database_label = gtk_label_new("Database [PhotoSelect]");
+    gtk_misc_set_alignment(GTK_MISC(database_label), 1.0, 0.5);
     gtk_widget_show(database_label);
 
     // Put the GtkEntrys and their labels into the table
