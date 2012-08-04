@@ -12,10 +12,10 @@ class PreferencesWindow {
   public:
   Preferences *thePreferences;
   GtkWidget *window;
-  GtkEntry *dbhost;    // GtkEntry for the Db Host
-  GtkEntry *user;      // GtkEntry for the Db User
-  GtkEntry *password;  // GtkEntry for the Db Password
-  GtkEntry *database;  // GtkEntry for the DB database name
+  GtkWidget *dbhost;    // GtkEntry for the Db Host
+  GtkWidget *user;      // GtkEntry for the Db User
+  GtkWidget *password;  // GtkEntry for the Db Password
+  GtkWidget *database;  // GtkEntry for the DB database name
   GtkWidget *accept_button;  // GtkButton
   GtkWidget *cancel_button;  // GtkButton
   GtkWidget *apply_button;  // GtkButton
@@ -30,7 +30,6 @@ class PreferencesWindow {
   }
 
   void highlight() {
-    std::cout << "highlight preferences window" << std::endl;
     GdkWindow *gdk_window = gtk_widget_get_window(window);
     gtk_window_set_urgency_hint(GTK_WINDOW(window), true);
     gtk_widget_show(window);
@@ -40,7 +39,6 @@ class PreferencesWindow {
     gdk_flush();
     gint x, y;
     gdk_window_get_root_origin(gdk_window, &x, &y);
-    std::cout << "gdk_window_get_root_origin " << x << " " << y << std::endl;
     gdk_window_move(gdk_window, x+10, y);
     gdk_flush();
     usleep(50000);
@@ -67,16 +65,8 @@ class PreferencesWindow {
   }
 
   void run() {
-    
-    /* Load UI from file. If error occurs, report it and quit application. */
-    GError *error = NULL;
-    GtkBuilder* builder = gtk_builder_new();
-    if( ! gtk_builder_add_from_file( builder,
-        "/home/bruce/PROJECTS/NEWPHOTOSELECT/src/GladeTestProject1.glade", &error ) ) {
-      g_warning( "%s", error->message );
-      g_free( error );
-    }
-    window = GTK_WIDGET( gtk_builder_get_object( builder, "PreferencesWindow" ));
+    // Make a window
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     GdkGeometry geometry;
     geometry.min_width = -1;
     geometry.min_height = -1;
@@ -84,35 +74,101 @@ class PreferencesWindow {
     geometry.max_height = -1;
     gtk_window_set_geometry_hints(GTK_WINDOW(window), window, &geometry,
         (GdkWindowHints)(GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
-    dbhost = GTK_ENTRY( gtk_builder_get_object( builder, "preferencesDbHost" ));
-    user = GTK_ENTRY( gtk_builder_get_object( builder, "preferencesUser" ));
-    password = GTK_ENTRY( gtk_builder_get_object( builder, "preferencesPassword" ));
-    database = GTK_ENTRY( gtk_builder_get_object( builder, "preferencesDatabase" ));
-    accept_button = GTK_WIDGET( gtk_builder_get_object( builder, "preferences_accept_button" ));
-    cancel_button = GTK_WIDGET( gtk_builder_get_object( builder, "preferences_cancel_button" ));
-    apply_button = GTK_WIDGET( gtk_builder_get_object( builder, "preferences_apply_button" ));
 
-    gtk_entry_set_text(dbhost, thePreferences -> get_dbhost().c_str());
-    gtk_entry_set_text(user, thePreferences -> get_user().c_str());
-    gtk_entry_set_text(password, thePreferences -> get_password().c_str());
-    gtk_entry_set_text(database, thePreferences -> get_database().c_str());
-    WidgetRegistry<PreferencesWindow>::set_widget(window, this);
+    // Make a vbox (window_vbox) to hold stuff than goes into window and put it in window
+    GtkWidget *window_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_show(window_vbox);
+    gtk_container_add(GTK_CONTAINER(window), window_vbox);
 
-    gtk_builder_connect_signals(builder, NULL);
+    // Make a notebook (notebook) to hold tabs for the various kinds of preferences
+    // and put it in window_vbox
+    GtkWidget *notebook = gtk_notebook_new();
+    gtk_widget_show(notebook);
+    gtk_box_pack_start(GTK_BOX(window_vbox), notebook, TRUE, TRUE, 0);
+    // Make a table (database_preferences_tab_table) to hold the database preferences
+    GtkWidget *database_preferences_tab_table = gtk_table_new(4, 2, false);
+    gtk_widget_show(database_preferences_tab_table);
+    // Make a label (database_preferences_tab_label) for the database preferences tab
+    GtkWidget *database_preferences_tab_label = gtk_label_new("Database");
+    gtk_widget_show(database_preferences_tab_label);
+    // Put the table and label into the notebook as a page
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook), database_preferences_tab_table,
+        database_preferences_tab_label);
+    // Make a box (button_hbox) for buttons and put it into window_vbox
+    GtkWidget *button_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_show(button_hbox);
+    gtk_box_pack_end(GTK_BOX(window_vbox), button_hbox, FALSE, FALSE, 0);
+    // Add Help, Accept, Cancel and Apply buttons to button_box
+    GtkWidget *help_button = gtk_button_new_with_label("Help");
+    gtk_widget_show(button_hbox);
+    gtk_box_pack_end(GTK_BOX(button_hbox), help_button, FALSE, FALSE, 0);
+    accept_button = gtk_button_new_with_label("Accept");
+    gtk_widget_show(accept_button);
+    gtk_box_pack_end(GTK_BOX(button_hbox), accept_button, FALSE, FALSE, 0);
+    cancel_button = gtk_button_new_with_label("Cancel");
+    gtk_widget_show(cancel_button);
+    gtk_box_pack_end(GTK_BOX(button_hbox), cancel_button, FALSE, FALSE, 0);
+    apply_button = gtk_button_new_with_label("Apply");
+    gtk_widget_show(apply_button);
+    gtk_box_pack_end(GTK_BOX(button_hbox), apply_button, FALSE, FALSE, 0);
+
+    // Make GtkEntrys (dbhost, user, password, database)
+    dbhost = gtk_entry_new();
+    gtk_widget_show(dbhost);
+    user = gtk_entry_new();
+    gtk_widget_show(user);
+    password = gtk_entry_new();
+    gtk_widget_show(password);
+    database = gtk_entry_new();
+    gtk_widget_show(database);
+
+   // Make labels for the GtkEntrys
+    GtkWidget *dbhost_label = gtk_label_new("DbHost[localhost]");
+    gtk_widget_show(dbhost_label);
+    GtkWidget *user_label = gtk_label_new("User");
+    gtk_widget_show(user_label);
+    GtkWidget *password_label = gtk_label_new("Password");
+    gtk_widget_show(password_label);
+    GtkWidget *database_label = gtk_label_new("Database [PhotoSelect]");
+    gtk_widget_show(database_label);
+
+    // Put the GtkEntrys and their labels into the table
+    gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
+        dbhost_label,   0, 1, 0, 1, GTK_FILL, GTK_FILL, 0, 0);
+    gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
+        dbhost,         1, 2, 0, 1, GTK_FILL, GTK_FILL, 0, 0);
+    gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
+        user_label,     0, 1, 1, 2, GTK_FILL, GTK_FILL, 0, 0);
+    gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
+        user,           1, 2, 1, 2, GTK_FILL, GTK_FILL, 0, 0);
+    gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
+        password_label, 0, 1, 2, 3, GTK_FILL, GTK_FILL, 0, 0);
+    gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
+        password,       1, 2, 2, 3, GTK_FILL, GTK_FILL, 0, 0);
+    gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
+        database_label, 0, 1, 3, 4, GTK_FILL, GTK_FILL, 0, 0);
+    gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
+        database,       1, 2, 3, 4, GTK_FILL, GTK_FILL, 0, 0);
+
     g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
     g_signal_connect(cancel_button, "clicked", G_CALLBACK(cancel_button_clicked_cb), NULL);
     g_signal_connect(window, "destroy", G_CALLBACK(cancel_button_clicked_cb), NULL);
     g_signal_connect(apply_button, "clicked", G_CALLBACK(apply_button_clicked_cb), NULL);
 
-    g_object_unref( G_OBJECT( builder ) );
+    gtk_entry_set_text(GTK_ENTRY(dbhost), thePreferences -> get_dbhost().c_str());
+    gtk_entry_set_text(GTK_ENTRY(user), thePreferences -> get_user().c_str());
+    gtk_entry_set_text(GTK_ENTRY(password), thePreferences -> get_password().c_str());
+    gtk_entry_set_text(GTK_ENTRY(database), thePreferences -> get_database().c_str());
+    WidgetRegistry<PreferencesWindow>::set_widget(window, this);
+
     gtk_widget_show(window);
   }
 
   void apply() {
-    thePreferences -> set_dbhost(gtk_entry_get_text(dbhost));
-    thePreferences -> set_user(gtk_entry_get_text(user));
-    thePreferences -> set_password(gtk_entry_get_text(password));
-    thePreferences -> set_database(gtk_entry_get_text(database));
+    thePreferences -> set_dbhost(gtk_entry_get_text(GTK_ENTRY(dbhost)));
+    thePreferences -> set_user(gtk_entry_get_text(GTK_ENTRY(user)));
+    thePreferences -> set_password(gtk_entry_get_text(GTK_ENTRY(password)));
+    thePreferences -> set_database(gtk_entry_get_text(GTK_ENTRY(database)));
     thePreferences -> writeback();
   }
 

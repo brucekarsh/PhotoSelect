@@ -331,7 +331,9 @@ class BaseWindow {
     if (NULL == preferencesWindow) {
       preferencesWindow = new PreferencesWindow(thePreferences);
       preferencesWindow->run();
-      g_signal_connect(preferencesWindow->window, "destroy", G_CALLBACK(preferences_window_destroy_cb), (gpointer) this);
+      preferencesWindow_handler_id = g_signal_connect(preferencesWindow->window,
+          "destroy", G_CALLBACK(preferences_window_destroy_cb), (gpointer) this);
+      preferencesWindow_instance = preferencesWindow->window;
     } else {
       preferencesWindow->highlight();
     }
