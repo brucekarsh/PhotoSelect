@@ -1,5 +1,6 @@
 #ifndef IMPORTWINDOW_H__
 #define IMPORTWINDOW_H__
+#include <boost/lexical_cast.hpp>
 #include <queue>
 #include <stdio.h>
 #include "ConversionEngine.h"
@@ -15,10 +16,15 @@ class ImportWindow {
   Preferences *thePreferences;
   GtkWidget *window;
   GtkWidget *file_chooser;
+  GtkWidget *scrollTextView;
+  GtkWidget *scrollWindow;
+  GtkWidget *scrollBox;
+  GtkWidget *status_label;
   GtkWidget *progressBar;
   bool cancel_requested;
   bool processing_imports;
   sql::Connection *connection;
+  int process_count;
 
   ImportWindow(Preferences* thePreferences_, sql::Connection *connection_) :
       thePreferences( thePreferences_), cancel_requested(false), processing_imports(false), connection(connection_) {
@@ -62,6 +68,35 @@ class ImportWindow {
     GtkWidget *accept_button = gtk_button_new_with_label("Accept");
     gtk_widget_show(accept_button);
     gtk_box_pack_end(GTK_BOX(button_hbox), accept_button, FALSE, FALSE, 0);
+
+    // Add a box for the scrollable text (scrollBox) to windowBox
+    scrollBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_box_pack_start(GTK_BOX(windowBox), scrollBox, TRUE, TRUE, 0);
+    gtk_widget_hide(scrollBox);
+
+    // Add a box for status information (status_row) to scrollBox
+    GtkWidget *status_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_show(status_row);
+    gtk_box_pack_start(GTK_BOX(scrollBox), status_row, FALSE, FALSE, 0);
+
+    // Add a label for status (status_label) to status_row
+    status_label = gtk_label_new("This is the status label");
+    gtk_widget_show(status_label);
+    gtk_box_pack_start(GTK_BOX(status_row), status_label, FALSE, FALSE, 0);
+
+    // Add a scrollable window (scrollWindow) to scrollBox
+    scrollWindow = gtk_scrolled_window_new(NULL, NULL);
+    gtk_widget_set_size_request(scrollWindow, 0, 300);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrollWindow),
+        GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    gtk_widget_show(scrollWindow);
+    gtk_box_pack_start(GTK_BOX(scrollBox), scrollWindow, TRUE, TRUE, 0);
+
+    // Add a text view (scrollTextView) to scrollWindow
+    scrollTextView = gtk_text_view_new();
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(scrollTextView), FALSE);
+    gtk_widget_show(scrollTextView);
+    gtk_container_add(GTK_CONTAINER(scrollWindow), scrollTextView);
 
     g_signal_connect(cancel_button, "clicked", G_CALLBACK(cancel_button_clicked_cb), NULL);
     g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
@@ -150,6 +185,12 @@ class ImportWindow {
   void start_importing();
 
   void display_on_UI(std::string text) {
+    GtkTextBuffer *scrollTextBuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(scrollTextView));
+    gtk_text_buffer_insert_at_cursor(scrollTextBuffer, (text + "\n").c_str(), 1+text.size());
+    gtk_label_set_text(GTK_LABEL(status_label), (std::string("status: processed ")
+        + boost::lexical_cast<std::string>(process_count) + "\n").c_str());
+    process_count++;
+    runUI();
   }
 };
 
@@ -167,12 +208,22 @@ class ImportWindow {
     GSList *p;
     std::queue<std::string> dirs_to_process;
     p = file_list;
+    process_count = 0;
+
+    // Indicate in the UI that we are starting
+    GtkTextBuffer *scrollTextBuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(scrollTextView));
+    std::string txt = "Starting...\n";
+    gtk_text_buffer_set_text(scrollTextBuffer, txt.c_str(), -1);
+    gtk_label_set_text(GTK_LABEL(status_label), "status: Starting.");
+    gtk_widget_show(scrollBox);
+    runUI();
 
     for (p = file_list; NULL != p; p = p -> next) {
       std::cout << (char*)(p -> data) << std::endl;
       dirs_to_process.push(std::string((char*)(p -> data)));
       if (cancel_requested) break;
     }
+
     if (!cancel_requested) {
       g_slist_free_full(file_list, g_free);
       photoDbImporter.set_dirs_to_process(dirs_to_process);
