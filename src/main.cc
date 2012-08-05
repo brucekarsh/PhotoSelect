@@ -101,7 +101,7 @@ open_database(std::string dbhost, std::string user, std::string password, std::s
     exit(1);
   }
 
-  std::string url;
+  std::string url=dbhost;
   sql::Connection *connection = Utils::get_connection(driver, url, user, password);
   if (NULL == connection) {
     std::cerr << "driver -> connect() failed\n" << std::endl;
