@@ -44,8 +44,11 @@ class BaseWindow {
   GtkWidget *edit_tags_menu_item;
   GtkWidget *view_tags_menu_item;
   GtkWidget *view_clone_menu_item;
+  GtkWidget *view_exif_menu_item;
   std::list<GtkWidget *> view_tags_menu_items;
+  std::list<GtkWidget *> view_exif_menu_items;
   GtkWidget *view_tags_menu;
+  GtkWidget *view_exif_menu;
   GtkWidget *notebook;
   PreferencesWindow *preferencesWindow;
   guint preferencesWindow_handler_id;
@@ -233,6 +236,11 @@ class BaseWindow {
     gtk_container_add(GTK_CONTAINER(view_menu), view_clone_menu_item);
     gtk_widget_show(view_clone_menu_item);
 
+    // Put a menuitem (view_exif_menu_item) into view_menu
+    view_exif_menu_item = gtk_menu_item_new_with_label("Exif");
+    gtk_container_add(GTK_CONTAINER(view_menu), view_exif_menu_item);
+    gtk_widget_show(view_exif_menu_item);
+
     // Put a menuitem (view_tags_menu_item) into view_menu
     view_tags_menu_item = gtk_menu_item_new_with_label("Tags");
     gtk_container_add(GTK_CONTAINER(view_menu), view_tags_menu_item);
@@ -242,6 +250,11 @@ class BaseWindow {
     view_tags_menu = gtk_menu_new();
     gtk_menu_item_set_submenu(GTK_MENU_ITEM(view_tags_menu_item), view_tags_menu);
     gtk_widget_show(view_tags_menu);
+
+    // Put a menu (view_exif_menu) into view_exif_menu_item
+    view_exif_menu = gtk_menu_new();
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(view_exif_menu_item), view_exif_menu);
+    gtk_widget_show(view_exif_menu);
 
     // Put some choices into the view_tags_menu
     GSList *group = NULL;
@@ -254,6 +267,20 @@ class BaseWindow {
       view_tags_menu_items.push_back(item);
       group = gtk_radio_menu_item_get_group (GTK_RADIO_MENU_ITEM (item));
       gtk_container_add(GTK_CONTAINER(view_tags_menu), item);
+      gtk_widget_show(item);
+    }
+
+    // Put some choices into the view_exif_menu
+    group = NULL;
+    std::string view_exif_menu_item_labels[] = { "none", "left", "right", "top", "bottom"};
+    BOOST_FOREACH(std::string label, view_exif_menu_item_labels) {
+      GtkWidget *item = gtk_radio_menu_item_new_with_label(group, label.c_str());
+      if (label == "right") {
+        gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item), true);
+      }
+      view_exif_menu_items.push_back(item);
+      group = gtk_radio_menu_item_get_group (GTK_RADIO_MENU_ITEM (item));
+      gtk_container_add(GTK_CONTAINER(view_exif_menu), item);
       gtk_widget_show(item);
     }
 
@@ -273,6 +300,7 @@ class BaseWindow {
   void file_project_rename_activate();
   void file_project_delete_activate();
   void view_tags_toggled(GtkCheckMenuItem *checkmenuitem);
+  void view_exif_toggled(GtkCheckMenuItem *checkmenuitem);
   void clone_activate();
   void edit_tags_activate();
   void rebuild_all_tag_views();
@@ -426,6 +454,14 @@ class BaseWindow {
     BaseWindow *base_window = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(checkmenuitem));
     base_window->view_tags_toggled(checkmenuitem);
   }
+
+  static void
+  view_exif_toggled_cb(GtkCheckMenuItem *checkmenuitem, gpointer user_data) {
+    BaseWindow *base_window = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(checkmenuitem));
+    if (base_window) {
+      base_window->view_exif_toggled(checkmenuitem);
+    }
+  }
     
   void connect_signals() {
     connect_signal(top_level_window, "destroy", G_CALLBACK(quit_cb), NULL);
@@ -452,6 +488,9 @@ class BaseWindow {
     connect_signal(view_clone_menu_item, "activate", G_CALLBACK(clone_activate_cb), NULL);
     BOOST_FOREACH(GtkWidget *item, view_tags_menu_items) {
       connect_signal(item, "toggled", G_CALLBACK(view_tags_toggled_cb), NULL);
+    }
+    BOOST_FOREACH(GtkWidget *item, view_exif_menu_items) {
+      connect_signal(item, "toggled", G_CALLBACK(view_exif_toggled_cb), NULL);
     }
   }
 
@@ -588,12 +627,27 @@ BaseWindow::edit_tags_activate() {
 
 inline void
 BaseWindow::view_tags_toggled(GtkCheckMenuItem *checkmenuitem) {
-  gint pagenum = gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
-  if (-1 == pagenum) return;
-  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
-  PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
-  std::string position = gtk_menu_item_get_label(GTK_MENU_ITEM(checkmenuitem));
-  photo_select_page->set_tags_position(position);
+  if (gtk_check_menu_item_get_active(checkmenuitem)) {
+    gint pagenum = gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
+    if (-1 == pagenum) return;
+    GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
+    PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
+    std::string position = gtk_menu_item_get_label(GTK_MENU_ITEM(checkmenuitem));
+    photo_select_page->set_tags_position(position);
+  }
+}
+
+inline void
+BaseWindow::view_exif_toggled(GtkCheckMenuItem *checkmenuitem) {
+  if (gtk_check_menu_item_get_active(checkmenuitem)) {
+    gint pagenum = gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
+    if (-1 == pagenum) return;
+    GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
+    PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
+    std::string position = gtk_menu_item_get_label(GTK_MENU_ITEM(checkmenuitem));
+    //photo_select_page->set_exif_position(position);
+    std::cout << "photo_select_page->set_exif_position(position); " << position << std::endl;
+  }
 }
 
 inline void
