@@ -341,6 +341,7 @@ class BaseWindow {
 
   static void
   file_import_activate_cb() {
+    if (!connection) return;
     ImportWindow *importWindow = new ImportWindow(thePreferences, connection);
     importWindow->run();
   }
@@ -390,6 +391,7 @@ class BaseWindow {
 
   GtkNotebook *
   create_window(GtkNotebook *notebook, GtkWidget *page, gint x, gint y, gpointer user_data) {
+    if (!connection) return NULL;
     GtkWidget* parent_window = gtk_widget_get_toplevel(GTK_WIDGET(notebook));
     gint parent_window_width, parent_window_height;
     gtk_window_get_size(GTK_WINDOW(parent_window), &parent_window_width, &parent_window_height);
@@ -510,6 +512,7 @@ BaseWindow::get_project_name() {
 
 inline void
 BaseWindow::file_project_open_activate() {
+  if (!connection) return;
   OpenProjectWindow* openProjectWindow =
       new OpenProjectWindow(connection, thePreferences, photoFileCache, this);
   openProjectWindow->run();
@@ -518,6 +521,7 @@ BaseWindow::file_project_open_activate() {
 
 inline void
 BaseWindow::file_project_new_activate() {
+  if (!connection) return;
   NewProjectWindow* newProjectWindow =
       new NewProjectWindow(connection, thePreferences, photoFileCache, this);
   newProjectWindow->run();
@@ -526,6 +530,7 @@ BaseWindow::file_project_new_activate() {
 
 inline void
 BaseWindow::file_project_add_to_activate() {
+  if (!connection) return;
   std::string project_name = get_project_name();
   if (0 == project_name.size()) {
     return;
@@ -538,6 +543,7 @@ BaseWindow::file_project_add_to_activate() {
 
 inline void
 BaseWindow::file_project_remove_from_activate() {
+  if (!connection) return;
   std::string project_name = get_project_name();
   if (0 == project_name.size()) {
     return;
@@ -550,6 +556,7 @@ BaseWindow::file_project_remove_from_activate() {
 
 inline void
 BaseWindow::file_project_rename_activate() {
+  if (!connection) return;
   RenameProjectWindow* renameProjectWindow =
       new RenameProjectWindow(connection, thePreferences, this);
   renameProjectWindow->run();
@@ -558,6 +565,7 @@ BaseWindow::file_project_rename_activate() {
 
 inline void
 BaseWindow::file_project_delete_activate() {
+  if (!connection) return;
   DeleteProjectWindow* deleteProjectWindow =
       new DeleteProjectWindow(connection, thePreferences, this);
   deleteProjectWindow->run();
@@ -566,6 +574,7 @@ BaseWindow::file_project_delete_activate() {
 
 inline void
 BaseWindow::edit_tags_activate() {
+  if (!connection) return;
   std::cout << "tags_activate entered" << std::endl;
   std::string project_name = get_project_name();
   if (0 == project_name.size()) {
@@ -580,6 +589,7 @@ BaseWindow::edit_tags_activate() {
 inline void
 BaseWindow::view_tags_toggled(GtkCheckMenuItem *checkmenuitem) {
   gint pagenum = gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
+  if (-1 == pagenum) return;
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
   PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
   std::string position = gtk_menu_item_get_label(GTK_MENU_ITEM(checkmenuitem));
@@ -589,6 +599,7 @@ BaseWindow::view_tags_toggled(GtkCheckMenuItem *checkmenuitem) {
 inline void
 BaseWindow::clone_activate() {
   gint pagenum = gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
+  if (-1 == pagenum) return;
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
   PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
   PhotoSelectPage *cloned_photo_select_page = photo_select_page->clone();

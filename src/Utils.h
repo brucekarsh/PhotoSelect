@@ -410,10 +410,17 @@ class Utils {
     return ::get_driver_instance();
   }
 
+  //!
+  //! Returns a connection to the database, or NULL if it can't get a connection
   static inline sql::Connection *get_connection(sql::Driver *driver, std::string url, std::string user,
       std::string password) {
-    sql::Connection *connection = driver->connect(url, user, password);
-    connection->setAutoCommit(0);
+    sql::Connection *connection;
+    try {
+      connection = driver->connect(url, user, password);
+      connection->setAutoCommit(0);
+    } catch (sql::SQLException &ex) {
+      connection = NULL;
+    }
     return connection;
   }
 

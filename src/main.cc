@@ -48,7 +48,9 @@ main(int argc, char **argv)
   BaseWindow *baseWindow = new BaseWindow(connection, &preferences, &photoFileCache);
   baseWindow->run();
 
-  open_initial_project(connection, baseWindow, &preferences, &photoFileCache);
+  if (connection) {
+    open_initial_project(connection, baseWindow, &preferences, &photoFileCache);
+  }
 
   gtk_main();
 }
@@ -105,11 +107,8 @@ open_database(std::string dbhost, std::string user, std::string password, std::s
   sql::Connection *connection = Utils::get_connection(driver, url, user, password);
   if (NULL == connection) {
     std::cerr << "driver -> connect() failed\n" << std::endl;
-    exit(1);
-    // TODO handle db open failure.
+  } else {
+    Utils::set_schema(connection, database);
   }
-
-  Utils::set_schema(connection, database);
-
   return connection;
 }
