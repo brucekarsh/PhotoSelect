@@ -8,17 +8,32 @@
 #include <sstream>
 #include <wordexp.h>
 
+namespace sql {
+  class Driver;
+  class Connection;
+}
+sql::Connection *open_database(std::string dbhost, std::string user, std::string password,
+    std::string get_database);
+
 class Preferences {
     std::string dbhost;    // the Db Host
     std::string user;      // the Db User
     std::string password;  // the Db Password
     std::string database;  // the DB database name
     bool invalid;
+    sql::Connection *connection;
 
     static const char * default_dbhost() { return "localhost"; }
     static const char * default_user() { return ""; }
     static const char * default_password() { return ""; }
     static const char * default_database() { return "PhotoSelect"; }
+
+    sql::Connection *get_connection() {
+      if (NULL == connection) {
+        connection == open_database(get_dbhost(), get_user(), get_password(), get_database());
+      }
+      return connection;
+    }
 
     std::string get_string_from_json(
         json_object *new_obj, std::string key, std::string default_value) {
@@ -78,7 +93,7 @@ class Preferences {
   public:
 
 
-    Preferences() : invalid(true) {
+    Preferences() : invalid(true), connection(NULL) {
     }
 
     std::string get_dbhost() {
