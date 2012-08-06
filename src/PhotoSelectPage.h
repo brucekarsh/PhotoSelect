@@ -414,9 +414,11 @@ class PhotoSelectPage {
     }
     conversionEngine.go_to(val-1);   
     rotation = Utils::get_rotation(connection, conversionEngine.getPhotoFilePath());
-    calculate_initial_scaling();
+    calculated_initial_scaling = false;
     set_position_entry();
     gtk_widget_grab_focus(next_button);
+    rebuild_tag_view();
+    invalidate_image();
   }
 
   void
@@ -439,7 +441,7 @@ class PhotoSelectPage {
       int deltaY = drag_end_y - drag_start_y;
       Dx += deltaX;
       Dy += deltaY;
-      redraw_image();
+      invalidate_image();
       drag_is_active = false;
     }
   }
@@ -453,6 +455,7 @@ class PhotoSelectPage {
     } else {
       std::cout << "don't know which way to scroll" << std::endl;
     }
+    invalidate_image();
   }
 
   void
@@ -466,7 +469,7 @@ class PhotoSelectPage {
         Dy += deltaY;
         drag_start_x = drag_end_x;
         drag_start_y = drag_end_y;
-        redraw_image();
+        invalidate_image();
     }
   }
 
@@ -477,6 +480,13 @@ class PhotoSelectPage {
     int val = conversionEngine.get_position();
     std::string valstring =  boost::lexical_cast<std::string>(val + 1);
     gtk_entry_set_text(GTK_ENTRY(position_entry), valstring.c_str());
+  }
+
+  void
+  invalidate_image() {
+    gint surface_height = gtk_widget_get_allocated_height(drawing_area);
+    gint surface_width = gtk_widget_get_allocated_width(drawing_area);
+    gtk_widget_queue_draw_area(drawing_area, 0, 0, surface_width, surface_height);
   }
 
   void redraw_image() {
@@ -511,32 +521,32 @@ class PhotoSelectPage {
 
   void keep() {
     rebuild_tag_view();
-    redraw_image();
+    invalidate_image();
     // TODO WRITEME or DELETEME
   }
 
   void drop() {
     // TODO WRITEME or DELETEME
     rebuild_tag_view();
-    redraw_image();
+    invalidate_image();
   }
 
   void next() {
     conversionEngine.next();   
     rotation = Utils::get_rotation(connection, conversionEngine.getPhotoFilePath());
-    calculate_initial_scaling();
+    calculated_initial_scaling = false;
     set_position_entry();
     rebuild_tag_view();
-    redraw_image();
+    invalidate_image();
   }
 
   void back() {
     conversionEngine.back();   
     rotation = Utils::get_rotation(connection, conversionEngine.getPhotoFilePath());
-    calculate_initial_scaling();
+    calculated_initial_scaling = false;
     set_position_entry();
     rebuild_tag_view();
-    redraw_image();
+    invalidate_image();
   }
 
   void rotate() {
@@ -546,13 +556,13 @@ class PhotoSelectPage {
     }
     Utils::set_rotation(connection, conversionEngine.getPhotoFilePath(), rotation);
     rebuild_tag_view();
-    redraw_image();
+    invalidate_image();
   }
 
   void gimp() {
     // TODO WRITEME or DELETEME
     rebuild_tag_view();
-    redraw_image();
+    invalidate_image();
   }
 
   static void tab_label_button_clicked_cb(GtkWidget *widget, gpointer data) {
@@ -623,10 +633,9 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->position_entry_activate();
-      photoSelectPage->rebuild_tag_view();
-      photoSelectPage -> redraw_image();
     }
   }
+
   static void
   drawing_area_button_press_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
     PhotoSelectPage *photoSelectPage = WidgetRegistry<PhotoSelectPage>::get_object(widget);
@@ -646,7 +655,6 @@ class PhotoSelectPage {
     PhotoSelectPage *photoSelectPage = WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->drawing_area_scroll(event);
-      photoSelectPage -> redraw_image();
     }
   }
   static void
