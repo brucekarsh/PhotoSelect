@@ -55,6 +55,7 @@ class PhotoSelectPage {
     int drag_start_y;
     boolean calculated_initial_scaling;
     std::string tags_position;
+    std::string exif_position;
     std::map<std::string, Utils::photo_tag_s> photo_tags;
     std::map<std::string, Utils::project_tag_s> project_tags;
 
@@ -65,13 +66,14 @@ class PhotoSelectPage {
       rotation(0), drawing_area(0), thePreferences((Preferences*)0),
       connection(connection_), photoFileCache(photoFileCache_), M(1.0), Dx(0),
       Dy(0), drag_is_active(false), calculated_initial_scaling(false), tag_view_box(0),
-      tags_position("right") {
+      tags_position("right"), exif_position("right") {
   }
 
   PhotoSelectPage *clone() {
     PhotoSelectPage *cloned_photo_select_page = new PhotoSelectPage(connection, photoFileCache);
     cloned_photo_select_page->setup(photoFilenameList, project_name, thePreferences);
     cloned_photo_select_page->set_tags_position(tags_position);
+    cloned_photo_select_page->set_exif_position(exif_position);
     return cloned_photo_select_page;
   }
 
@@ -89,6 +91,13 @@ class PhotoSelectPage {
   set_tags_position(const std::string position) {
     tags_position = position;
     rebuild_tag_view();
+  }
+
+  void
+  set_exif_position(const std::string position) {
+    std::cout << "photo_select_page->set_exif_position(position); " << position << std::endl;
+    exif_position = position;
+    rebuild_exif_view();
   }
 
   void
@@ -215,7 +224,9 @@ class PhotoSelectPage {
     gtk_entry_set_width_chars(GTK_ENTRY(position_entry), 10);
     gtk_widget_show(position_entry);
     gtk_box_pack_end(GTK_BOX(button_hbox), position_entry, FALSE, FALSE, 0);
+
     rebuild_tag_view();
+    rebuild_exif_view();
     g_signal_connect(position_entry, "activate", G_CALLBACK(position_entry_activate_cb), 0);
   }
 
@@ -301,6 +312,10 @@ class PhotoSelectPage {
     } else if (tags_position == "bottom") {
       gtk_box_pack_start(GTK_BOX(page_vbox), tag_view_box, FALSE, FALSE, 0);
     }
+  }
+
+  void rebuild_exif_view() {
+    // TODO WRITEME
   }
 
   void setup(std::list<std::string> photoFilenameList_, std::string project_name_,
