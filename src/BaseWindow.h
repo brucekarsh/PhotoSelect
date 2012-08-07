@@ -645,7 +645,7 @@ BaseWindow::view_exif_toggled(GtkCheckMenuItem *checkmenuitem) {
     GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
     PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
     std::string position = gtk_menu_item_get_label(GTK_MENU_ITEM(checkmenuitem));
-    photo_select_page->set_exif_position(position);
+    photo_select_page->set_exifs_position(position);
   }
 }
 

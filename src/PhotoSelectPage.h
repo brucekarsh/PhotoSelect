@@ -48,6 +48,7 @@ class PhotoSelectPage {
     GtkWidget *tab_label_label;
     GtkWidget *tab_label_button;
     GtkWidget *tag_view_box;
+    GtkWidget *exif_view_box;
     float Dx, Dy; // displacement of the current image in screen coordinates
     float M;      // magnification of the current image (screen_size = m * image_size)
     bool drag_is_active;
@@ -55,7 +56,7 @@ class PhotoSelectPage {
     int drag_start_y;
     boolean calculated_initial_scaling;
     std::string tags_position;
-    std::string exif_position;
+    std::string exifs_position;
     std::map<std::string, Utils::photo_tag_s> photo_tags;
     std::map<std::string, Utils::project_tag_s> project_tags;
 
@@ -66,14 +67,14 @@ class PhotoSelectPage {
       rotation(0), drawing_area(0), thePreferences((Preferences*)0),
       connection(connection_), photoFileCache(photoFileCache_), M(1.0), Dx(0),
       Dy(0), drag_is_active(false), calculated_initial_scaling(false), tag_view_box(0),
-      tags_position("right"), exif_position("right") {
+      exif_view_box(0), tags_position("right"), exifs_position("right") {
   }
 
   PhotoSelectPage *clone() {
     PhotoSelectPage *cloned_photo_select_page = new PhotoSelectPage(connection, photoFileCache);
     cloned_photo_select_page->setup(photoFilenameList, project_name, thePreferences);
     cloned_photo_select_page->set_tags_position(tags_position);
-    cloned_photo_select_page->set_exif_position(exif_position);
+    cloned_photo_select_page->set_exifs_position(exifs_position);
     return cloned_photo_select_page;
   }
 
@@ -94,9 +95,8 @@ class PhotoSelectPage {
   }
 
   void
-  set_exif_position(const std::string position) {
-    std::cout << "photo_select_page->set_exif_position(position); " << position << std::endl;
-    exif_position = position;
+  set_exifs_position(const std::string position) {
+    exifs_position = position;
     rebuild_exif_view();
   }
 
@@ -316,6 +316,76 @@ class PhotoSelectPage {
 
   void rebuild_exif_view() {
     // TODO WRITEME
+    GtkWidget *exif_view_scrolled_window = NULL;
+    GtkWidget *exif_view_exifs_box = NULL;
+
+    // Destroy any existing exif_view_box
+    if (NULL != exif_view_box) {
+      gtk_widget_destroy(exif_view_box);
+      exif_view_box = NULL;
+    }
+
+    // Get all the exifs for this photo
+    std::map<std::string, std::string> exifs = get_exifs();
+
+    // Don't do anything if the exif view is turned off
+    if (exifs_position == "none") {
+      return;
+    }
+    
+    // Make a box (exif_view_box) for the exif_view
+    exif_view_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_show(exif_view_box);
+
+    // Put a label (exif_view_label) into the exif_view_box
+    GtkWidget *exif_view_label = gtk_label_new("Exif Data");
+    gtk_widget_show(exif_view_label);
+    gtk_box_pack_start(GTK_BOX(exif_view_box), exif_view_label, FALSE, FALSE, 0);
+    
+
+    // Make a scrolled window (exif_view_scrolled_window) to scroll the exif list
+    exif_view_scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(exif_view_scrolled_window),
+        GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_widget_show(exif_view_scrolled_window);
+
+    // Make a box (exif_view_exifs_box) to go into the scrolled window
+    exif_view_exifs_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_show(exif_view_exifs_box);
+
+    // Put labels in exif_view_exifs_box, one for each exif
+    typedef std::pair<std::string, std::string> map_entry_t;
+    BOOST_FOREACH(map_entry_t map_entry, exifs) {
+      std::string exif_name = map_entry.first;
+      std::string exif_value = map_entry.second;
+      // Make a label, pack it, show it
+      GtkWidget *label = gtk_label_new((exif_name + " " + exif_value).c_str());
+      gtk_box_pack_start(GTK_BOX(exif_view_exifs_box), label, FALSE, FALSE, 0);
+      gtk_widget_show(label);
+    }
+
+    // Put the exif_view_scrolled_window into the exif_view_box.
+    gtk_box_pack_start(GTK_BOX(exif_view_box), exif_view_scrolled_window, TRUE, TRUE, 0);
+    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(exif_view_scrolled_window),
+        exif_view_exifs_box);
+
+    // Put the exif_view_box into the page_hbox.
+    if (exifs_position == "left") {
+      gtk_box_pack_start(GTK_BOX(page_hbox), exif_view_box, FALSE, FALSE, 0);
+      gtk_box_reorder_child(GTK_BOX(page_hbox), exif_view_box, 0);
+    } else if (exifs_position == "right") {
+      gtk_box_pack_start(GTK_BOX(page_hbox), exif_view_box, FALSE, FALSE, 0);
+    } else if (exifs_position == "top") {
+      gtk_box_pack_start(GTK_BOX(page_vbox), exif_view_box, FALSE, FALSE, 0);
+      gtk_box_reorder_child(GTK_BOX(page_vbox), exif_view_box, 0);
+    } else if (exifs_position == "bottom") {
+      gtk_box_pack_start(GTK_BOX(page_vbox), exif_view_box, FALSE, FALSE, 0);
+    }
+  }
+
+  std::map<std::string, std::string> get_exifs() {
+    std::map<std::string, std::string> exifs;
+    return exifs;
   }
 
   void setup(std::list<std::string> photoFilenameList_, std::string project_name_,
