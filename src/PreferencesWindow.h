@@ -1,5 +1,6 @@
 #ifndef PREFERENCESWINDOW_H__
 #define PREFERENCESWINDOW_H__
+#include <algorithm>
 #include <list>
 #include <stdio.h>
 #include "ConversionEngine.h"
@@ -19,7 +20,7 @@ class PreferencesWindow {
   GtkWidget *accept_button;  // GtkButton
   GtkWidget *cancel_button;  // GtkButton
   GtkWidget *apply_button;  // GtkButton
-
+  std::list<GtkWidget *> exif_check_buttons;
 
   PreferencesWindow(Preferences* thePreferences) {
     this->thePreferences = thePreferences;
@@ -94,6 +95,16 @@ class PreferencesWindow {
     // Put the table and label into the notebook as a page
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), database_preferences_tab_table,
         database_preferences_tab_label);
+
+    // Make a vbox (exif_preferences_tab_vbox) to hold the exif preferences
+    GtkWidget *exif_preferences_tab_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_show(exif_preferences_tab_vbox);
+    // Make a label (exif_preferences_tab_label) for the exif preferences tab
+    GtkWidget *exif_preferences_tab_label = gtk_label_new("Exif");
+    gtk_widget_show(exif_preferences_tab_label);
+    // Put the vbox and label into the notebook as a page
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook), exif_preferences_tab_vbox,
+        exif_preferences_tab_label);
     // Make a box (button_hbox) for buttons and put it into window_vbox
     GtkWidget *button_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_show(button_hbox);
@@ -122,7 +133,7 @@ class PreferencesWindow {
     database = gtk_entry_new();
     gtk_widget_show(database);
 
-   // Make labels for the GtkEntrys
+   // Make labels for the above GtkEntrys
     GtkWidget *dbhost_label = gtk_label_new("DbHost[localhost]");
     gtk_misc_set_alignment(GTK_MISC(dbhost_label), 1.0, 0.5);
     gtk_widget_show(dbhost_label);
@@ -136,7 +147,7 @@ class PreferencesWindow {
     gtk_misc_set_alignment(GTK_MISC(database_label), 1.0, 0.5);
     gtk_widget_show(database_label);
 
-    // Put the GtkEntrys and their labels into the table
+    // Put the GtkEntrys and their labels into the database_preferences_tab_table
     gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
         dbhost_label,   0, 1, 0, 1, GTK_FILL, GTK_FILL, 0, 0);
     gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
@@ -153,6 +164,34 @@ class PreferencesWindow {
         database_label, 0, 1, 3, 4, GTK_FILL, GTK_FILL, 0, 0);
     gtk_table_attach(GTK_TABLE(database_preferences_tab_table),
         database,       1, 2, 3, 4, (GtkAttachOptions)(GTK_FILL | GTK_EXPAND), GTK_FILL, 0, 0);
+
+    // Make GtkCheckBoxes for the exif fields
+    std::string exif_choices[] = {
+        "Exif.Image.DateTime",
+        "Exif.Image.Make",
+        "Exif.Image.Model",
+        "Exif.Photo.ExposureTime",
+        "Exif.Photo.FNumber",
+        "Exif.Photo.FocalLengthIn35mmFilm",
+        "Exif.Photo.ISOSpeedRatings",
+        "Exif.Photo.PixelXDimension",
+        "Exif.Photo.PixelYDimension"
+    };
+    exif_check_buttons.clear();
+    std::list<std::string> checked_exif_selections = thePreferences->get_checked_exif_selections();
+    std::list<std::string> text_exif_selections = thePreferences->get_text_exif_selections();
+    BOOST_FOREACH(std::string choice, exif_choices) {
+      GtkWidget *check_button = gtk_check_button_new_with_label(choice.c_str());
+      if ( std::find(checked_exif_selections.begin(), checked_exif_selections.end(), choice) !=
+          checked_exif_selections.end() ||
+          std::find(text_exif_selections.begin(), text_exif_selections.end(), choice) !=
+          text_exif_selections.end()) {
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_button), true);
+      } 
+      gtk_widget_show(check_button);
+      exif_check_buttons.push_back(check_button);
+      gtk_box_pack_start(GTK_BOX(exif_preferences_tab_vbox), check_button, false, false, 0);
+    }
 
     g_signal_connect(accept_button, "clicked", G_CALLBACK(accept_button_clicked_cb), NULL);
     g_signal_connect(cancel_button, "clicked", G_CALLBACK(cancel_button_clicked_cb), NULL);
@@ -173,8 +212,28 @@ class PreferencesWindow {
     thePreferences -> set_user(gtk_entry_get_text(GTK_ENTRY(user)));
     thePreferences -> set_password(gtk_entry_get_text(GTK_ENTRY(password)));
     thePreferences -> set_database(gtk_entry_get_text(GTK_ENTRY(database)));
+
+    std::list<std::string> checked_exif_selections = get_checked_exif_selections();
+    std::list<std::string> text_exif_selections = get_text_exif_selections();
+    thePreferences -> set_exif_selections(checked_exif_selections, text_exif_selections);
     thePreferences -> writeback();
   }
+
+  std::list<std::string> get_checked_exif_selections() {
+    std::list<std::string> selections;
+    BOOST_FOREACH(GtkWidget *check_button, exif_check_buttons) {
+      if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_button))) {
+        std::string exif_name = gtk_button_get_label(GTK_BUTTON(check_button));
+	selections.push_back(exif_name);
+      }
+    }
+    return selections;
+  } 
+
+  std::list<std::string> get_text_exif_selections() {
+    std::list<std::string> selections;
+    return selections;
+  } 
 
   void quit() {
     gtk_widget_destroy(window);

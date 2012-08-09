@@ -327,6 +327,31 @@ class Utils {
     prepared_statement->executeUpdate();
   }
 
+  static inline std::string
+  get_from_exifblob_by_filePath(sql::Connection *connection, const std::string &filePath) {
+    std::string sql = "SELECT value from PhotoFile "
+        "INNER JOIN ExifBlob ON (PhotoFile.checksumId = ExifBlob.checksumId) "
+        "WHERE PhotoFile.filePath = ?";
+    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    prepared_statement->setString(1, filePath);
+    std::auto_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
+    bool has_first = rs->first();
+    if (!has_first) {
+      std::cout << "Cannot get a result set in get_from_exifblob_by_filePath" << std::endl;
+      exit(1);
+    }
+    bool is_first = rs->isFirst();
+    bool is_last = rs->isLast();
+    if (!is_first || ! is_last) {
+      std::cout << "More than one key found in results in get_id_from_Checksum" << std::endl;
+      std::cout << "isFirst(): " << rs->isFirst() << std::endl;
+      std::cout << "isLast(): " << rs->isLast() << std::endl;
+      exit(1);
+    }
+    std::string value = rs->getString(1);
+    return value;
+  }
+
   static inline int64_t
   insert_into_Checksum(sql::Connection *connection, const std::string &checksum) {
     std::string sql = "INSERT IGNORE INTO Checksum(checksum) Values (?)";

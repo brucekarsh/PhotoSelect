@@ -11,6 +11,15 @@
 #include <cairo-xlib.h>
 #include <boost/lexical_cast.hpp>
 
+#include <xercesc/parsers/XercesDOMParser.hpp>
+#include <xercesc/dom/DOM.hpp>
+#include <xercesc/dom/DOMNode.hpp>
+#include <xercesc/sax/HandlerBase.hpp>
+#include <xercesc/util/XMLString.hpp>
+#include <xercesc/util/PlatformUtils.hpp>
+#include <xercesc/framework/MemBufInputSource.hpp>
+#include <xercesc/util/OutOfMemoryException.hpp>
+
 #include "Utils.h"
 
 class PhotoFileCache;
@@ -32,6 +41,8 @@ class PhotoSelectPage {
 
     GtkWidget *page_hbox;
     GtkWidget *page_vbox;
+    GtkWidget *page_left_vbox;
+    GtkWidget *page_right_vbox;
     GtkWidget *drawing_area;
     GtkWidget *button_hbox;
     GtkWidget *keep_button;
@@ -138,14 +149,24 @@ class PhotoSelectPage {
     page_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_show(page_hbox);
 
+    // make left and right vboxes to hold meta-information views for things like exif and tags
+    page_left_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    page_right_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_show(page_left_vbox);
+    gtk_widget_show(page_right_vbox);
+
     // make a vbox to hold the page (page_vbox)
     page_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(page_vbox);
 
+    // add the page_left_vbox to the page_hbox
+    gtk_box_pack_start(GTK_BOX(page_hbox), page_left_vbox, FALSE, FALSE, 0);
     // add the page_vbox to the page_hbox
     gtk_box_pack_start(GTK_BOX(page_hbox), page_vbox, TRUE, TRUE, 0);
+    // add the page_right_vbox to the page_hbox
+    gtk_box_pack_start(GTK_BOX(page_hbox), page_right_vbox, FALSE, FALSE, 0);
 
-    // add a drawing area (drawing_area) to page_vbox
+    // add a drawing area (drawing_area) to page_vbox and setup its signals
     drawing_area = gtk_drawing_area_new();
     gtk_widget_show(drawing_area);
     gtk_box_pack_start(GTK_BOX(page_vbox), drawing_area, TRUE, TRUE, 0);
@@ -302,12 +323,11 @@ class PhotoSelectPage {
 
     // Put the tag_view_box into the page_hbox.
     if (tags_position == "left") {
-      gtk_box_pack_start(GTK_BOX(page_hbox), tag_view_box, FALSE, FALSE, 0);
-      gtk_box_reorder_child(GTK_BOX(page_hbox), tag_view_box, 0);
+      gtk_box_pack_start(GTK_BOX(page_left_vbox), tag_view_box, TRUE, TRUE, 0);
     } else if (tags_position == "right") {
-      gtk_box_pack_start(GTK_BOX(page_hbox), tag_view_box, FALSE, FALSE, 0);
+      gtk_box_pack_start(GTK_BOX(page_right_vbox), tag_view_box, TRUE, TRUE, 0);
     } else if (tags_position == "top") {
-      gtk_box_pack_start(GTK_BOX(page_vbox), tag_view_box, FALSE, FALSE, 0);
+      gtk_box_pack_start(GTK_BOX(page_vbox), tag_view_box, TRUE, TRUE, 0);
       gtk_box_reorder_child(GTK_BOX(page_vbox), tag_view_box, 0);
     } else if (tags_position == "bottom") {
       gtk_box_pack_start(GTK_BOX(page_vbox), tag_view_box, FALSE, FALSE, 0);
@@ -317,7 +337,7 @@ class PhotoSelectPage {
   void rebuild_exif_view() {
     // TODO WRITEME
     GtkWidget *exif_view_scrolled_window = NULL;
-    GtkWidget *exif_view_exifs_box = NULL;
+    GtkWidget *exif_view_exifs_grid = NULL;
 
     // Destroy any existing exif_view_box
     if (NULL != exif_view_box) {
@@ -349,32 +369,45 @@ class PhotoSelectPage {
         GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_widget_show(exif_view_scrolled_window);
 
-    // Make a box (exif_view_exifs_box) to go into the scrolled window
-    exif_view_exifs_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_show(exif_view_exifs_box);
+    // Make a grid (exif_view_exifs_grid) to go into the scrolled window
+    exif_view_exifs_grid = gtk_grid_new();
+    gtk_grid_set_column_spacing(GTK_GRID(exif_view_exifs_grid), 5);
+    gtk_widget_show(exif_view_exifs_grid);
 
-    // Put labels in exif_view_exifs_box, one for each exif
+    // Put labels in exif_view_exifs_grid, one pair for each exif
+    std::list<std::string> checked_exif_selections =
+        thePreferences->get_checked_exif_selections();
+    std::list<std::string> text_exif_selections = thePreferences->get_text_exif_selections();
     typedef std::pair<std::string, std::string> map_entry_t;
+    int row_num = 0;
     BOOST_FOREACH(map_entry_t map_entry, exifs) {
       std::string exif_name = map_entry.first;
-      std::string exif_value = map_entry.second;
-      // Make a label, pack it, show it
-      GtkWidget *label = gtk_label_new((exif_name + " " + exif_value).c_str());
-      gtk_box_pack_start(GTK_BOX(exif_view_exifs_box), label, FALSE, FALSE, 0);
-      gtk_widget_show(label);
+      if ( contains(checked_exif_selections, exif_name) ||
+          contains(text_exif_selections, exif_name)) {
+        // add this exif entry to the grid
+        std::string exif_value = map_entry.second;
+        GtkWidget *name_label = gtk_label_new(exif_name.c_str());
+        gtk_misc_set_alignment(GTK_MISC(name_label), 1.0, 0.5);
+        GtkWidget *value_label = gtk_label_new(exif_value.c_str());
+        gtk_misc_set_alignment(GTK_MISC(value_label), 0.0, 0.5);
+        gtk_widget_show(name_label);
+        gtk_widget_show(value_label);
+        gtk_grid_attach(GTK_GRID(exif_view_exifs_grid), name_label, 0, row_num, 1, 1);
+        gtk_grid_attach(GTK_GRID(exif_view_exifs_grid), value_label,  1, row_num, 1, 1);
+        row_num += 1;
+      }
     }
 
     // Put the exif_view_scrolled_window into the exif_view_box.
     gtk_box_pack_start(GTK_BOX(exif_view_box), exif_view_scrolled_window, TRUE, TRUE, 0);
     gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(exif_view_scrolled_window),
-        exif_view_exifs_box);
+        exif_view_exifs_grid);
 
     // Put the exif_view_box into the page_hbox.
     if (exifs_position == "left") {
-      gtk_box_pack_start(GTK_BOX(page_hbox), exif_view_box, FALSE, FALSE, 0);
-      gtk_box_reorder_child(GTK_BOX(page_hbox), exif_view_box, 0);
+      gtk_box_pack_start(GTK_BOX(page_left_vbox), exif_view_box, TRUE, TRUE, 0);
     } else if (exifs_position == "right") {
-      gtk_box_pack_start(GTK_BOX(page_hbox), exif_view_box, FALSE, FALSE, 0);
+      gtk_box_pack_start(GTK_BOX(page_right_vbox), exif_view_box, TRUE, TRUE, 0);
     } else if (exifs_position == "top") {
       gtk_box_pack_start(GTK_BOX(page_vbox), exif_view_box, FALSE, FALSE, 0);
       gtk_box_reorder_child(GTK_BOX(page_vbox), exif_view_box, 0);
@@ -383,10 +416,135 @@ class PhotoSelectPage {
     }
   }
 
+  bool contains(std::list<std::string> search_list, std::string search_value) {
+    return (std::find(search_list.begin(), search_list.end(), search_value) != search_list.end());
+  }
+  
   std::map<std::string, std::string> get_exifs() {
     std::map<std::string, std::string> exifs;
+
+    std::string file_name = conversionEngine.getPhotoFilePath();
+    std::string exif_string = Utils::get_from_exifblob_by_filePath(connection, file_name);
+
+    std::auto_ptr<xercesc::XercesDOMParser> parser (new xercesc::XercesDOMParser());
+    parser->setValidationScheme(xercesc::XercesDOMParser::Val_Never);
+
+    bool ret = parse_json_string(parser.get(), exif_string);
+    if (!ret) {
+      std::cout << "parse failed" << std::endl;
+    } else {
+      xercesc::DOMDocument *domDocument = parser->getDocument();
+      xercesc::DOMNode * documentElement = domDocument->getDocumentElement();
+      
+      xercesc::DOMNode *child;
+      for (child = documentElement->getFirstChild(); child != NULL; child = child->getNextSibling()) {
+        char *node_name = xercesc::XMLString::transcode(child->getNodeName());
+        xercesc::DOMNode::NodeType node_type = child->getNodeType();
+        if (node_type == xercesc::DOMNode::ELEMENT_NODE && !strcmp("t", node_name)) {
+          xercesc::DOMNamedNodeMap *attributes = child->getAttributes();
+          char *exif_name_value = get_value_by_name(attributes, "name");
+          char *exif_value_value = get_value_by_name(attributes, "value");
+          if (exif_name_value && exif_value_value) {
+            exifs[exif_name_value] = exif_value_value;
+          }
+        }
+      }
+    }
+
     return exifs;
   }
+
+  //!
+  //! Returns a value for an attribute value from a json node map given an attribute name
+  char *
+  get_value_by_name(xercesc::DOMNamedNodeMap *attributes, std::string exif_name) {
+    DOMNode *attribute_node = attributes->getNamedItem(X(exif_name.c_str()));
+    char *exif_value = NULL;
+    if (attribute_node) {
+      const XMLCh *value_xmlch = attribute_node->getNodeValue();
+      if (value_xmlch) {
+        exif_value = xercesc::XMLString::transcode(value_xmlch);
+      }
+    }
+    return exif_value;
+  }
+
+  // Used only for debugging
+  void print_node(xercesc::DOMNode *node) {
+    char *name = xercesc::XMLString::transcode(node->getNodeName());
+    char *value = (char *)"NULL";
+    const XMLCh *value_xmlch = node->getNodeValue();
+    if (value_xmlch) {
+      value = xercesc::XMLString::transcode(value_xmlch);
+    }
+    xercesc::DOMNamedNodeMap *attributes = node->getAttributes();
+    XMLSize_t num_attributes = 0;
+    if (attributes) {
+      num_attributes = attributes->getLength();
+    }
+    std::cout << node_type_string(node->getNodeType())
+        << " " << name
+        << " " << value
+        << " " << num_attributes
+        << std::endl;
+    xercesc::XMLString::release(&name);
+    for (int i = 0; i < num_attributes; i++) {
+      std::cout << "  ";
+      print_node(attributes->item(i));
+    }
+  }
+
+  // Used only for debugging
+  std::string node_type_string(xercesc::DOMNode::NodeType nt) {
+    static std::string type_strings[] = {
+        "",
+        "ELEMENT_NODE",
+        "ATTRIBUTE_NODE",
+        "TEXT_NODE",
+        "CDATA_SECTION_NODE",
+        "ENTITY_REFERENCE_NODE",
+        "ENTITY_NODE",
+        "PROCESSING_INSTRUCTION_NODE",
+        "COMMENT_NODE",
+        "DOCUMENT_NODE",
+        "DOCUMENT_TYPE_NODE",
+        "DOCUMENT_FRAGMENT_NODE",
+        "NOTATION_NODE"
+    };
+
+    if (nt < 1 || nt > 12) {
+      return "INVALID_NODE";
+    }
+    return type_strings[nt];
+  }
+
+  //!
+  //! Parse a json string into a DOM using Xerces
+  bool parse_json_string(xercesc::XercesDOMParser* parser, std::string json_string) {
+    static const char * memBufId = "someId";
+    std::auto_ptr<xercesc::MemBufInputSource> memBufIS (new xercesc::MemBufInputSource(
+        (const XMLByte*)json_string.c_str(), json_string.length(), memBufId, false));
+    try {
+        parser->parse(*memBufIS);
+    } catch (const xercesc::XMLException& toCatch) {
+        char* message = xercesc::XMLString::transcode(toCatch.getMessage());
+        std::cout << "Exception message is: \n"
+             << message << "\n";
+        xercesc::XMLString::release(&message);
+        return false;
+    } catch (const xercesc::DOMException& toCatch) {
+        char* message = xercesc::XMLString::transcode(toCatch.msg);
+        std::cout << "Exception message is: \n"
+             << message << "\n";
+        xercesc::XMLString::release(&message);
+        return false;
+    } catch (...) {
+        std::cout << "Unexpected Exception \n" ;
+        return false;
+    }
+    return true;
+  }
+
 
   void setup(std::list<std::string> photoFilenameList_, std::string project_name_,
       Preferences *thePreferences) {
@@ -503,6 +661,7 @@ class PhotoSelectPage {
     set_position_entry();
     gtk_widget_grab_focus(next_button);
     rebuild_tag_view();
+    rebuild_exif_view();
     invalidate_image();
   }
 
@@ -605,15 +764,11 @@ class PhotoSelectPage {
   }
 
   void keep() {
-    rebuild_tag_view();
-    invalidate_image();
     // TODO WRITEME or DELETEME
   }
 
   void drop() {
     // TODO WRITEME or DELETEME
-    rebuild_tag_view();
-    invalidate_image();
   }
 
   void next() {
@@ -622,6 +777,7 @@ class PhotoSelectPage {
     calculated_initial_scaling = false;
     set_position_entry();
     rebuild_tag_view();
+    rebuild_exif_view();
     invalidate_image();
   }
 
@@ -631,6 +787,7 @@ class PhotoSelectPage {
     calculated_initial_scaling = false;
     set_position_entry();
     rebuild_tag_view();
+    rebuild_exif_view();
     invalidate_image();
   }
 
@@ -640,14 +797,11 @@ class PhotoSelectPage {
       rotation = 0;
     }
     Utils::set_rotation(connection, conversionEngine.getPhotoFilePath(), rotation);
-    rebuild_tag_view();
     invalidate_image();
   }
 
   void gimp() {
     // TODO WRITEME or DELETEME
-    rebuild_tag_view();
-    invalidate_image();
   }
 
   static void tab_label_button_clicked_cb(GtkWidget *widget, gpointer data) {

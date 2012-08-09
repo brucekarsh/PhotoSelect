@@ -20,6 +20,8 @@ class Preferences {
     std::string user;      // the Db User
     std::string password;  // the Db Password
     std::string database;  // the DB database name
+    std::list<std::string> checked_exif_selections;
+    std::list<std::string> text_exif_selections;
     bool invalid;
     sql::Connection *connection;
 
@@ -35,6 +37,27 @@ class Preferences {
       return connection;
     }
 
+    //! Returns a list of strings given a name and a json object containing a
+    //! (top level) named array of strings.
+    std::list<std::string> get_list_of_strings_from_json(
+        json_object *new_obj, std::string key) {
+      std::list<std::string> result;
+      json_object *object = json_object_object_get(new_obj, key.c_str());
+      if (object && json_type_array == json_object_get_type(object)) {
+	int num_elements = json_object_array_length(object);
+        for (int i = 0; i < num_elements; i++) {
+          json_object *element = json_object_array_get_idx(object, i);
+          if (json_type_string == json_object_get_type(element)) {
+	    std::string element_value = json_object_get_string(element);
+	    result.push_back(element_value);
+          }
+        }
+      }
+      return result;
+    }
+
+    //! Returns a string from a json object given the string's name. If no string with
+    //! the given name is found, returns a given default value.
     std::string get_string_from_json(
         json_object *new_obj, std::string key, std::string default_value) {
       std::string result;
@@ -47,6 +70,7 @@ class Preferences {
       }
       return result;
     }
+
     void validate() {
       std::string preferences_text = get_preferences_text();
 
@@ -61,6 +85,9 @@ class Preferences {
           user = get_string_from_json(new_obj, "user", default_user());
           password = get_string_from_json(new_obj, "password", default_password());
           database = get_string_from_json(new_obj, "database", default_database());
+          checked_exif_selections
+              = get_list_of_strings_from_json(new_obj, "checked_exif_selections");
+          text_exif_selections = get_list_of_strings_from_json(new_obj, "text_exif_selections");
         }
       }
       invalid = false;
@@ -132,16 +159,49 @@ class Preferences {
       this -> database = database;
     }
 
+    void set_exif_selections( std::list<std::string> checked_exif_selections,
+        std::list<std::string> text_exif_selections) {
+      this->checked_exif_selections = checked_exif_selections;
+      this->text_exif_selections = text_exif_selections;
+    }
+
+    std::list<std::string> get_checked_exif_selections() {
+      if(invalid) validate();
+      return checked_exif_selections;
+    }
+
+    std::list<std::string> get_text_exif_selections() {
+      if(invalid) validate();
+      return text_exif_selections;
+    }
+
     void invalidate() {
       invalid = true;
     }
 
     void writeback() {
+      // Make a json representation of the preferences
       struct json_object *new_obj = json_object_new_object();
       json_object_object_add(new_obj, "dbhost", json_object_new_string(dbhost.c_str()));
       json_object_object_add(new_obj, "user", json_object_new_string(user.c_str()));
       json_object_object_add(new_obj, "password", json_object_new_string(password.c_str()));
       json_object_object_add(new_obj, "database", json_object_new_string(database.c_str()));
+      // Add the checked_exif_selections
+      json_object *checked_exif_selections_array = json_object_new_array();
+      BOOST_FOREACH(std::string exif_name, checked_exif_selections) {
+        json_object_array_add(checked_exif_selections_array,
+          json_object_new_string(exif_name.c_str()));
+      }
+      json_object_object_add(new_obj, "checked_exif_selections", checked_exif_selections_array);
+      // Add the text_exif_selections
+      json_object *text_exif_selections_array = json_object_new_array();
+      BOOST_FOREACH(std::string exif_name, text_exif_selections) {
+        json_object_array_add(text_exif_selections_array,
+          json_object_new_string(exif_name.c_str()));
+      }
+      json_object_object_add(new_obj, "text_exif_selections", text_exif_selections_array);
+  
+      // Write the json to a file.
       wordexp_t exp_result;
       wordexp("~/.PhotoSelect", &exp_result, 0);
       std::ofstream outfile(exp_result.we_wordv[0], std::ios::trunc | std::ios::out);
