@@ -386,9 +386,12 @@ class PhotoSelectPage {
           contains(text_exif_selections, exif_name)) {
         // add this exif entry to the grid
         std::string exif_value = map_entry.second;
-        GtkWidget *name_label = gtk_label_new(exif_name.c_str());
-        gtk_misc_set_alignment(GTK_MISC(name_label), 1.0, 0.5);
+        std::string shortened_exif_name = shorten_exif_name(exif_name);
+        GtkWidget *name_label = gtk_label_new(shortened_exif_name.c_str());
+        gtk_widget_set_tooltip_text(name_label, exif_name.c_str());
+        gtk_misc_set_alignment(GTK_MISC(name_label), 0.0, 0.5);
         GtkWidget *value_label = gtk_label_new(exif_value.c_str());
+        gtk_widget_set_tooltip_text(value_label, exif_name.c_str());
         gtk_misc_set_alignment(GTK_MISC(value_label), 0.0, 0.5);
         gtk_widget_show(name_label);
         gtk_widget_show(value_label);
@@ -414,6 +417,14 @@ class PhotoSelectPage {
     } else if (exifs_position == "bottom") {
       gtk_box_pack_start(GTK_BOX(page_vbox), exif_view_box, FALSE, FALSE, 0);
     }
+  }
+
+  std::string shorten_exif_name(const std::string &exif_name) {
+    size_t pos = exif_name.find_last_of('.');
+    if (std::string::npos == pos) {
+      return exif_name;
+    }
+    return exif_name.substr(pos+1);
   }
 
   bool contains(std::list<std::string> search_list, std::string search_value) {
