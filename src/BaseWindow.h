@@ -55,8 +55,8 @@ class BaseWindow {
   gpointer preferencesWindow_instance;
   PhotoFileCache *photoFileCache;
 
-  static sql::Connection *connection;
-  static Preferences* thePreferences;
+  sql::Connection *connection;
+  Preferences* thePreferences;
 
   std::list<guint> signal_handler_ids;
   std::list<gpointer> signal_instances;
@@ -309,49 +309,65 @@ class BaseWindow {
   static void
   file_project_open_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
-    baseWindow->file_project_open_activate();
+    if (baseWindow) {
+      baseWindow->file_project_open_activate();
+    }
   }
 
   static void
   file_project_new_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
-    baseWindow->file_project_new_activate();
+    if (baseWindow) {
+      baseWindow->file_project_new_activate();
+    }
   }
 
   static void
   file_project_add_to_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
-    baseWindow->file_project_add_to_activate();
+    if (baseWindow) {
+      baseWindow->file_project_add_to_activate();
+    }
   }
 
   static void
   file_project_remove_from_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
-    baseWindow->file_project_remove_from_activate();
+    if (baseWindow) {
+      baseWindow->file_project_remove_from_activate();
+    }
   }
 
   static void
   file_project_rename_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
-    baseWindow->file_project_rename_activate();
+    if (baseWindow) {
+      baseWindow->file_project_rename_activate();
+    }
   }
 
   static void
   file_project_delete_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
-    baseWindow->file_project_delete_activate();
+    if (baseWindow) {
+      baseWindow->file_project_delete_activate();
+    }
   }
 
   static void
   edit_preferences_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
-    baseWindow->preferences_activate();
+    if (baseWindow) {
+      baseWindow->preferences_activate();
+    }
   }
 
   static void
   edit_tags_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
-    baseWindow->edit_tags_activate();
+    if (baseWindow) {
+      baseWindow->edit_tags_activate();
+    }
   }
 
   void
@@ -367,17 +383,27 @@ class BaseWindow {
     }
   }
 
-  static void
-  file_import_activate_cb() {
+  void
+  file_import_activate() {
     if (!connection) return;
     ImportWindow *importWindow = new ImportWindow(thePreferences, connection);
     importWindow->run();
   }
 
   static void
+  file_import_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
+    BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
+    if (baseWindow) {
+      baseWindow->file_import_activate();
+    }
+  }
+
+  static void
   clone_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
     BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
-    baseWindow->clone_activate();
+    if (baseWindow) {
+      baseWindow->clone_activate();
+    }
   }
 
   void
@@ -397,8 +423,12 @@ class BaseWindow {
   static GtkNotebook *
   create_window_cb(GtkNotebook *notebook, GtkWidget *page, gint x, gint y, gpointer user_data) {
     BaseWindow *base_window = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(notebook));
-    GtkNotebook *new_notebook = base_window->create_window(notebook, page, x, y, user_data);
-    return new_notebook;
+    if (base_window) {
+      GtkNotebook *new_notebook = base_window->create_window(notebook, page, x, y, user_data);
+      return new_notebook;
+    } else {
+      return NULL;
+    }
   }
 
   void
@@ -452,7 +482,9 @@ class BaseWindow {
   static void
   view_tags_toggled_cb(GtkCheckMenuItem *checkmenuitem, gpointer user_data) {
     BaseWindow *base_window = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(checkmenuitem));
-    base_window->view_tags_toggled(checkmenuitem);
+    if (base_window) {
+      base_window->view_tags_toggled(checkmenuitem);
+    }
   }
 
   static void
@@ -544,7 +576,9 @@ BaseWindow::get_project_name() {
   if (-1 != pagenum) {
     GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
     PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
-    project_name = photo_select_page->project_name;
+    if (photo_select_page) {
+      project_name = photo_select_page->project_name;
+    }
   }
   return project_name;
 }
@@ -632,8 +666,10 @@ BaseWindow::view_tags_toggled(GtkCheckMenuItem *checkmenuitem) {
     if (-1 == pagenum) return;
     GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
     PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
-    std::string position = gtk_menu_item_get_label(GTK_MENU_ITEM(checkmenuitem));
-    photo_select_page->set_tags_position(position);
+    if (photo_select_page) {
+      std::string position = gtk_menu_item_get_label(GTK_MENU_ITEM(checkmenuitem));
+      photo_select_page->set_tags_position(position);
+    }
   }
 }
 
@@ -644,8 +680,10 @@ BaseWindow::view_exif_toggled(GtkCheckMenuItem *checkmenuitem) {
     if (-1 == pagenum) return;
     GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
     PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
-    std::string position = gtk_menu_item_get_label(GTK_MENU_ITEM(checkmenuitem));
-    photo_select_page->set_exifs_position(position);
+    if (photo_select_page) {
+      std::string position = gtk_menu_item_get_label(GTK_MENU_ITEM(checkmenuitem));
+      photo_select_page->set_exifs_position(position);
+    }
   }
 }
 
@@ -655,9 +693,11 @@ BaseWindow::clone_activate() {
   if (-1 == pagenum) return;
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
   PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
-  PhotoSelectPage *cloned_photo_select_page = photo_select_page->clone();
-  add_page(cloned_photo_select_page->get_tab_label(),
-      cloned_photo_select_page->get_notebook_page(), cloned_photo_select_page->project_name);
+  if (photo_select_page) {
+    PhotoSelectPage *cloned_photo_select_page = photo_select_page->clone();
+    add_page(cloned_photo_select_page->get_tab_label(),
+        cloned_photo_select_page->get_notebook_page(), cloned_photo_select_page->project_name);
+  }
 }
 
 inline void
@@ -666,7 +706,9 @@ BaseWindow::rebuild_all_tag_views() {
   for (gint pagenum = 0; pagenum < n_pages; pagenum++) {
     GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
     PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
-    photo_select_page->rebuild_tag_view();
+    if (photo_select_page) {
+      photo_select_page->rebuild_tag_view();
+    }
   }
 }
 
