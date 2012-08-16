@@ -8,9 +8,9 @@
 #include <time.h>
 #include <sys/timeb.h>
 
-#include <crypto++/cryptlib.h>
-#include <crypto++/hex.h>
-#include <crypto++/ripemd.h>
+#include <cryptopp/cryptlib.h>
+#include <cryptopp/hex.h>
+#include <cryptopp/ripemd.h>
 
 #include <list>
 #include <stdio.h>
