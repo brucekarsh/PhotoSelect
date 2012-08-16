@@ -3,7 +3,8 @@ AC_CONFIG_SRCDIR([src/main.cc])
 AM_INIT_AUTOMAKE
 AC_PROG_CC
 AC_PROG_CXX
-PKG_CHECK_MODULES([PhotoSelect], [gtk+-3.0 gmodule-2.0 >= 2.0 json exiv2 libcrypto++ xerces-c])
+PKG_CHECK_MODULES([PhotoSelect], [gtk+-3.0 gmodule-2.0 >= 2.0 json exiv2 xerces-c])
+PKG_CHECK_MODULES([LIBCRYPTO], [libcrypto++],,[CXXFLAGES="${CXXFLAGS} -lcryptopp])
 AC_PROG_INSTALL
 AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT

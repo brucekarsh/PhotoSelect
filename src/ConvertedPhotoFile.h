@@ -3,7 +3,7 @@
 
 #include <map>
 #include <string>
-#include <malloc.h>
+#include <stdlib.h>
 #include <sys/time.h>
 #include <math.h>
 extern "C" {
