@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include "ConversionEngine.h"
 #include <gtk/gtk.h>
-#include <cairo-xlib.h>
+//#include <cairo-xlib.h>
 #include "WidgetRegistry.h"
 #include "Preferences.h"
 

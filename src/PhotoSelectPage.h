@@ -8,7 +8,7 @@
 #include "ConversionEngine.h"
 #include <boost/foreach.hpp>
 #include <gtk/gtk.h>
-#include <cairo-xlib.h>
+//#include <cairo-xlib.h>
 #include <boost/lexical_cast.hpp>
 
 #include <xercesc/parsers/XercesDOMParser.hpp>
@@ -27,6 +27,9 @@ class Preferences;
 namespace sql {
   class Connection;
 }
+
+ // ZOOMRATION is 2^(1/4)
+#define ZOOMRATIO 1.18920711500272106671
 
 class PhotoSelectPage {
   public:
@@ -71,7 +74,7 @@ class PhotoSelectPage {
     std::map<std::string, Utils::photo_tag_s> photo_tags;
     std::map<std::string, Utils::project_tag_s> project_tags;
 
-    static const float ZOOMRATIO = 1.18920711500272106671;  // 2^(1/4)
+    //static const float ZOOMRATIO = 1.18920711500272106671;  // 2^(1/4)
 
   PhotoSelectPage(sql::Connection *connection_, PhotoFileCache *photoFileCache_) :
       conversionEngine(photoFileCache_), 
