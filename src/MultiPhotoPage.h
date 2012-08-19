@@ -25,12 +25,24 @@
 
 class PhotoFileCache;
 class Preferences;
+  
 namespace sql {
   class Connection;
 }
 
 class MultiPhotoPage : public PhotoSelectPage {
   public:
+
+    //! Holds the state of a single photo on a MultiPhotoPage
+    class PhotoState {
+      public:
+        bool is_selected;
+        int pos;
+        int  row;
+        int col;
+        PhotoState(bool is_selected = false, int pos = 0, int row = 0, int col = 0) :
+            is_selected(is_selected), pos(pos), row(row), col(col) {};
+    };
 
     static const int NUM_COLS = 3;
 
@@ -61,6 +73,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     std::string exifs_position;
     std::map<std::string, Utils::photo_tag_s> photo_tags;
     std::map<std::string, Utils::project_tag_s> project_tags;
+    std::map<GtkWidget *, PhotoState> event_box_map;
 
   MultiPhotoPage(sql::Connection *connection_, PhotoFileCache *photoFileCache_) :
       conversionEngine(photoFileCache_), 
@@ -177,15 +190,25 @@ class MultiPhotoPage : public PhotoSelectPage {
     gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
     gtk_widget_show(grid);
 
-    for (int i = 0; i < photoFilenameList.size(); i++) {
+    int num_photo_files = photoFilenameList.size();
+
+    for (int i = 0; i < num_photo_files; i++) {
       int row = index_to_row(i);
       int col = index_to_col(i);
+      GtkWidget *event_box = gtk_event_box_new();
+      gtk_widget_show(event_box);
+      g_signal_connect(event_box, "button-press-event", G_CALLBACK(event_box_clicked_cb), NULL);
+
+
       GtkWidget *label = gtk_label_new( (
           boost::lexical_cast<std::string>(i) + "=" +
           boost::lexical_cast<std::string>(row) + "," +
           boost::lexical_cast<std::string>(col)).c_str());
       gtk_widget_show(label);
-      gtk_grid_attach(GTK_GRID(grid), label, col, row, 1, 1);
+      gtk_container_add(GTK_CONTAINER(event_box), label);
+      gtk_grid_attach(GTK_GRID(grid), event_box, col, row, 1, 1);
+      PhotoState photo_state(false, i, row, col);
+      event_box_map[event_box] = photo_state;
     }
     gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window), grid);
     gtk_widget_show(scrolled_window);
@@ -525,6 +548,37 @@ class MultiPhotoPage : public PhotoSelectPage {
     // Add it to the registry so we can find this object when we get a callback
     WidgetRegistry<PhotoSelectPage>::set_widget(page_hbox, this);
   } 
+
+  static
+  gboolean
+  event_box_clicked_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    std::cout << "event_box_clicked_cb" << std::endl;
+    std::cout << "visible = " << gtk_event_box_get_visible_window(GTK_EVENT_BOX(widget)) << std::endl;
+    MultiPhotoPage *photoSelectPage =
+        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage->event_box_clicked(widget);
+    }
+    return TRUE;
+  }
+
+  void
+  event_box_clicked(GtkWidget *widget) {
+    std::cout << "Clicked" << std::endl;
+    PhotoState &photo_state = event_box_map[widget];
+    std::cout << "is_selected = " << photo_state.is_selected << std::endl;
+    GtkEventBox *event_box = GTK_EVENT_BOX(widget);
+    if (photo_state.is_selected) {
+      gtk_widget_override_background_color(widget, GTK_STATE_FLAG_NORMAL, NULL);
+      photo_state.is_selected = false;
+    } else {
+      GdkRGBA rgba;
+      gdk_rgba_parse(&rgba, "red");
+      gtk_widget_override_background_color(widget, GTK_STATE_FLAG_NORMAL, &rgba);
+      photo_state.is_selected = true;
+    }
+  }
+  
 
   static void tab_label_button_clicked_cb(GtkWidget *widget, gpointer data) {
     MultiPhotoPage *photoSelectPage = (MultiPhotoPage *)data;
