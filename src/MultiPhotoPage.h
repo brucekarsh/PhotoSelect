@@ -32,6 +32,8 @@ namespace sql {
 class MultiPhotoPage : public PhotoSelectPage {
   public:
 
+    static const int NUM_COLS = 3;
+
     Preferences *thePreferences;
     int rotation;
     ConversionEngine conversionEngine;
@@ -161,8 +163,43 @@ class MultiPhotoPage : public PhotoSelectPage {
     // add the page_right_vbox to the page_hbox
     gtk_box_pack_start(GTK_BOX(page_hbox), page_right_vbox, FALSE, FALSE, 0);
 
+    // Add the ScrolledWindow
+    GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(scrolled_window),
+        GTK_SHADOW_ETCHED_OUT);
+    gtk_widget_show(GTK_WIDGET(scrolled_window));
+    gtk_box_pack_start(GTK_BOX(page_vbox), scrolled_window, TRUE, TRUE, 0);
+
+
+    // Add the grid
+    GtkWidget *grid = gtk_grid_new();
+    gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
+    gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
+    gtk_widget_show(grid);
+
+    for (int i = 0; i < photoFilenameList.size(); i++) {
+      int row = index_to_row(i);
+      int col = index_to_col(i);
+      GtkWidget *label = gtk_label_new( (
+          boost::lexical_cast<std::string>(i) + "=" +
+          boost::lexical_cast<std::string>(row) + "," +
+          boost::lexical_cast<std::string>(col)).c_str());
+      gtk_widget_show(label);
+      gtk_grid_attach(GTK_GRID(grid), label, col, row, 1, 1);
+    }
+    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window), grid);
+    gtk_widget_show(scrolled_window);
+
     rebuild_tag_view();
     rebuild_exif_view();
+  }
+
+  int index_to_row(int index) {
+    return index/NUM_COLS;
+  }
+
+  int index_to_col(int index) {
+    return index%NUM_COLS;
   }
 
   // Adds a tag view to the MultiPhotoPage. The tag view (tag_view_box) is put into
