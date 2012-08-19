@@ -142,10 +142,6 @@ class DeleteProjectWindow {
   
 };
 
-#include "BaseWindow.h"
-#include "PhotoSelectPage.h"
-
-
 inline  void
 DeleteProjectWindow::accept() {
   std::string project_name = get_project_name();

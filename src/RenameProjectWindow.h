@@ -206,10 +206,6 @@ class RenameProjectWindow {
   }
 };
 
-#include "BaseWindow.h"
-#include "PhotoSelectPage.h"
-
-
 inline  void
 RenameProjectWindow::accept() {
   boolean error_occurred = false;
