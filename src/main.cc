@@ -3,7 +3,8 @@
 #include <gtk/gtk.h>
 
 #include "BaseWindow.h"
-#include "PhotoSelectPage.h"
+#include "SinglePhotoPage.h"
+#include "MultiPhotoPage.h"
 #include "Preferences.h"
 #include "PhotoFileCache.h"
 
@@ -65,10 +66,14 @@ open_initial_project(sql::Connection *connection, BaseWindow *base_window,
   }
   std::list<std::string> photoFilenameList = Utils::get_project_photo_files(connection,
       project_name);
-  PhotoSelectPage *photoSelectPage = new PhotoSelectPage(connection, photoFileCache);
+  SinglePhotoPage *photoSelectPage = new SinglePhotoPage(connection, photoFileCache);
   photoSelectPage->setup(photoFilenameList, project_name, preferences);
   base_window->add_page(photoSelectPage->get_tab_label(),
       photoSelectPage->get_notebook_page(), project_name);
+  MultiPhotoPage *multiPhotoPage = new MultiPhotoPage(connection, photoFileCache);
+  multiPhotoPage->setup(photoFilenameList, project_name, preferences);
+  base_window->add_page(multiPhotoPage->get_tab_label(),
+      multiPhotoPage->get_notebook_page(), project_name);
 }
 
 std::string get_last_project_name() {

@@ -166,7 +166,7 @@ class OpenProjectWindow {
 };
 
 #include "BaseWindow.h"
-#include "PhotoSelectPage.h"
+#include "SinglePhotoPage.h"
 
 inline  void
 OpenProjectWindow::apply() {
@@ -176,7 +176,7 @@ OpenProjectWindow::apply() {
   }
   std::list<std::string> photoFilenameList = Utils::get_project_photo_files(connection,
       project_name);
-  PhotoSelectPage *photoSelectPage = new PhotoSelectPage(connection, photoFileCache);
+  SinglePhotoPage *photoSelectPage = new SinglePhotoPage(connection, photoFileCache);
   photoSelectPage->setup(photoFilenameList, project_name, preferences);
   baseWindow->add_page(photoSelectPage->get_tab_label(),
       photoSelectPage->get_notebook_page(), project_name);

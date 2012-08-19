@@ -577,7 +577,7 @@ BaseWindow::get_project_name() {
     GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
     PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
     if (photo_select_page) {
-      project_name = photo_select_page->project_name;
+      project_name = photo_select_page->get_project_name();
     }
   }
   return project_name;
@@ -696,7 +696,7 @@ BaseWindow::clone_activate() {
   if (photo_select_page) {
     PhotoSelectPage *cloned_photo_select_page = photo_select_page->clone();
     add_page(cloned_photo_select_page->get_tab_label(),
-        cloned_photo_select_page->get_notebook_page(), cloned_photo_select_page->project_name);
+        cloned_photo_select_page->get_notebook_page(), cloned_photo_select_page->get_project_name());
   }
 }
 
