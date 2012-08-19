@@ -45,9 +45,11 @@ class MultiPhotoPage : public PhotoSelectPage {
     };
 
     static const int NUM_COLS = 3;
+    static const int DRAWING_AREA_WIDTH = 100;
+    static const int DRAWING_AREA_HEIGHT = 100;
+    static const int DRAWING_AREA_MARGIN = 4;
 
     Preferences *thePreferences;
-    int rotation;
     ConversionEngine conversionEngine;
     std::list<std::string> photoFilenameList;
     std::string project_name;
@@ -63,12 +65,6 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkWidget *tab_label_button;
     GtkWidget *tag_view_box;
     GtkWidget *exif_view_box;
-    float Dx, Dy; // displacement of the current image in screen coordinates
-    float M;      // magnification of the current image (screen_size = m * image_size)
-    bool drag_is_active;
-    int drag_start_x;
-    int drag_start_y;
-    boolean calculated_initial_scaling;
     std::string tags_position;
     std::string exifs_position;
     std::map<std::string, Utils::photo_tag_s> photo_tags;
@@ -77,9 +73,9 @@ class MultiPhotoPage : public PhotoSelectPage {
 
   MultiPhotoPage(sql::Connection *connection_, PhotoFileCache *photoFileCache_) :
       conversionEngine(photoFileCache_), 
-      rotation(0), thePreferences((Preferences*)0),
-      connection(connection_), photoFileCache(photoFileCache_), M(1.0), Dx(0),
-      Dy(0), drag_is_active(false), calculated_initial_scaling(false), tag_view_box(0),
+      thePreferences((Preferences*)0),
+      connection(connection_), photoFileCache(photoFileCache_),
+      tag_view_box(0),
       exif_view_box(0), tags_position("none"), exifs_position("none") {
   }
 
@@ -198,14 +194,14 @@ class MultiPhotoPage : public PhotoSelectPage {
       GtkWidget *event_box = gtk_event_box_new();
       gtk_widget_show(event_box);
       g_signal_connect(event_box, "button-press-event", G_CALLBACK(event_box_clicked_cb), NULL);
-
-
-      GtkWidget *label = gtk_label_new( (
-          boost::lexical_cast<std::string>(i) + "=" +
-          boost::lexical_cast<std::string>(row) + "," +
-          boost::lexical_cast<std::string>(col)).c_str());
-      gtk_widget_show(label);
-      gtk_container_add(GTK_CONTAINER(event_box), label);
+      GtkWidget *drawing_area = gtk_drawing_area_new();
+      gtk_widget_set_margin_left(drawing_area, DRAWING_AREA_MARGIN);
+      gtk_widget_set_margin_right(drawing_area, DRAWING_AREA_MARGIN);
+      gtk_widget_set_margin_top(drawing_area, DRAWING_AREA_MARGIN);
+      gtk_widget_set_margin_bottom(drawing_area, DRAWING_AREA_MARGIN);
+      gtk_widget_set_size_request(drawing_area, DRAWING_AREA_WIDTH, DRAWING_AREA_HEIGHT);
+      gtk_widget_show(drawing_area);
+      gtk_container_add(GTK_CONTAINER(event_box), drawing_area);
       gtk_grid_attach(GTK_GRID(grid), event_box, col, row, 1, 1);
       PhotoState photo_state(false, i, row, col);
       event_box_map[event_box] = photo_state;
