@@ -40,8 +40,13 @@ class MultiPhotoPage : public PhotoSelectPage {
         int pos;
         int  row;
         int col;
+        unsigned char *pixels;
+        int surface_width;
+        int surface_height;
         PhotoState(bool is_selected = false, int pos = 0, int row = 0, int col = 0) :
-            is_selected(is_selected), pos(pos), row(row), col(col) {};
+            is_selected(is_selected), pos(pos), row(row), col(col), pixels(NULL),
+            surface_width(0), surface_height(0) {};
+        ~PhotoState() { if (NULL != pixels) {free(pixels);} };
     };
 
     static const int NUM_COLS = 3;
@@ -563,11 +568,49 @@ class MultiPhotoPage : public PhotoSelectPage {
   void drawing_area_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
     GtkDrawingArea *drawing_area = GTK_DRAWING_AREA(widget);
     GtkEventBox *event_box = GTK_EVENT_BOX(gtk_widget_get_parent(GTK_WIDGET(drawing_area)));
-    PhotoState photo_state = event_box_map[GTK_WIDGET(event_box)];
+    PhotoState &photo_state = event_box_map[GTK_WIDGET(event_box)];
     std::cout << "event box " << photo_state.pos << " " <<
         photo_state.row << " " <<
         photo_state.col << " " <<
         photo_state.is_selected << std::endl;
+    gint surface_height = gtk_widget_get_allocated_height(GTK_WIDGET(drawing_area));
+    gint surface_width = gtk_widget_get_allocated_width(GTK_WIDGET(drawing_area));
+    if (photo_state.surface_width == surface_width &&
+        photo_state.surface_height == surface_height &&
+        NULL != photo_state.pixels) {
+    } else {
+      if (NULL != photo_state.pixels) {
+        free(photo_state.pixels);
+      }
+      conversionEngine.go_to(photo_state.pos);
+      std::string file_name = conversionEngine.getPhotoFilePath();
+      std::cout << file_name << std::endl;
+      std::cout << "height " << surface_height << " width " << surface_width << std::endl;
+      ConvertedPhotoFile *convertedPhotoFile = conversionEngine.getConvertedPhotoFile(); 
+      double M;
+      int width = convertedPhotoFile->width;
+      int height = convertedPhotoFile->height;
+      calculate_scaling(M, width, height, surface_width, surface_height);
+      photo_state.pixels = convertedPhotoFile->scale_and_pan_and_rotate(
+          surface_width, surface_height, M, 0.0, 0.0, 0.0);
+      photo_state.surface_width = surface_width;
+      photo_state.surface_height = surface_height;
+    }
+    int stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, surface_width);
+    cairo_surface_t *source_surface = cairo_image_surface_create_for_data(
+        photo_state.pixels,
+        CAIRO_FORMAT_RGB24, surface_width, surface_height, stride);
+    cairo_set_source_surface(cr, source_surface, 0, 0);
+    cairo_paint(cr);
+    cairo_surface_destroy(source_surface);
+  }
+
+  void calculate_scaling(double &M, int image_width, int image_height,
+      int surface_width, int surface_height) {
+    M = MIN((double) surface_width / image_width, (double) surface_height / image_height);
+    if (0.0 == M) {
+      M = 1.0;
+    }
   }
 
   static gboolean
