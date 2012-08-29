@@ -195,6 +195,8 @@ class MultiPhotoPage : public PhotoSelectPage {
       gtk_widget_show(event_box);
       g_signal_connect(event_box, "button-press-event", G_CALLBACK(event_box_clicked_cb), NULL);
       GtkWidget *drawing_area = gtk_drawing_area_new();
+      g_signal_connect(drawing_area, "draw", G_CALLBACK(drawing_area_draw_cb), NULL);
+      g_signal_connect(drawing_area, "realize", G_CALLBACK(drawing_area_realize_cb), NULL);
       gtk_widget_set_margin_left(drawing_area, DRAWING_AREA_MARGIN);
       gtk_widget_set_margin_right(drawing_area, DRAWING_AREA_MARGIN);
       gtk_widget_set_margin_top(drawing_area, DRAWING_AREA_MARGIN);
@@ -545,8 +547,30 @@ class MultiPhotoPage : public PhotoSelectPage {
     WidgetRegistry<PhotoSelectPage>::set_widget(page_hbox, this);
   } 
 
-  static
-  gboolean
+  static void drawing_area_realize_cb(GtkWidget *widget, gpointer user_data) {
+    std::cout << "drawing_area_realize_cb" << std::endl;
+  }
+
+  static void drawing_area_draw_cb(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
+    std::cout << "drawing_area_draw_cb" << std::endl;
+    MultiPhotoPage *photoSelectPage =
+        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage->drawing_area_draw(widget, cr, user_data);
+    }
+  }
+
+  void drawing_area_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
+    GtkDrawingArea *drawing_area = GTK_DRAWING_AREA(widget);
+    GtkEventBox *event_box = GTK_EVENT_BOX(gtk_widget_get_parent(GTK_WIDGET(drawing_area)));
+    PhotoState photo_state = event_box_map[GTK_WIDGET(event_box)];
+    std::cout << "event box " << photo_state.pos << " " <<
+        photo_state.row << " " <<
+        photo_state.col << " " <<
+        photo_state.is_selected << std::endl;
+  }
+
+  static gboolean
   event_box_clicked_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     std::cout << "event_box_clicked_cb" << std::endl;
     std::cout << "visible = " << gtk_event_box_get_visible_window(GTK_EVENT_BOX(widget)) << std::endl;
