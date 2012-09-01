@@ -19,34 +19,7 @@ extern "C" {
 class ConvertedPhotoFile;
 
 class ConvertedPhotoFile {
-  class FractionalIncrement {
-    int whole, num, denom, val, frac;
   public:
-    FractionalIncrement(int num_param, int denom_param) {
-        whole = num_param/denom_param;
-        num   = num_param%denom_param;
-        denom = denom_param;
-        val   = 0;
-        frac  = 0;
-    };
-    int increment(void) {
-        int inc=whole;
-        frac += num;
-        if(frac >= denom) {
-            frac -= denom;
-            inc++;
-        }
-        val += inc;
-        return inc;
-    };
-    void reset(void) {
-        val = 0;
-        frac = 0;
-    };
-  };
-
-  public:
-
   std::string photoFilePath;
   int width;
   int height;
