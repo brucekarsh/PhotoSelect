@@ -25,8 +25,6 @@ class ConversionEngine {
   //! It first tries to get the ConvertedPhotoFile from the cache. If it
   //! can't, t tries to find it in the photoFileMap and add it to the cache.
   //! If it can't do that either, it returns an UnknownConvertedPhotoFile.
-  //! \param photoFilePath the filesystem path of the photo file for which a ConvertedPhotoFile is
-  //!        requested
   /// \return A convertedPhotoFile (which could still be converting)
   ///         or an UnknownCovertedPhotoFile if it cannot convert the file.
   ConvertedPhotoFile * getConvertedPhotoFile() {
@@ -39,6 +37,26 @@ class ConversionEngine {
     if (0 == convertedPhotoFile) {
       convertedPhotoFile = photoFileCache->add(photoFilename);
     }
+    return convertedPhotoFile;
+  }
+
+  //! Gets a ConvertedPhotoFile for a thumbnail given a path to a file representing a photo.
+  //! It does not try to cache anything. It tries to scale the image, but not so much
+  //! that i becomes smaller than the specified display size.
+  //! 
+  //! If it can't do that either, it returns an UnknownConvertedPhotoFile.
+  //! \param display_width width of the display
+  //! \param display_height height of the display
+  /// \return A convertedPhotoFile (which could still be converting)
+  ///         or an UnknownCovertedPhotoFile if it cannot convert the file.
+  ConvertedPhotoFile *getConvertedPhotoFile(int display_width, int display_height) {
+    if (photoFilenameVectorPosition <0
+        || photoFilenameVectorPosition >= photoFilenameVector.size()) {
+      return NULL;
+    }
+    std::string photoFilename = photoFilenameVector[photoFilenameVectorPosition];
+    ConvertedPhotoFile * convertedPhotoFile = new ConvertedPhotoFile(photoFilename,
+        display_width, display_height);
     return convertedPhotoFile;
   }
 

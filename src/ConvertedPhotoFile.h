@@ -52,23 +52,31 @@ class ConvertedPhotoFile {
   int height;
   unsigned char *pixels;
   
-  ConvertedPhotoFile(std::string &photoFilePath) {
+  ConvertedPhotoFile(const std::string &photoFilePath) {
+    construct(photoFilePath);
+  }
+
+  ConvertedPhotoFile(std::string &photoFilePath, int display_width, int display_height) {
+    construct(photoFilePath);
+  }
+
+  void construct(const std::string &photoFilePath) {
     unsigned char *pixels_tmp;
-    int width_tmp, height_tmp;
 
     this->photoFilePath = photoFilePath;
 
-    pixels_tmp = read_JPEG_file (photoFilePath.c_str(), &width_tmp, &height_tmp);
+    read_JPEG_header(photoFilePath.c_str());
+    pixels_tmp = read_JPEG_pixels();
     if(pixels_tmp) {
       pixels = pixels_tmp;
-      width  = width_tmp;
-      height = height_tmp;
-      } else {
-        // TODO WRITEME handle read_JPEG_file failure
-        pixels = 0;
-        width = 0;
-        height = 0;
-      }
+      width = cinfo.output_width;
+      height = cinfo.output_height;
+    } else {
+      // TODO WRITEME handle read_JPEG_file failure
+      pixels = 0;
+      width = 0;
+      height = 0;
+    }
   }
 
   ~ConvertedPhotoFile() { 
@@ -90,24 +98,19 @@ class ConvertedPhotoFile {
     longjmp(myerr->setjmp_buffer, 1);
   }
 
-  unsigned char *
-  read_JPEG_file (const char * filename, int *width_tmp_p, int *height_tmp_p)
-  {
-    struct jpeg_decompress_struct cinfo;
+  //! Opens the file, reads the header. Populates members: cinfo, infile
+  //! If it cannot read the header, then it returns with infile==NULL.
+  struct jpeg_decompress_struct cinfo;
+  FILE * infile;
+
+  void read_JPEG_header(const char *filename) {
     struct my_error_mgr jerr;
-
-
-    /* More stuff */
-    FILE * infile;                /* source file */
-    int row_stride;               /* physical row width in output buffer */
-    unsigned char *buffer=0;
-    unsigned char *bufferp=0;
 
     // Open the input file.
 
     if ((infile = fopen(filename, "rb")) == NULL) {
       std::cout << "can't open " <<  filename << std::endl;
-      return 0;
+      return;
     }
 
     // Set up error handler
@@ -120,10 +123,8 @@ class ConvertedPhotoFile {
       std::cout << "Ouch!! in setjmp handler" << std::endl;
       jpeg_destroy_decompress(&cinfo);
       fclose(infile);
-  //    if(buffer)free(buffer);
-  //    buffer=0;
-  //    return 0;
-  return buffer;
+      infile = NULL;
+      return;
     }
   
     // Create and initialize the decompressor
@@ -131,11 +132,31 @@ class ConvertedPhotoFile {
     jpeg_create_decompress(&cinfo);
     jpeg_stdio_src(&cinfo, infile);
     (void) jpeg_read_header(&cinfo, TRUE);
+  }
+
+  unsigned char *read_JPEG_pixels() {
+    struct my_error_mgr jerr;
+    unsigned char *buffer = NULL;
+    int row_stride;               /* physical row width in output buffer */
+    unsigned char *bufferp=0;
+
     cinfo.out_color_space = JCS_RGB;  // Always return RGB.
     jpeg_calc_output_dimensions(&cinfo);
     row_stride = cinfo.output_width * cinfo.output_components;
-    *width_tmp_p = cinfo.output_width;
-    *height_tmp_p = cinfo.output_height;
+
+    // Set up error handler
+    cinfo.err = jpeg_std_error(&jerr.pub);
+    jerr.pub.error_exit = my_error_exit;
+    if (setjmp(jerr.setjmp_buffer)) {
+      /* If we get here, the JPEG code has signaled an error.
+       * We need to clean up the JPEG object, close the input file, and return.
+       */
+      std::cout << "Ouch!! in setjmp handler" << std::endl;
+      jpeg_destroy_decompress(&cinfo);
+      fclose(infile);
+      if(buffer)free(buffer);
+      return NULL;
+    }
   
     // Create a buffer to hold the output image
   

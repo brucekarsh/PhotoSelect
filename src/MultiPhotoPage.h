@@ -582,19 +582,9 @@ class MultiPhotoPage : public PhotoSelectPage {
       if (NULL != photo_state.pixels) {
         free(photo_state.pixels);
       }
-      conversionEngine.go_to(photo_state.pos);
-      std::string file_name = conversionEngine.getPhotoFilePath();
-      std::cout << file_name << std::endl;
-      std::cout << "height " << surface_height << " width " << surface_width << std::endl;
-      ConvertedPhotoFile *convertedPhotoFile = conversionEngine.getConvertedPhotoFile(); 
-      double M;
-      int width = convertedPhotoFile->width;
-      int height = convertedPhotoFile->height;
-      calculate_scaling(M, width, height, surface_width, surface_height);
-      photo_state.pixels = convertedPhotoFile->scale_and_pan_and_rotate(
-          surface_width, surface_height, M, 0.0, 0.0, 0.0);
       photo_state.surface_width = surface_width;
       photo_state.surface_height = surface_height;
+      get_photo_thumbnail(photo_state);
     }
     int stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, surface_width);
     cairo_surface_t *source_surface = cairo_image_surface_create_for_data(
@@ -603,6 +593,37 @@ class MultiPhotoPage : public PhotoSelectPage {
     cairo_set_source_surface(cr, source_surface, 0, 0);
     cairo_paint(cr);
     cairo_surface_destroy(source_surface);
+  }
+
+  void get_photo_thumbnail(PhotoState &photo_state) {
+      struct timespec t0;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t0);
+    conversionEngine.go_to(photo_state.pos);
+    struct timespec t1;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t1);
+    std::string file_name = conversionEngine.getPhotoFilePath();
+    ConvertedPhotoFile *convertedPhotoFile = conversionEngine.getConvertedPhotoFile(
+        photo_state.surface_width, photo_state.surface_height); 
+    struct timespec t2;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t2);
+    double M;
+    int width = convertedPhotoFile->width;
+    int height = convertedPhotoFile->height;
+    calculate_scaling(M, width, height, photo_state.surface_width, photo_state.surface_height);
+    photo_state.pixels = convertedPhotoFile->scale_and_pan_and_rotate(
+        photo_state.surface_width, photo_state.surface_height, M, 0.0, 0.0, 0.0);
+    struct timespec t3;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t3);
+    std::cout << "Time: goto=" << tdiff(t1,t0) << " getConvertedPhotoFile=" <<
+        tdiff(t2,t1) << " scale_and_pan_and_rotate=" <<
+        tdiff(t3,t2) << " total=" << tdiff(t3,t0) << std::endl;
+  }
+
+  int tdiff(const struct timespec &endtime, const struct timespec &starttime) {
+    int tdelta_nsec = endtime.tv_nsec-starttime.tv_nsec;
+    int tdelta_sec = endtime.tv_sec-starttime.tv_sec;
+    int tdelta = (tdelta_sec * 1000) + (tdelta_nsec / 1000000);
+    return tdelta;
   }
 
   void calculate_scaling(double &M, int image_width, int image_height,
