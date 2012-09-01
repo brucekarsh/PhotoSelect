@@ -19,37 +19,73 @@ extern "C" {
 class ConvertedPhotoFile;
 
 class ConvertedPhotoFile {
+  private:
+    struct jpeg_decompress_struct cinfo;
+    FILE * infile;
   public:
   std::string photoFilePath;
   int width;
   int height;
   unsigned char *pixels;
   
-  ConvertedPhotoFile(const std::string &photoFilePath) {
-    construct(photoFilePath);
+  //! Construct with no libjpeg scaling
+  ConvertedPhotoFile(const std::string &photoFilePath) : photoFilePath(photoFilePath) {
+    read_JPEG_header(photoFilePath.c_str());
+    if (NULL == infile) {
+      pixels = 0;
+      width = 0;
+      height = 0;
+      return;
+    }
+    pixels = read_JPEG_pixels();
+    if (NULL == pixels) {
+      width = 0;
+      height = 0;
+      return;
+    }
+    width = cinfo.output_width;
+    height = cinfo.output_height;
   }
 
-  ConvertedPhotoFile(std::string &photoFilePath, int display_width, int display_height) {
-    construct(photoFilePath);
-  }
-
-  void construct(const std::string &photoFilePath) {
-    unsigned char *pixels_tmp;
-
-    this->photoFilePath = photoFilePath;
+  //! Construct with libjpeg scaling, but don't scale more that the display size
+  ConvertedPhotoFile(std::string &photoFilePath, int display_width, int display_height) :
+      photoFilePath(photoFilePath) {
 
     read_JPEG_header(photoFilePath.c_str());
-    pixels_tmp = read_JPEG_pixels();
-    if(pixels_tmp) {
-      pixels = pixels_tmp;
-      width = cinfo.output_width;
-      height = cinfo.output_height;
-    } else {
+    set_JPEG_scaling(display_width, display_height);
+    pixels = read_JPEG_pixels();
+    if(NULL == pixels) {
       // TODO WRITEME handle read_JPEG_file failure
       pixels = 0;
       width = 0;
       height = 0;
+    } else {
+      width = cinfo.output_width;
+      height = cinfo.output_height;
     }
+  }
+
+  //! Sets scale_num and scale_denom to as small a ratio as possible without
+  //! scaling smaller than the display size.
+  void set_JPEG_scaling(int display_width, int display_height) {
+    int denom = 8;
+    int num;
+    for (num = 1; num < 8; num++) {
+      int scaled_width = cinfo.output_width * num / denom;
+      int scaled_height = cinfo.output_height * num / denom;
+      std::cout << scaled_width << " vs " << display_width <<
+          ".  " << scaled_height << " vs " << display_height << std::endl;
+      if (scaled_width >= display_width && scaled_height >= display_height) {
+        std::cout << "big enough" << std::endl;
+        break;
+      } else {
+        std::cout << "not big enough" << std::endl;
+      }
+    }
+    cinfo.scale_num = num;
+    cinfo.scale_denom = denom;
+    jpeg_calc_output_dimensions(&cinfo);
+    std::cout << "libjpeg scaling: " << cinfo.scale_num << "/" << cinfo.scale_denom << std::endl;
   }
 
   ~ConvertedPhotoFile() { 
@@ -73,9 +109,6 @@ class ConvertedPhotoFile {
 
   //! Opens the file, reads the header. Populates members: cinfo, infile
   //! If it cannot read the header, then it returns with infile==NULL.
-  struct jpeg_decompress_struct cinfo;
-  FILE * infile;
-
   void read_JPEG_header(const char *filename) {
     struct my_error_mgr jerr;
 
@@ -105,6 +138,8 @@ class ConvertedPhotoFile {
     jpeg_create_decompress(&cinfo);
     jpeg_stdio_src(&cinfo, infile);
     (void) jpeg_read_header(&cinfo, TRUE);
+    cinfo.out_color_space = JCS_RGB;  // Always return RGB.
+    jpeg_calc_output_dimensions(&cinfo);
   }
 
   unsigned char *read_JPEG_pixels() {
@@ -113,8 +148,6 @@ class ConvertedPhotoFile {
     int row_stride;               /* physical row width in output buffer */
     unsigned char *bufferp=0;
 
-    cinfo.out_color_space = JCS_RGB;  // Always return RGB.
-    jpeg_calc_output_dimensions(&cinfo);
     row_stride = cinfo.output_width * cinfo.output_components;
 
     // Set up error handler
