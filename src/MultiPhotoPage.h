@@ -553,11 +553,9 @@ class MultiPhotoPage : public PhotoSelectPage {
   } 
 
   static void drawing_area_realize_cb(GtkWidget *widget, gpointer user_data) {
-    std::cout << "drawing_area_realize_cb" << std::endl;
   }
 
   static void drawing_area_draw_cb(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
-    std::cout << "drawing_area_draw_cb" << std::endl;
     MultiPhotoPage *photoSelectPage =
         (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
@@ -569,10 +567,6 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkDrawingArea *drawing_area = GTK_DRAWING_AREA(widget);
     GtkEventBox *event_box = GTK_EVENT_BOX(gtk_widget_get_parent(GTK_WIDGET(drawing_area)));
     PhotoState &photo_state = event_box_map[GTK_WIDGET(event_box)];
-    std::cout << "event box " << photo_state.pos << " " <<
-        photo_state.row << " " <<
-        photo_state.col << " " <<
-        photo_state.is_selected << std::endl;
     gint surface_height = gtk_widget_get_allocated_height(GTK_WIDGET(drawing_area));
     gint surface_width = gtk_widget_get_allocated_width(GTK_WIDGET(drawing_area));
     if (photo_state.surface_width == surface_width &&
@@ -636,8 +630,6 @@ class MultiPhotoPage : public PhotoSelectPage {
 
   static gboolean
   event_box_clicked_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    std::cout << "event_box_clicked_cb" << std::endl;
-    std::cout << "visible = " << gtk_event_box_get_visible_window(GTK_EVENT_BOX(widget)) << std::endl;
     MultiPhotoPage *photoSelectPage =
         (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
@@ -648,9 +640,7 @@ class MultiPhotoPage : public PhotoSelectPage {
 
   void
   event_box_clicked(GtkWidget *widget) {
-    std::cout << "Clicked" << std::endl;
     PhotoState &photo_state = event_box_map[widget];
-    std::cout << "is_selected = " << photo_state.is_selected << std::endl;
     GtkEventBox *event_box = GTK_EVENT_BOX(widget);
     if (photo_state.is_selected) {
       gtk_widget_override_background_color(widget, GTK_STATE_FLAG_NORMAL, NULL);

@@ -73,13 +73,8 @@ class ConvertedPhotoFile {
     for (num = 1; num < 8; num++) {
       int scaled_width = cinfo.output_width * num / denom;
       int scaled_height = cinfo.output_height * num / denom;
-      std::cout << scaled_width << " vs " << display_width <<
-          ".  " << scaled_height << " vs " << display_height << std::endl;
       if (scaled_width >= display_width && scaled_height >= display_height) {
-        std::cout << "big enough" << std::endl;
         break;
-      } else {
-        std::cout << "not big enough" << std::endl;
       }
     }
     cinfo.scale_num = num;
