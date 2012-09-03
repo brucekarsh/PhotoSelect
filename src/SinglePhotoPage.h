@@ -588,7 +588,7 @@ class SinglePhotoPage : public PhotoSelectPage {
     gtk_label_set_text(GTK_LABEL(of_label), ofstring);
 
     // Set up the position_entry
-    set_position_entry();
+    position_entry_activate();
   } 
 
   void
