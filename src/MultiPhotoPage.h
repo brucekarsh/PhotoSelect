@@ -43,6 +43,7 @@ class MultiPhotoPage : public PhotoSelectPage {
         unsigned char *pixels;
         int surface_width;
         int surface_height;
+        int rotation;
         PhotoState(bool is_selected = false, int pos = 0, int row = 0, int col = 0) :
             is_selected(is_selected), pos(pos), row(row), col(col), pixels(NULL),
             surface_width(0), surface_height(0) {};
@@ -81,7 +82,7 @@ class MultiPhotoPage : public PhotoSelectPage {
       thePreferences((Preferences*)0),
       connection(connection_), photoFileCache(photoFileCache_),
       tag_view_box(0),
-      exif_view_box(0), tags_position("none"), exifs_position("none") {
+      exif_view_box(0), tags_position("left"), exifs_position("none") {
   }
 
   const std::string &get_project_name() {
@@ -243,10 +244,6 @@ class MultiPhotoPage : public PhotoSelectPage {
       tag_view_box = NULL;
     }
 
-    // Get all the tags for this photo
-    std::string file_name = conversionEngine.getPhotoFilePath();
-    photo_tags = Utils::get_photo_tags(connection, project_name, file_name);
-
     // Get all the tags for this project
     project_tags = Utils::get_project_tags(connection, project_name);
 
@@ -272,31 +269,34 @@ class MultiPhotoPage : public PhotoSelectPage {
     gtk_widget_show(tag_view_scrolled_window);
 
     // Make a box (tag_view_tags_box) to go into the scrolled window
-    tag_view_tags_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_show(tag_view_tags_box);
+    //tag_view_tags_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    //gtk_widget_show(tag_view_tags_box);
+
+    // Make a grid to hold the tag
+    GtkWidget* tag_view_tags_grid = gtk_grid_new();
+    gtk_widget_show(tag_view_tags_grid);
 
     // Put check buttons in tag_view_tags_box, one for each tag in the project
+    int row_num = 0;
     typedef std::pair<std::string, Utils::project_tag_s> map_entry_t;
     BOOST_FOREACH(map_entry_t map_entry, project_tags) {
       std::string name = map_entry.first;
-      Utils::project_tag_s project_tag = map_entry.second;
-      // Make a button, pack it, show it and connect it.
-      GtkWidget *button = gtk_check_button_new_with_label(name.c_str());
-      gtk_box_pack_start(GTK_BOX(tag_view_tags_box), button, FALSE, FALSE, 0);
-      gtk_widget_show(button);
-
-      // If the tag is set for this photo, activate its check button.
-      if (1 == photo_tags.count(name)) {
-        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), true);
-      }
-
-      g_signal_connect(button, "toggled", G_CALLBACK(tag_button_clicked_cb), NULL);
+      GtkWidget *label = gtk_label_new(name.c_str());
+      gtk_widget_show(label);
+      gtk_grid_attach(GTK_GRID(tag_view_tags_grid), label, 0, row_num, 1, 1);
+      GtkWidget *set_button = gtk_button_new_with_label("set");
+      gtk_widget_show(set_button);
+      gtk_grid_attach(GTK_GRID(tag_view_tags_grid), set_button, 1, row_num, 1, 1);
+      GtkWidget *clear_button = gtk_button_new_with_label("clear");
+      gtk_widget_show(clear_button);
+      gtk_grid_attach(GTK_GRID(tag_view_tags_grid), clear_button, 2, row_num, 1, 1);
+      row_num++;
     }
 
     // Put the tag_view_scrolled_window into the tag_view_box.
     gtk_box_pack_start(GTK_BOX(tag_view_box), tag_view_scrolled_window, TRUE, TRUE, 0);
     gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(tag_view_scrolled_window),
-        tag_view_tags_box);
+        tag_view_tags_grid);
 
     // Put the tag_view_box into the page_hbox.
     if (tags_position == "left") {
@@ -572,6 +572,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     if (photo_state.surface_width == surface_width &&
         photo_state.surface_height == surface_height &&
         NULL != photo_state.pixels) {
+      // Do nothing, pixels are already computed
     } else {
       if (NULL != photo_state.pixels) {
         free(photo_state.pixels);
@@ -596,8 +597,9 @@ class MultiPhotoPage : public PhotoSelectPage {
     struct timespec t1;
     clock_gettime(CLOCK_MONOTONIC_RAW, &t1);
     std::string file_name = conversionEngine.getPhotoFilePath();
+    int rotation = Utils::get_rotation(connection, conversionEngine.getPhotoFilePath());
     ConvertedPhotoFile *convertedPhotoFile = conversionEngine.getConvertedPhotoFile(
-        photo_state.surface_width, photo_state.surface_height); 
+        photo_state.surface_width, photo_state.surface_height, rotation); 
     struct timespec t2;
     clock_gettime(CLOCK_MONOTONIC_RAW, &t2);
     double M;
@@ -605,7 +607,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     int height = convertedPhotoFile->height;
     calculate_scaling(M, width, height, photo_state.surface_width, photo_state.surface_height);
     photo_state.pixels = convertedPhotoFile->scale_and_pan_and_rotate(
-        photo_state.surface_width, photo_state.surface_height, M, 0.0, 0.0, 0.0);
+        photo_state.surface_width, photo_state.surface_height, M, 0.0, 0.0, rotation);
     struct timespec t3;
     clock_gettime(CLOCK_MONOTONIC_RAW, &t3);
     std::cout << "Time: goto=" << tdiff(t1,t0) << " getConvertedPhotoFile=" <<
@@ -662,36 +664,6 @@ class MultiPhotoPage : public PhotoSelectPage {
   }
 
   void quit();
-
-  static void
-  tag_button_clicked_cb(GtkToggleButton *togglebutton, gpointer user_data) {
-    MultiPhotoPage *photoSelectPage =
-        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(
-        GTK_WIDGET(togglebutton));
-    if (0 != photoSelectPage) {
-      photoSelectPage->tag_button_clicked(togglebutton, user_data);
-    }
-  }
-
-  void
-  tag_button_clicked(GtkToggleButton *togglebutton, gpointer user_data) {
-    std::string tag_name = gtk_button_get_label(GTK_BUTTON(togglebutton));
-    bool active = gtk_toggle_button_get_active(togglebutton);
-    std::string file_name = conversionEngine.getPhotoFilePath();
-    project_tags = Utils::get_project_tags(connection, project_name);
-    photo_tags = Utils::get_photo_tags(connection, project_name, file_name);
-
-    // Ignore this click if it's for a tag that's not in our project
-    if (0 == project_tags.count(tag_name)) {
-      return;
-    }
-
-    if (active) {
-      Utils::add_tag_by_filename(connection, tag_name, file_name);
-    } else {
-      Utils::remove_tag_by_filename(connection, tag_name, file_name);
-    }
-  }
 };
 
 #include "BaseWindow.h"

@@ -49,14 +49,14 @@ class ConversionEngine {
   //! \param display_height height of the display
   /// \return A convertedPhotoFile (which could still be converting)
   ///         or an UnknownCovertedPhotoFile if it cannot convert the file.
-  ConvertedPhotoFile *getConvertedPhotoFile(int display_width, int display_height) {
+  ConvertedPhotoFile *getConvertedPhotoFile(int display_width, int display_height, int rotation) {
     if (photoFilenameVectorPosition <0
         || photoFilenameVectorPosition >= photoFilenameVector.size()) {
       return NULL;
     }
     std::string photoFilename = photoFilenameVector[photoFilenameVectorPosition];
     ConvertedPhotoFile * convertedPhotoFile = new ConvertedPhotoFile(photoFilename,
-        display_width, display_height);
+        display_width, display_height, rotation);
     return convertedPhotoFile;
   }
 

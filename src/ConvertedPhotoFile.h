@@ -48,11 +48,11 @@ class ConvertedPhotoFile {
   }
 
   //! Construct with libjpeg scaling, but don't scale more that the display size
-  ConvertedPhotoFile(std::string &photoFilePath, int display_width, int display_height) :
-      photoFilePath(photoFilePath) {
+  ConvertedPhotoFile(std::string &photoFilePath, int display_width, int display_height,
+      int rotation) : photoFilePath(photoFilePath) {
 
     read_JPEG_header(photoFilePath.c_str());
-    set_JPEG_scaling(display_width, display_height);
+    set_JPEG_scaling(display_width, display_height, rotation);
     pixels = read_JPEG_pixels();
     if(NULL == pixels) {
       // TODO WRITEME handle read_JPEG_file failure
@@ -67,12 +67,20 @@ class ConvertedPhotoFile {
 
   //! Sets scale_num and scale_denom to as small a ratio as possible without
   //! scaling smaller than the display size.
-  void set_JPEG_scaling(int display_width, int display_height) {
+  void set_JPEG_scaling(int display_width, int display_height, int rotation) {
     int denom = 8;
     int num;
+    int output_width, output_height;
+    if (rotation == 0 || rotation == 2) {
+      output_width = cinfo.output_width;
+      output_height = cinfo.output_height;
+    } else {
+      output_width = cinfo.output_height;
+      output_height = cinfo.output_width;
+    }
     for (num = 1; num < 8; num++) {
-      int scaled_width = cinfo.output_width * num / denom;
-      int scaled_height = cinfo.output_height * num / denom;
+      int scaled_width = output_width * num / denom;
+      int scaled_height = output_height * num / denom;
       if (scaled_width >= display_width && scaled_height >= display_height) {
         break;
       }
