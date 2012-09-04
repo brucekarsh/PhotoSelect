@@ -70,12 +70,12 @@ class ConversionEngine {
     return photoFilename;
   }
 
-  void setPhotoFileList(std::list<std::string> *photoFileNameList) {
+  void setPhotoFileVector(std::vector<std::string> *photoFilenameVector_) {
     int i;
-    std::list<std::string>::iterator photoFileNameListIterator = photoFileNameList->begin();
-    for (i=0; i<photoFileNameList->size(); i++) {
-      photoFilenameVector.push_back(photoFileNameListIterator->c_str());
-      photoFileNameListIterator++;
+    std::vector<std::string>::iterator photoFilenameVectorIterator = photoFilenameVector_->begin();
+    for (i=0; i<photoFilenameVector_->size(); i++) {
+      photoFilenameVector.push_back(photoFilenameVectorIterator->c_str());
+      photoFilenameVectorIterator++;
     }
     photoFilenameVectorPosition = 0;
     clip_position();

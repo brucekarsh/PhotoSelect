@@ -115,7 +115,8 @@ class BaseWindow {
 
     // Capture unhandled key presses to the top level window. We use these to make
     // shortcuts. (I.e., n = Next, b = Back, etc.)
-    g_signal_connect_after(top_level_window, "key-press-event", G_CALLBACK(keypress_cb), NULL);
+    //g_signal_connect_after(top_level_window, "key-press-event", G_CALLBACK(keypress_cb), NULL);
+    g_signal_connect(top_level_window, "key-press-event", G_CALLBACK(keypress_cb), NULL);
 
     // Put a GtkBox (top_level_vbox) in top_level_window
     top_level_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);

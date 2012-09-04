@@ -38,7 +38,7 @@ class SinglePhotoPage : public PhotoSelectPage {
     Preferences *thePreferences;
     int rotation;
     ConversionEngine conversionEngine;
-    std::list<std::string> photoFilenameList;
+    std::vector<std::string> photoFilenameVector;
     std::string project_name;
     sql::Connection *connection;
     PhotoFileCache *photoFileCache;
@@ -91,7 +91,7 @@ class SinglePhotoPage : public PhotoSelectPage {
 
   PhotoSelectPage *clone() {
     SinglePhotoPage *cloned_photo_select_page = new SinglePhotoPage(connection, photoFileCache);
-    cloned_photo_select_page->setup(photoFilenameList, project_name, thePreferences);
+    cloned_photo_select_page->setup(photoFilenameVector, project_name, thePreferences);
     cloned_photo_select_page->set_tags_position(tags_position);
     cloned_photo_select_page->set_exifs_position(exifs_position);
     return cloned_photo_select_page;
@@ -565,14 +565,14 @@ class SinglePhotoPage : public PhotoSelectPage {
   }
 
 
-  void setup(std::list<std::string> photoFilenameList_, std::string project_name_,
+  void setup(std::vector<std::string> photoFilenameVector_, std::string project_name_,
       Preferences *thePreferences) {
     this->thePreferences = thePreferences;
     this->project_name = project_name_;
-    photoFilenameList = photoFilenameList_;
+    photoFilenameVector = photoFilenameVector_;
 
     // Set up a conversion engine.
-    conversionEngine.setPhotoFileList(&photoFilenameList);
+    conversionEngine.setPhotoFileVector(&photoFilenameVector);
 
     // Build the page
     build_page();
@@ -582,7 +582,7 @@ class SinglePhotoPage : public PhotoSelectPage {
 
     // Set up the of_label
     char ofstring[20];
-    int numberOfPhotos = photoFilenameList.size();
+    int numberOfPhotos = photoFilenameVector.size();
     snprintf(ofstring, 20, "of %d      ", numberOfPhotos);
     ofstring[19]=0;
     gtk_label_set_text(GTK_LABEL(of_label), ofstring);
@@ -670,7 +670,7 @@ class SinglePhotoPage : public PhotoSelectPage {
     if (val < 1) {
       val = 1;
     }
-    int siz = photoFilenameList.size();
+    int siz = photoFilenameVector.size();
     if (val > siz) {
       val = siz;
     }

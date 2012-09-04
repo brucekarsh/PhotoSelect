@@ -3,6 +3,7 @@
 
 #include "PhotoSelectPage.h"
 #include "WidgetRegistry.h"
+#include <algorithm>
 #include <list>
 #include <map>
 #include <stdio.h>
@@ -35,19 +36,46 @@ class MultiPhotoPage : public PhotoSelectPage {
 
     //! Holds the state of a single photo on a MultiPhotoPage
     class PhotoState {
-      public:
-        bool is_selected;
         int pos;
-        int  row;
+        int row;
         int col;
-        unsigned char *pixels;
+        bool is_selected;
         int surface_width;
         int surface_height;
         int rotation;
+        unsigned char *pixels;
+      public:
         PhotoState(bool is_selected = false, int pos = 0, int row = 0, int col = 0) :
             is_selected(is_selected), pos(pos), row(row), col(col), pixels(NULL),
             surface_width(0), surface_height(0) {};
         ~PhotoState() { if (NULL != pixels) {free(pixels);} };
+        int get_pos() { return pos; };
+        int get_row() { return row; };
+        int get_col() { return col; };
+        int get_is_selected() { return is_selected; };
+        void set_is_selected(bool b) { is_selected = b; };
+        int get_surface_width() { return surface_width; };
+        int get_surface_height() { return surface_width; };
+        int get_rotation() { return rotation; };
+        unsigned char * get_pixels() { return pixels; };
+        void set_pixels(unsigned char *pixels, int surface_width,
+            int surface_height, int rotation) {
+          clear_pixels();
+	  this->pixels = pixels;
+          this->surface_width = surface_width;
+          this->surface_height = surface_height;
+          this->rotation = rotation;
+        }
+        void clear_pixels() {
+          if (pixels) {
+            free(pixels);
+            pixels = 0;
+          }
+          surface_width = 0;
+          surface_height = 0;
+          surface_height = 0;
+          rotation = 0;
+        }
     };
 
     static const int NUM_COLS = 3;
@@ -57,7 +85,7 @@ class MultiPhotoPage : public PhotoSelectPage {
 
     Preferences *thePreferences;
     ConversionEngine conversionEngine;
-    std::list<std::string> photoFilenameList;
+    std::vector<std::string> photoFilenameVector;
     std::string project_name;
     sql::Connection *connection;
     PhotoFileCache *photoFileCache;
@@ -75,7 +103,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     std::string exifs_position;
     std::map<std::string, Utils::photo_tag_s> photo_tags;
     std::map<std::string, Utils::project_tag_s> project_tags;
-    std::map<GtkWidget *, PhotoState> event_box_map;
+    std::map<GtkWidget *, PhotoState> event_box_map; // Map from event box to PhotoState
 
   MultiPhotoPage(sql::Connection *connection_, PhotoFileCache *photoFileCache_) :
       conversionEngine(photoFileCache_), 
@@ -91,11 +119,32 @@ class MultiPhotoPage : public PhotoSelectPage {
 
   virtual void back() {}
   virtual void next() {}
-  virtual void rotate() {}
+  virtual void rotate() {
+    std::cout << "rotate called on MultiPhotoPage" << std::endl;
+  }
+
+  virtual void rotate(GtkWidget *widget) {
+    std::cout << "rotate(widget) called on MultiPhotoPage" << std::endl;
+    GtkWidget *event_box = gtk_widget_get_parent(GTK_WIDGET(GTK_DRAWING_AREA(widget)));
+    PhotoState &photo_state = event_box_map[GTK_WIDGET(GTK_EVENT_BOX(event_box))];
+    std::string file_path = photoFilenameVector[photo_state.get_pos()];
+    std::cout << "file_path is " << file_path << std::endl;
+    int rotation = photo_state.get_rotation();
+    std::cout << "rotation is " << rotation << std::endl;
+    rotation += 1;
+    if (rotation == 4) {
+      rotation = 0;
+    }
+    std::cout << "rotation now is " << rotation << std::endl;
+    Utils::set_rotation(connection, file_path, rotation);
+    photo_state.clear_pixels();
+    // invalidate the drawing area so that it gets redrawn
+    gtk_widget_queue_draw(widget);
+  }
 
   PhotoSelectPage *clone() {
     MultiPhotoPage *cloned_photo_select_page = new MultiPhotoPage(connection, photoFileCache);
-    cloned_photo_select_page->setup(photoFilenameList, project_name, thePreferences);
+    cloned_photo_select_page->setup(photoFilenameVector, project_name, thePreferences);
     cloned_photo_select_page->set_tags_position(tags_position);
     cloned_photo_select_page->set_exifs_position(exifs_position);
     return cloned_photo_select_page;
@@ -190,32 +239,47 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkWidget *grid = gtk_grid_new();
     gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
     gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
-    gtk_widget_show(grid);
 
-    int num_photo_files = photoFilenameList.size();
+    int num_photo_files = photoFilenameVector.size();
 
     for (int i = 0; i < num_photo_files; i++) {
       int row = index_to_row(i);
       int col = index_to_col(i);
+
       GtkWidget *event_box = gtk_event_box_new();
-      gtk_widget_show(event_box);
-      g_signal_connect(event_box, "button-press-event", G_CALLBACK(event_box_clicked_cb), NULL);
       GtkWidget *drawing_area = gtk_drawing_area_new();
+
+      gtk_widget_add_events(drawing_area, GDK_KEY_PRESS_MASK | GDK_ENTER_NOTIFY_MASK
+          | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK);
+      gtk_widget_set_can_focus(drawing_area, TRUE);
+
+      g_signal_connect(event_box, "button-press-event", G_CALLBACK(event_box_clicked_cb),
+        NULL);
+      g_signal_connect(drawing_area, "enter-notify-event", G_CALLBACK(drawing_area_enter_cb), NULL);
+      g_signal_connect(drawing_area, "leave-notify-event", G_CALLBACK(drawing_area_leave_cb), NULL);
       g_signal_connect(drawing_area, "draw", G_CALLBACK(drawing_area_draw_cb), NULL);
       g_signal_connect(drawing_area, "realize", G_CALLBACK(drawing_area_realize_cb), NULL);
+
       gtk_widget_set_margin_left(drawing_area, DRAWING_AREA_MARGIN);
       gtk_widget_set_margin_right(drawing_area, DRAWING_AREA_MARGIN);
       gtk_widget_set_margin_top(drawing_area, DRAWING_AREA_MARGIN);
       gtk_widget_set_margin_bottom(drawing_area, DRAWING_AREA_MARGIN);
       gtk_widget_set_size_request(drawing_area, DRAWING_AREA_WIDTH, DRAWING_AREA_HEIGHT);
-      gtk_widget_show(drawing_area);
       gtk_container_add(GTK_CONTAINER(event_box), drawing_area);
       gtk_grid_attach(GTK_GRID(grid), event_box, col, row, 1, 1);
+
+      gtk_widget_show(drawing_area);
+      gtk_widget_show(event_box);
+
+
+      g_signal_connect(drawing_area, "key-press-event", G_CALLBACK(drawing_area_key_press_cb),
+          NULL);
       PhotoState photo_state(false, i, row, col);
       event_box_map[event_box] = photo_state;
     }
     gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window), grid);
     gtk_widget_show(scrolled_window);
+    gtk_widget_show(grid);
 
     rebuild_tag_view();
     rebuild_exif_view();
@@ -536,14 +600,14 @@ class MultiPhotoPage : public PhotoSelectPage {
   }
 
 
-  void setup(std::list<std::string> photoFilenameList_, std::string project_name_,
+  void setup(std::vector<std::string> photoFilenameVector_, std::string project_name_,
       Preferences *thePreferences) {
     this->thePreferences = thePreferences;
     this->project_name = project_name_;
-    photoFilenameList = photoFilenameList_;
+    photoFilenameVector = photoFilenameVector_;
 
     // Set up a conversion engine.
-    conversionEngine.setPhotoFileList(&photoFilenameList);
+    conversionEngine.setPhotoFileVector(&photoFilenameVector);
 
     // Build the page
     build_page();
@@ -563,56 +627,71 @@ class MultiPhotoPage : public PhotoSelectPage {
     }
   }
 
+  static void drawing_area_key_press_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    std::cout << "drawing_area_key_press_cb" << std::endl;
+    MultiPhotoPage *photoSelectPage =
+        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage->drawing_area_key_press(widget, event, user_data);
+    }
+  }
+
+  void drawing_area_key_press(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    guint keyval = ((GdkEventKey *)event)->keyval;
+    switch (keyval) {
+      case 'r':
+        rotate(widget);
+      default:
+        break;
+    }
+  }
+
   void drawing_area_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
     GtkDrawingArea *drawing_area = GTK_DRAWING_AREA(widget);
     GtkEventBox *event_box = GTK_EVENT_BOX(gtk_widget_get_parent(GTK_WIDGET(drawing_area)));
     PhotoState &photo_state = event_box_map[GTK_WIDGET(event_box)];
     gint surface_height = gtk_widget_get_allocated_height(GTK_WIDGET(drawing_area));
     gint surface_width = gtk_widget_get_allocated_width(GTK_WIDGET(drawing_area));
-    if (photo_state.surface_width == surface_width &&
-        photo_state.surface_height == surface_height &&
-        NULL != photo_state.pixels) {
+    if (photo_state.get_surface_width() == surface_width &&
+        photo_state.get_surface_height() == surface_height &&
+        NULL != photo_state.get_pixels()) {
       // Do nothing, pixels are already computed
     } else {
-      if (NULL != photo_state.pixels) {
-        free(photo_state.pixels);
-      }
-      photo_state.surface_width = surface_width;
-      photo_state.surface_height = surface_height;
-      get_photo_thumbnail(photo_state);
+      get_photo_thumbnail(photo_state, surface_width, surface_height);
     }
     int stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, surface_width);
     cairo_surface_t *source_surface = cairo_image_surface_create_for_data(
-        photo_state.pixels,
+        photo_state.get_pixels(),
         CAIRO_FORMAT_RGB24, surface_width, surface_height, stride);
     cairo_set_source_surface(cr, source_surface, 0, 0);
     cairo_paint(cr);
     cairo_surface_destroy(source_surface);
   }
 
-  void get_photo_thumbnail(PhotoState &photo_state) {
+  void get_photo_thumbnail(PhotoState &photo_state, int surface_width, int surface_height) {
       struct timespec t0;
     clock_gettime(CLOCK_MONOTONIC_RAW, &t0);
-    conversionEngine.go_to(photo_state.pos);
+    conversionEngine.go_to(photo_state.get_pos());
     struct timespec t1;
     clock_gettime(CLOCK_MONOTONIC_RAW, &t1);
     std::string file_name = conversionEngine.getPhotoFilePath();
     int rotation = Utils::get_rotation(connection, conversionEngine.getPhotoFilePath());
     ConvertedPhotoFile *convertedPhotoFile = conversionEngine.getConvertedPhotoFile(
-        photo_state.surface_width, photo_state.surface_height, rotation); 
+        surface_width, surface_height, rotation); 
     struct timespec t2;
     clock_gettime(CLOCK_MONOTONIC_RAW, &t2);
     double M;
     int width = convertedPhotoFile->width;
     int height = convertedPhotoFile->height;
-    calculate_scaling(M, width, height, photo_state.surface_width, photo_state.surface_height);
-    photo_state.pixels = convertedPhotoFile->scale_and_pan_and_rotate(
-        photo_state.surface_width, photo_state.surface_height, M, 0.0, 0.0, rotation);
+    calculate_scaling(M, width, height, surface_width, surface_height);
+    unsigned char *pixels = convertedPhotoFile->scale_and_pan_and_rotate(
+        surface_width, surface_height, M, 0.0, 0.0, rotation);
     struct timespec t3;
     clock_gettime(CLOCK_MONOTONIC_RAW, &t3);
     std::cout << "Time: goto=" << tdiff(t1,t0) << " getConvertedPhotoFile=" <<
         tdiff(t2,t1) << " scale_and_pan_and_rotate=" <<
         tdiff(t3,t2) << " total=" << tdiff(t3,t0) << std::endl;
+    photo_state.set_pixels(pixels, surface_width, surface_height, rotation);
   }
 
   int tdiff(const struct timespec &endtime, const struct timespec &starttime) {
@@ -631,6 +710,16 @@ class MultiPhotoPage : public PhotoSelectPage {
   }
 
   static gboolean
+  drawing_area_enter_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    gtk_grab_add(widget);
+  } 
+
+  static gboolean
+  drawing_area_leave_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    gtk_grab_remove(widget);
+  } 
+
+  static gboolean
   event_box_clicked_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     MultiPhotoPage *photoSelectPage =
         (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
@@ -644,14 +733,14 @@ class MultiPhotoPage : public PhotoSelectPage {
   event_box_clicked(GtkWidget *widget) {
     PhotoState &photo_state = event_box_map[widget];
     GtkEventBox *event_box = GTK_EVENT_BOX(widget);
-    if (photo_state.is_selected) {
+    if (photo_state.get_is_selected()) {
       gtk_widget_override_background_color(widget, GTK_STATE_FLAG_NORMAL, NULL);
-      photo_state.is_selected = false;
+      photo_state.set_is_selected(false);
     } else {
       GdkRGBA rgba;
       gdk_rgba_parse(&rgba, "red");
       gtk_widget_override_background_color(widget, GTK_STATE_FLAG_NORMAL, &rgba);
-      photo_state.is_selected = true;
+      photo_state.set_is_selected(true);
     }
   }
   

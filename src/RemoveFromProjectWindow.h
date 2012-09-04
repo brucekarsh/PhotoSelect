@@ -86,14 +86,14 @@ class RemoveFromProjectWindow {
       return;
     }
 
-    std::list<std::string> photoFilenameList;
+    std::vector<std::string> photoFilenameVector;
     std::list<long> photoFileIdList;
-    photoFilenameList = query_view.getPhotoFilenameList();
+    photoFilenameVector = query_view.getPhotoFilenameVector();
     photoFileIdList = query_view.getPhotoFileIdList();
     // Remove the filenames from the ProjectPhotoFile table
     std::list<long>::iterator id_iter = photoFileIdList.begin();
-    for (std::list<std::string>::iterator filename_iter = photoFilenameList.begin();
-        filename_iter != photoFilenameList.end();
+    for (std::vector<std::string>::iterator filename_iter = photoFilenameVector.begin();
+        filename_iter != photoFilenameVector.end();
         ++filename_iter) {
       long photo_file_id = *id_iter;
       std::string photo_file_name = *filename_iter;

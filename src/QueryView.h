@@ -49,7 +49,7 @@ class QueryView {
   GtkWidget *accept_button;
   GtkWidget *quitButton;
   sql::Connection *connection;
-  std::list<std::string> photoFilenameList;
+  std::vector<std::string> photoFilenameVector;
   std::list<long> photoFileIdList;
   bool is_limited_to_a_project;
   std::string limit_project_name; // Name of the project that the query is limited to
@@ -67,7 +67,7 @@ class QueryView {
   GtkWidget *get_widget() { return queryViewBox; }
   GtkWidget *get_accept_button() { return accept_button; }
   GtkWidget *get_quit_button() { return quitButton; }
-  const std::list<std::string> &getPhotoFilenameList() {return photoFilenameList;};
+  const std::vector<std::string> &getPhotoFilenameVector() {return photoFilenameVector;};
   const std::list<long> &getPhotoFileIdList() {return photoFileIdList;};
   void limit_to_a_project(std::string name) {
     limit_project_name = name;
@@ -188,13 +188,13 @@ class QueryView {
     int count = 0;
     int total_count = 0;
     std::string label;
-    photoFilenameList.clear();
+    photoFilenameVector.clear();
     while (rs->next()) {
       std::string filePath = rs->getString(1);
       long id = rs->getInt64(2);
       gtk_text_buffer_insert_at_cursor(scrollTextBuffer, filePath.c_str(), filePath.size());
       gtk_text_buffer_insert_at_cursor(scrollTextBuffer, "\n", 1);
-      photoFilenameList.push_back(filePath);
+      photoFilenameVector.push_back(filePath);
       photoFileIdList.push_back(id);
       count++;
       total_count++;

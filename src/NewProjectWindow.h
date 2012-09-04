@@ -119,15 +119,15 @@ NewProjectWindow::accept() {
     return;
   }
 
-  std::list<std::string> photoFilenameList;
+  std::vector<std::string> photoFilenameVector;
   std::list<long> photoFileIdList;
-  photoFilenameList = query_view.getPhotoFilenameList();
+  photoFilenameVector = query_view.getPhotoFilenameVector();
   photoFileIdList = query_view.getPhotoFileIdList();
 
   // Add the filenames into the ProjectPhotoFile table
   std::list<long>::iterator id_iter = photoFileIdList.begin();
-  for (std::list<std::string>::iterator filename_iter = photoFilenameList.begin();
-      filename_iter != photoFilenameList.end();
+  for (std::vector<std::string>::iterator filename_iter = photoFilenameVector.begin();
+      filename_iter != photoFilenameVector.end();
       ++filename_iter) {
     long photo_file_id = *id_iter;
     ++id_iter;
@@ -136,7 +136,7 @@ NewProjectWindow::accept() {
   connection->commit();
 
   SinglePhotoPage *photoSelectPage = new SinglePhotoPage(connection, photoFileCache);
-  photoSelectPage->setup(photoFilenameList, project_name, preferences);
+  photoSelectPage->setup(photoFilenameVector, project_name, preferences);
   baseWindow->add_page(photoSelectPage->get_tab_label(),
       photoSelectPage->get_notebook_page(), project_name);
   quit();

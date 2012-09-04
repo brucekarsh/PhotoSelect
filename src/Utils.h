@@ -252,9 +252,9 @@ class Utils {
   }
 
   //! Get all photo files for a project
-  static inline std::list<std::string> get_project_photo_files(sql::Connection *connection,
+  static inline std::vector<std::string> get_project_photo_files(sql::Connection *connection,
       std::string project_name) {
-    std::list<std::string> project_photo_files;
+    std::vector<std::string> project_photo_files;
     std::string sql =
         "SELECT DISTINCT filePath FROM Project "
         "INNER JOIN ProjectPhotoFile ON (ProjectPhotoFile.projectId = Project.id) "
