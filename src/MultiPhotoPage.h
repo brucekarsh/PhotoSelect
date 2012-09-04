@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include "ConversionEngine.h"
 #include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
 #include <gtk/gtk.h>
 //#include <cairo-xlib.h>
 #include <boost/lexical_cast.hpp>
@@ -254,6 +255,9 @@ class MultiPhotoPage : public PhotoSelectPage {
       GtkWidget *drawing_area = gtk_drawing_area_new();
       gtk_widget_add_events(drawing_area, GDK_KEY_PRESS_MASK | GDK_ENTER_NOTIFY_MASK
           | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK);
+      std::string tooltip_text = "[" + boost::lexical_cast<std::string>(i)
+          + "] " + photoFilenameVector[i];
+      gtk_widget_set_tooltip_text(drawing_area, tooltip_text.c_str());
       gtk_widget_set_can_focus(drawing_area, TRUE);
       g_signal_connect(event_box, "button-press-event", G_CALLBACK(event_box_clicked_cb), NULL);
       g_signal_connect(drawing_area, "enter-notify-event", G_CALLBACK(drawing_area_enter_cb), NULL);
