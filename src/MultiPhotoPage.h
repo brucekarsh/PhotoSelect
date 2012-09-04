@@ -79,9 +79,9 @@ class MultiPhotoPage : public PhotoSelectPage {
     };
 
     static const int NUM_COLS = 3;
-    static const int DRAWING_AREA_WIDTH = 100;
-    static const int DRAWING_AREA_HEIGHT = 100;
-    static const int DRAWING_AREA_MARGIN = 4;
+    static const int DRAWING_AREA_WIDTH = 200;
+    static const int DRAWING_AREA_HEIGHT = 200;
+    static const int DRAWING_AREA_MARGIN = 3;
 
     Preferences *thePreferences;
     ConversionEngine conversionEngine;
