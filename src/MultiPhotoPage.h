@@ -78,7 +78,7 @@ class MultiPhotoPage : public PhotoSelectPage {
         }
     };
 
-    static const int NUM_COLS = 3;
+    static const int NUM_COLS = 4;
     static const int DRAWING_AREA_WIDTH = 200;
     static const int DRAWING_AREA_HEIGHT = 200;
     static const int DRAWING_AREA_MARGIN = 3;
@@ -208,6 +208,8 @@ class MultiPhotoPage : public PhotoSelectPage {
 
     // make a hbox to hold the page (page_hbox)
     page_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_add_events(page_hbox, GDK_STRUCTURE_MASK | GDK_CONFIGURE);
+    g_signal_connect(page_hbox, "size-allocate", G_CALLBACK(page_hbox_size_allocate_cb), NULL);
     gtk_widget_show(page_hbox);
 
     // make left and right vboxes to hold meta-information views for things like exif and tags
@@ -223,12 +225,14 @@ class MultiPhotoPage : public PhotoSelectPage {
     // add the page_left_vbox to the page_hbox
     gtk_box_pack_start(GTK_BOX(page_hbox), page_left_vbox, FALSE, FALSE, 0);
     // add the page_vbox to the page_hbox
-    gtk_box_pack_start(GTK_BOX(page_hbox), page_vbox, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(page_hbox), page_vbox, FALSE, FALSE, 0);
     // add the page_right_vbox to the page_hbox
     gtk_box_pack_start(GTK_BOX(page_hbox), page_right_vbox, FALSE, FALSE, 0);
 
     // Add the ScrolledWindow
     GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
+        GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(scrolled_window),
         GTK_SHADOW_ETCHED_OUT);
     gtk_widget_show(GTK_WIDGET(scrolled_window));
@@ -608,6 +612,12 @@ class MultiPhotoPage : public PhotoSelectPage {
     // Add it to the registry so we can find this object when we get a callback
     WidgetRegistry<PhotoSelectPage>::set_widget(page_hbox, this);
   } 
+
+  static void page_hbox_size_allocate_cb(GtkWidget *widget, GdkRectangle *allocation,
+      gpointer user_data) {
+    std::cout << "page_hbox_size_allocate_cb" << std::endl;
+    std::cout << "width " << allocation->width << " height " << allocation->height << std::endl;
+  }
 
   static void drawing_area_realize_cb(GtkWidget *widget, gpointer user_data) {
   }
