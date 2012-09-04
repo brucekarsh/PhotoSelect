@@ -234,7 +234,6 @@ class MultiPhotoPage : public PhotoSelectPage {
     gtk_widget_show(GTK_WIDGET(scrolled_window));
     gtk_box_pack_start(GTK_BOX(page_vbox), scrolled_window, TRUE, TRUE, 0);
 
-
     // Add the grid
     GtkWidget *grid = gtk_grid_new();
     gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
@@ -242,24 +241,21 @@ class MultiPhotoPage : public PhotoSelectPage {
 
     int num_photo_files = photoFilenameVector.size();
 
+    // Iterate over the photo files, make GtkEventBox, GtkDrawingArea, PhotoState for
+    // each one, wire it up, etc
     for (int i = 0; i < num_photo_files; i++) {
       int row = index_to_row(i);
       int col = index_to_col(i);
-
       GtkWidget *event_box = gtk_event_box_new();
       GtkWidget *drawing_area = gtk_drawing_area_new();
-
       gtk_widget_add_events(drawing_area, GDK_KEY_PRESS_MASK | GDK_ENTER_NOTIFY_MASK
           | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK);
       gtk_widget_set_can_focus(drawing_area, TRUE);
-
-      g_signal_connect(event_box, "button-press-event", G_CALLBACK(event_box_clicked_cb),
-        NULL);
+      g_signal_connect(event_box, "button-press-event", G_CALLBACK(event_box_clicked_cb), NULL);
       g_signal_connect(drawing_area, "enter-notify-event", G_CALLBACK(drawing_area_enter_cb), NULL);
       g_signal_connect(drawing_area, "leave-notify-event", G_CALLBACK(drawing_area_leave_cb), NULL);
       g_signal_connect(drawing_area, "draw", G_CALLBACK(drawing_area_draw_cb), NULL);
       g_signal_connect(drawing_area, "realize", G_CALLBACK(drawing_area_realize_cb), NULL);
-
       gtk_widget_set_margin_left(drawing_area, DRAWING_AREA_MARGIN);
       gtk_widget_set_margin_right(drawing_area, DRAWING_AREA_MARGIN);
       gtk_widget_set_margin_top(drawing_area, DRAWING_AREA_MARGIN);
@@ -267,11 +263,8 @@ class MultiPhotoPage : public PhotoSelectPage {
       gtk_widget_set_size_request(drawing_area, DRAWING_AREA_WIDTH, DRAWING_AREA_HEIGHT);
       gtk_container_add(GTK_CONTAINER(event_box), drawing_area);
       gtk_grid_attach(GTK_GRID(grid), event_box, col, row, 1, 1);
-
       gtk_widget_show(drawing_area);
       gtk_widget_show(event_box);
-
-
       g_signal_connect(drawing_area, "key-press-event", G_CALLBACK(drawing_area_key_press_cb),
           NULL);
       PhotoState photo_state(false, i, row, col);
