@@ -110,6 +110,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     std::map<std::string, int> set_tag_counts;
     std::map<std::string, int> clear_tag_counts;
     std::map<GtkWidget *, std::string> tag_button_map;
+    std::map<std::string, std::map<std::string, Utils::photo_tag_s> > all_photo_tags_for_project;
 
   MultiPhotoPage(sql::Connection *connection_, PhotoFileCache *photoFileCache_) :
       conversionEngine(photoFileCache_), 
@@ -391,11 +392,10 @@ class MultiPhotoPage : public PhotoSelectPage {
     set_tag_counts.clear();
     clear_tag_counts.clear();
     // Get the tags for all the files in this project
-    std::map<std::string, std::map<std::string, Utils::photo_tag_s> > all_photo_tags =
-      Utils::get_all_photo_tags_for_project(connection, project_name);
+    all_photo_tags_for_project = Utils::get_all_photo_tags_for_project(connection, project_name);
 
     // Count the tags
-    BOOST_FOREACH(Utils::all_photo_tags_map_entry_t map_entry, all_photo_tags) {
+    BOOST_FOREACH(Utils::all_photo_tags_map_entry_t map_entry, all_photo_tags_for_project) {
       typedef std::pair<std::string, Utils::photo_tag_s> tag_map_entry_t;
       BOOST_FOREACH(tag_map_entry_t e, map_entry.second) {
         std::string tag_name = e.first;
@@ -415,7 +415,7 @@ class MultiPhotoPage : public PhotoSelectPage {
       // so we only want to look at selected photos
       if (photo_state.get_is_selected()) {
         // get all of the tags for the photo
-        std::map<std::string, Utils::photo_tag_s> photo_tags = all_photo_tags[filename];
+        std::map<std::string, Utils::photo_tag_s> photo_tags = all_photo_tags_for_project[filename];
         typedef std::pair<std::string, Utils::project_tag_s> map_entry_t;
         BOOST_FOREACH(map_entry_t map_entry, project_tags) {
           std::string tag_name = map_entry.first;
@@ -823,8 +823,22 @@ class MultiPhotoPage : public PhotoSelectPage {
   }
 
   void clear_button_clicked(GtkWidget *widget, gpointer data) {
-    std::string tag = tag_button_map[widget];
-    std::cout << "clear_button_clicked " << tag << std::endl;
+    std::string tag_name = tag_button_map[widget];
+    int pos = 0;
+    BOOST_FOREACH(std::string file_name, photoFilenameVector) {
+      int row = index_to_row(pos);
+      int col = index_to_col(pos);
+      GtkWidget *event_box = gtk_grid_get_child_at(GTK_GRID(grid), col, row);
+      PhotoState &photo_state = event_box_map[event_box];
+      if (photo_state.get_is_selected()) {
+        if (0 != all_photo_tags_for_project[file_name].count(tag_name)) {
+          Utils::remove_tag_by_filename(connection, tag_name, file_name);
+        }
+      }
+      pos++;
+    }
+    count_tags();
+    rebuild_tag_view();
   }
 
   static void set_button_clicked_cb(GtkWidget *widget, gpointer data) {
@@ -836,8 +850,22 @@ class MultiPhotoPage : public PhotoSelectPage {
   }
 
   void set_button_clicked(GtkWidget *widget, gpointer data) {
-    std::string tag = tag_button_map[widget];
-    std::cout << "set_button_clicked " << tag << std::endl;
+    std::string tag_name = tag_button_map[widget];
+    int pos = 0;
+    BOOST_FOREACH(std::string file_name, photoFilenameVector) {
+      int row = index_to_row(pos);
+      int col = index_to_col(pos);
+      GtkWidget *event_box = gtk_grid_get_child_at(GTK_GRID(grid), col, row);
+      PhotoState &photo_state = event_box_map[event_box];
+      if (photo_state.get_is_selected()) {
+        if (0 == all_photo_tags_for_project[file_name].count(tag_name)) {
+          Utils::add_tag_by_filename(connection, tag_name, file_name);
+        }
+      }
+      pos++;
+    }
+    count_tags();
+    rebuild_tag_view();
   }
 
   void quit();
