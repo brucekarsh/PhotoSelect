@@ -109,6 +109,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     std::map<std::string, int> all_tag_counts;
     std::map<std::string, int> set_tag_counts;
     std::map<std::string, int> clear_tag_counts;
+    std::map<GtkWidget *, std::string> tag_button_map;
 
   MultiPhotoPage(sql::Connection *connection_, PhotoFileCache *photoFileCache_) :
       conversionEngine(photoFileCache_), 
@@ -343,6 +344,7 @@ class MultiPhotoPage : public PhotoSelectPage {
 
     // Put check buttons in tag_view_tags_box, one for each tag in the project
     int row_num = 0;
+    tag_button_map.clear();
     typedef std::pair<std::string, Utils::project_tag_s> map_entry_t;
     BOOST_FOREACH(map_entry_t map_entry, project_tags) {
       std::string name = map_entry.first;
@@ -352,11 +354,15 @@ class MultiPhotoPage : public PhotoSelectPage {
       std::string set_label = "set (" +
           boost::lexical_cast<std::string>(set_tag_counts[name]) + ")";
       GtkWidget *set_button = gtk_button_new_with_label(set_label.c_str());
+      tag_button_map[set_button] = name;
+      g_signal_connect(set_button, "clicked", G_CALLBACK(set_button_clicked_cb), NULL);
       gtk_widget_show(set_button);
       gtk_grid_attach(GTK_GRID(tag_view_tags_grid), set_button, 1, row_num, 1, 1);
       std::string clear_label = "clear (" +
           boost::lexical_cast<std::string>(clear_tag_counts[name]) + ")";
       GtkWidget *clear_button = gtk_button_new_with_label(clear_label.c_str());
+      tag_button_map[clear_button] = name;
+      g_signal_connect(clear_button, "clicked", G_CALLBACK(clear_button_clicked_cb), NULL);
       gtk_widget_show(clear_button);
       gtk_grid_attach(GTK_GRID(tag_view_tags_grid), clear_button, 2, row_num, 1, 1);
       row_num++;
@@ -806,6 +812,32 @@ class MultiPhotoPage : public PhotoSelectPage {
     if (0 != photoSelectPage) {
       photoSelectPage->quit();
     }
+  }
+
+  static void clear_button_clicked_cb(GtkWidget *widget, gpointer data) {
+    MultiPhotoPage *photoSelectPage =
+        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage->clear_button_clicked(widget, data);
+    }
+  }
+
+  void clear_button_clicked(GtkWidget *widget, gpointer data) {
+    std::string tag = tag_button_map[widget];
+    std::cout << "clear_button_clicked " << tag << std::endl;
+  }
+
+  static void set_button_clicked_cb(GtkWidget *widget, gpointer data) {
+    MultiPhotoPage *photoSelectPage =
+        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage->set_button_clicked(widget, data);
+    }
+  }
+
+  void set_button_clicked(GtkWidget *widget, gpointer data) {
+    std::string tag = tag_button_map[widget];
+    std::cout << "set_button_clicked " << tag << std::endl;
   }
 
   void quit();
