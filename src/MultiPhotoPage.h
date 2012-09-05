@@ -129,18 +129,14 @@ class MultiPhotoPage : public PhotoSelectPage {
   }
 
   virtual void rotate(GtkWidget *widget) {
-    std::cout << "rotate(widget) called on MultiPhotoPage" << std::endl;
     GtkWidget *event_box = gtk_widget_get_parent(GTK_WIDGET(GTK_DRAWING_AREA(widget)));
     PhotoState &photo_state = event_box_map[GTK_WIDGET(GTK_EVENT_BOX(event_box))];
     std::string file_path = photoFilenameVector[photo_state.get_pos()];
-    std::cout << "file_path is " << file_path << std::endl;
     int rotation = photo_state.get_rotation();
-    std::cout << "rotation is " << rotation << std::endl;
     rotation += 1;
     if (rotation == 4) {
       rotation = 0;
     }
-    std::cout << "rotation now is " << rotation << std::endl;
     Utils::set_rotation(connection, file_path, rotation);
     photo_state.clear_pixels();
     // invalidate the drawing area so that it gets redrawn
@@ -394,19 +390,11 @@ class MultiPhotoPage : public PhotoSelectPage {
 
     // Count the tags
     BOOST_FOREACH(Utils::all_photo_tags_map_entry_t map_entry, all_photo_tags) {
-      //std::cout << map_entry.first << std::endl;
       typedef std::pair<std::string, Utils::photo_tag_s> tag_map_entry_t;
       BOOST_FOREACH(tag_map_entry_t e, map_entry.second) {
         std::string tag_name = e.first;
-        //std::cout << "    " << e.first << std::endl;
         all_tag_counts[tag_name] += 1;
       }
-    }
-
-    // Print the tag counts
-    typedef std::pair<std::string, int> all_tag_counts_entry_t;
-    BOOST_FOREACH(all_tag_counts_entry_t entry, all_tag_counts) {
-      std::cout << entry.first << " " << entry.second << std::endl;
     }
 
     int pos = 0;
@@ -433,17 +421,6 @@ class MultiPhotoPage : public PhotoSelectPage {
 	}
       }
       pos++;
-    }
-
-    std::cout << "Printing counts" << std::endl;
-    typedef std::pair<std::string, int> tag_count_entry_t;
-    BOOST_FOREACH(tag_count_entry_t clear_tag_count, clear_tag_counts) {
-      std::cout << "clear " << clear_tag_count.first << " " << clear_tag_count.second
-          << std::endl;
-    }
-    BOOST_FOREACH(tag_count_entry_t set_tag_count, set_tag_counts) {
-      std::cout << "set " << set_tag_count.first << " " << set_tag_count.second
-           << std::endl;
     }
   }
 
@@ -706,7 +683,6 @@ class MultiPhotoPage : public PhotoSelectPage {
   }
 
   static void drawing_area_key_press_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    std::cout << "drawing_area_key_press_cb" << std::endl;
     MultiPhotoPage *photoSelectPage =
         (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
