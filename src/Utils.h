@@ -20,9 +20,11 @@
 class Utils {
   public:
     struct photo_tag_s {
+      // TODO: Someday we might want to put something here
     };
 
     struct project_tag_s {
+      // TODO: Someday we might want to put something here
     };
 
   static inline std::map<std::string, photo_tag_s>
@@ -44,6 +46,31 @@ class Utils {
       tags[name] = tag;
     }
     return tags;
+  };
+
+  typedef std::map<std::string, std::map<std::string, photo_tag_s> > all_photo_tags_map_t;
+  typedef std::pair<std::string, std::map<std::string, photo_tag_s> > all_photo_tags_map_entry_t;
+  static inline all_photo_tags_map_t
+      get_all_photo_tags_for_project(sql::Connection *connection, std::string project_name) {
+    all_photo_tags_map_t result;
+    std::string sql = "SELECT PhotoFile.filePath, Tag.name "
+        "FROM Project "
+        "INNER JOIN ProjectPhotoFile ON (Project.id = ProjectPhotoFile.projectId) "
+        "INNER JOIN PhotoFile ON (ProjectPhotoFile.photoFileId = PhotoFile.id) "
+        "INNER JOIN TagChecksum ON (PhotoFile.checksumId = TagChecksum.checksumId) "
+        "INNER JOIN Tag ON (Tag.id = TagChecksum.tagId) "
+        "WHERE (Project.name = ?) "
+        "ORDER BY PhotoFile.filePath ";
+    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    prepared_statement->setString(1, project_name);
+    std::auto_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
+    while (rs->next()) {
+      std::string filePath = rs->getString(1);
+      std::string tag = rs->getString(2);
+      result[filePath][tag];
+    }
+
+    return result;
   }
   
   static inline std::map<std::string, project_tag_s>

@@ -100,11 +100,15 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkWidget *tab_label_button;
     GtkWidget *tag_view_box;
     GtkWidget *exif_view_box;
+    GtkWidget *grid;
     std::string tags_position;
     std::string exifs_position;
     std::map<std::string, Utils::photo_tag_s> photo_tags;
     std::map<std::string, Utils::project_tag_s> project_tags;
     std::map<GtkWidget *, PhotoState> event_box_map; // Map from event box to PhotoState
+    std::map<std::string, int> all_tag_counts;
+    std::map<std::string, int> set_tag_counts;
+    std::map<std::string, int> clear_tag_counts;
 
   MultiPhotoPage(sql::Connection *connection_, PhotoFileCache *photoFileCache_) :
       conversionEngine(photoFileCache_), 
@@ -240,7 +244,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     gtk_box_pack_start(GTK_BOX(page_vbox), scrolled_window, TRUE, TRUE, 0);
 
     // Add the grid
-    GtkWidget *grid = gtk_grid_new();
+    grid = gtk_grid_new();
     gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
     gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
 
@@ -349,10 +353,14 @@ class MultiPhotoPage : public PhotoSelectPage {
       GtkWidget *label = gtk_label_new(name.c_str());
       gtk_widget_show(label);
       gtk_grid_attach(GTK_GRID(tag_view_tags_grid), label, 0, row_num, 1, 1);
-      GtkWidget *set_button = gtk_button_new_with_label("set");
+      std::string set_label = "set (" +
+          boost::lexical_cast<std::string>(set_tag_counts[name]) + ")";
+      GtkWidget *set_button = gtk_button_new_with_label(set_label.c_str());
       gtk_widget_show(set_button);
       gtk_grid_attach(GTK_GRID(tag_view_tags_grid), set_button, 1, row_num, 1, 1);
-      GtkWidget *clear_button = gtk_button_new_with_label("clear");
+      std::string clear_label = "clear (" +
+          boost::lexical_cast<std::string>(clear_tag_counts[name]) + ")";
+      GtkWidget *clear_button = gtk_button_new_with_label(clear_label.c_str());
       gtk_widget_show(clear_button);
       gtk_grid_attach(GTK_GRID(tag_view_tags_grid), clear_button, 2, row_num, 1, 1);
       row_num++;
@@ -373,6 +381,69 @@ class MultiPhotoPage : public PhotoSelectPage {
       gtk_box_reorder_child(GTK_BOX(page_vbox), tag_view_box, 0);
     } else if (tags_position == "bottom") {
       gtk_box_pack_start(GTK_BOX(page_vbox), tag_view_box, FALSE, FALSE, 0);
+    }
+  }
+
+  void count_tags() {
+    all_tag_counts.clear();
+    set_tag_counts.clear();
+    clear_tag_counts.clear();
+    // Get the tags for all the files in this project
+    std::map<std::string, std::map<std::string, Utils::photo_tag_s> > all_photo_tags =
+      Utils::get_all_photo_tags_for_project(connection, project_name);
+
+    // Count the tags
+    BOOST_FOREACH(Utils::all_photo_tags_map_entry_t map_entry, all_photo_tags) {
+      //std::cout << map_entry.first << std::endl;
+      typedef std::pair<std::string, Utils::photo_tag_s> tag_map_entry_t;
+      BOOST_FOREACH(tag_map_entry_t e, map_entry.second) {
+        std::string tag_name = e.first;
+        //std::cout << "    " << e.first << std::endl;
+        all_tag_counts[tag_name] += 1;
+      }
+    }
+
+    // Print the tag counts
+    typedef std::pair<std::string, int> all_tag_counts_entry_t;
+    BOOST_FOREACH(all_tag_counts_entry_t entry, all_tag_counts) {
+      std::cout << entry.first << " " << entry.second << std::endl;
+    }
+
+    int pos = 0;
+    // Iterate through each photo file in the project
+    BOOST_FOREACH(std::string filename, photoFilenameVector) {
+      // get the photo file's PhotoState
+      int row = index_to_row(pos);
+      int col = index_to_col(pos);
+      GtkWidget *event_box = gtk_grid_get_child_at(GTK_GRID(grid), col, row);
+      PhotoState &photo_state = event_box_map[event_box];
+      // we want counts of the number of tags that will be newly set and cleard
+      // so we only want to look at selected photos
+      if (photo_state.get_is_selected()) {
+        // get all of the tags for the photo
+        std::map<std::string, Utils::photo_tag_s> photo_tags = all_photo_tags[filename];
+        typedef std::pair<std::string, Utils::project_tag_s> map_entry_t;
+        BOOST_FOREACH(map_entry_t map_entry, project_tags) {
+          std::string tag_name = map_entry.first;
+          if (0 != photo_tags.count(tag_name)) {
+            clear_tag_counts[tag_name]++;
+          } else {
+            set_tag_counts[tag_name]++;
+          }
+	}
+      }
+      pos++;
+    }
+
+    std::cout << "Printing counts" << std::endl;
+    typedef std::pair<std::string, int> tag_count_entry_t;
+    BOOST_FOREACH(tag_count_entry_t clear_tag_count, clear_tag_counts) {
+      std::cout << "clear " << clear_tag_count.first << " " << clear_tag_count.second
+          << std::endl;
+    }
+    BOOST_FOREACH(tag_count_entry_t set_tag_count, set_tag_counts) {
+      std::cout << "set " << set_tag_count.first << " " << set_tag_count.second
+           << std::endl;
     }
   }
 
@@ -749,6 +820,8 @@ class MultiPhotoPage : public PhotoSelectPage {
       gtk_widget_override_background_color(widget, GTK_STATE_FLAG_NORMAL, &rgba);
       photo_state.set_is_selected(true);
     }
+    count_tags();
+    rebuild_tag_view();
   }
   
 
