@@ -25,6 +25,8 @@
 
 #include "Utils.h"
 
+#define SNAP_TIME(T) struct timespec T; clock_gettime(CLOCK_MONOTONIC_RAW, &T);
+
 class PhotoFileCache;
 class Preferences;
   
@@ -58,6 +60,8 @@ class MultiPhotoPage : public PhotoSelectPage {
         int get_surface_width() { return surface_width; };
         int get_surface_height() { return surface_width; };
         int get_rotation() { return rotation; };
+        void set_row(int row) { this->row = row; };
+        void set_col(int col) { this->col = col; };
         unsigned char * get_pixels() { return pixels; };
         void set_pixels(unsigned char *pixels, int surface_width,
             int surface_height, int rotation) {
@@ -79,7 +83,6 @@ class MultiPhotoPage : public PhotoSelectPage {
         }
     };
 
-    static const int NUM_COLS = 4;
     static const int DRAWING_AREA_WIDTH = 200;
     static const int DRAWING_AREA_HEIGHT = 200;
     static const int DRAWING_AREA_MARGIN = 3;
@@ -95,12 +98,14 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkWidget *page_vbox;
     GtkWidget *page_left_vbox;
     GtkWidget *page_right_vbox;
+    GtkWidget *central_hbox;
     GtkWidget *tab_label_hbox;
     GtkWidget *tab_label_label;
     GtkWidget *tab_label_button;
     GtkWidget *tag_view_box;
     GtkWidget *exif_view_box;
     GtkWidget *grid;
+    GtkWidget *scrolled_window;
     std::string tags_position;
     std::string exifs_position;
     std::map<std::string, Utils::photo_tag_s> photo_tags;
@@ -111,13 +116,14 @@ class MultiPhotoPage : public PhotoSelectPage {
     std::map<std::string, int> clear_tag_counts;
     std::map<GtkWidget *, std::string> tag_button_map;
     std::map<std::string, std::map<std::string, Utils::photo_tag_s> > all_photo_tags_for_project;
+    int num_cols;
 
   MultiPhotoPage(sql::Connection *connection_, PhotoFileCache *photoFileCache_) :
       conversionEngine(photoFileCache_), 
       thePreferences((Preferences*)0),
       connection(connection_), photoFileCache(photoFileCache_),
       tag_view_box(0),
-      exif_view_box(0), tags_position("left"), exifs_position("none") {
+      exif_view_box(0), tags_position("left"), exifs_position("none"), num_cols(4) {
   }
 
   const std::string &get_project_name() {
@@ -212,7 +218,6 @@ class MultiPhotoPage : public PhotoSelectPage {
     // make a hbox to hold the page (page_hbox)
     page_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_add_events(page_hbox, GDK_STRUCTURE_MASK | GDK_CONFIGURE);
-    g_signal_connect(page_hbox, "size-allocate", G_CALLBACK(page_hbox_size_allocate_cb), NULL);
     gtk_widget_show(page_hbox);
 
     // make left and right vboxes to hold meta-information views for things like exif and tags
@@ -223,23 +228,27 @@ class MultiPhotoPage : public PhotoSelectPage {
 
     // make a vbox to hold the page (page_vbox)
     page_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    g_signal_connect(page_vbox, "size-allocate", G_CALLBACK(page_vbox_size_allocate_cb), NULL);
     gtk_widget_show(page_vbox);
 
     // add the page_left_vbox to the page_hbox
     gtk_box_pack_start(GTK_BOX(page_hbox), page_left_vbox, FALSE, FALSE, 0);
     // add the page_vbox to the page_hbox
-    gtk_box_pack_start(GTK_BOX(page_hbox), page_vbox, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(page_hbox), page_vbox, TRUE, TRUE, 0);
     // add the page_right_vbox to the page_hbox
     gtk_box_pack_start(GTK_BOX(page_hbox), page_right_vbox, FALSE, FALSE, 0);
 
     // Add the ScrolledWindow
-    GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    scrolled_window = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
         GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(scrolled_window),
         GTK_SHADOW_ETCHED_OUT);
     gtk_widget_show(GTK_WIDGET(scrolled_window));
-    gtk_box_pack_start(GTK_BOX(page_vbox), scrolled_window, TRUE, TRUE, 0);
+    central_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_show(central_hbox);
+    gtk_box_pack_start(GTK_BOX(central_hbox), scrolled_window, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(page_vbox), central_hbox, TRUE, TRUE, 0);
 
     // Add the grid
     grid = gtk_grid_new();
@@ -289,11 +298,11 @@ class MultiPhotoPage : public PhotoSelectPage {
   }
 
   int index_to_row(int index) {
-    return index/NUM_COLS;
+    return index / num_cols;
   }
 
   int index_to_col(int index) {
-    return index%NUM_COLS;
+    return index % num_cols;
   }
 
   // Adds a tag view to the MultiPhotoPage. The tag view (tag_view_box) is put into
@@ -671,10 +680,65 @@ class MultiPhotoPage : public PhotoSelectPage {
     WidgetRegistry<PhotoSelectPage>::set_widget(page_hbox, this);
   } 
 
-  static void page_hbox_size_allocate_cb(GtkWidget *widget, GdkRectangle *allocation,
+  static void page_vbox_size_allocate_cb(GtkWidget *widget, GdkRectangle *allocation,
       gpointer user_data) {
-    std::cout << "page_hbox_size_allocate_cb" << std::endl;
+    MultiPhotoPage *photoSelectPage =
+        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage->page_vbox_size_allocate(widget, allocation, user_data);
+    }
+  }
+
+  void page_vbox_size_allocate(GtkWidget *widget, GdkRectangle *allocation, gpointer user_data) {
+    std::cout << "page_vbox_size_allocate_cb" << std::endl;
     std::cout << "width " << allocation->width << " height " << allocation->height << std::endl;
+    int max_columns = (allocation->width - 2) / (DRAWING_AREA_WIDTH + 2 * DRAWING_AREA_MARGIN);
+    std::cout << "max_columns " << max_columns << std::endl;
+    if (max_columns != num_cols) {
+      rebuild_grid(max_columns);
+    }
+  }
+
+  void rebuild_grid(int max_columns) {
+    std::cout << "rebuild_grid" << std::endl;
+    gtk_widget_hide(grid);
+    GList *widget_list = gtk_container_get_children(GTK_CONTAINER(grid));
+
+    std::list<GtkWidget *> event_box_list;
+    for (GList *p = widget_list; p != NULL; p = g_list_next(p)) {
+      GtkWidget *event_box = GTK_WIDGET(p->data);
+      g_object_ref((gpointer)event_box);
+      event_box_list.push_back(event_box);
+    }
+
+    GtkWidget *new_grid = gtk_grid_new();
+    BOOST_FOREACH(GtkWidget *event_box, event_box_list) {
+      PhotoState &photo_state = event_box_map[event_box];
+      int pos = photo_state.get_pos();
+      int row = pos / max_columns;
+      int col = pos % max_columns;
+      photo_state.set_row(row);
+      photo_state.set_col(col);
+      gtk_container_remove(GTK_CONTAINER(grid), event_box);
+      gtk_grid_attach(GTK_GRID(new_grid), GTK_WIDGET(GTK_EVENT_BOX(event_box)), col, row, 1, 1);
+      g_object_unref((gpointer)event_box);
+      gtk_widget_show(event_box);
+    }
+
+    gtk_widget_destroy(GTK_WIDGET(grid));
+    gtk_widget_show(new_grid);
+    gtk_widget_destroy(scrolled_window);
+    scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
+        GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(scrolled_window),
+        GTK_SHADOW_ETCHED_OUT);
+    gtk_widget_show(GTK_WIDGET(scrolled_window));
+    gtk_box_pack_start(GTK_BOX(central_hbox), scrolled_window, FALSE, FALSE, 0);
+
+    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window), new_grid);
+    grid = new_grid;
+    num_cols = max_columns;
   }
 
   static void drawing_area_realize_cb(GtkWidget *widget, gpointer user_data) {
