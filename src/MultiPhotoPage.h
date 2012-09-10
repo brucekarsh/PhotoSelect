@@ -24,6 +24,7 @@
 #include <xercesc/util/OutOfMemoryException.hpp>
 
 #include "Db.h"
+#include "Utils.h"
 
 #define SNAP_TIME(T) struct timespec T; clock_gettime(CLOCK_MONOTONIC_RAW, &T);
 
@@ -881,7 +882,7 @@ num_photo_files = 100;
   }
 
   static void find_pointer_coords(GtkWidget *widget, gint *x, gint *y) {
-    gtk_widget_get_pointer(widget, x, y);
+    Utils::get_pointer(widget, x, y);
     *x += gtk_adjustment_get_value(gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(widget)));
     *y += gtk_adjustment_get_value(gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(widget)));
   }

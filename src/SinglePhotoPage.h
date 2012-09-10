@@ -22,6 +22,7 @@
 #include <xercesc/util/OutOfMemoryException.hpp>
 
 #include "Db.h"
+#include "Utils.h"
 
 class PhotoFileCache;
 class Preferences;
@@ -627,20 +628,10 @@ class SinglePhotoPage : public PhotoSelectPage {
     Dy = 0.0;
   }
 
-  /** replacement for the deprecated gtk_widget_get_pointer */
-  void get_pointer(GtkWidget *widget, gint *pointer_x, gint *pointer_y) {
-    GdkDeviceManager *device_manager =
-        gdk_display_get_device_manager(gtk_widget_get_display (widget));
-    GdkDevice *pointer = gdk_device_manager_get_client_pointer(device_manager);
-    gdk_window_get_device_position(gtk_widget_get_window (widget),
-        pointer, pointer_x, pointer_y, NULL);
-  }
-
   void zoom(float zoomfactor)
   {
     int sx, sy;
-    //gtk_widget_get_pointer(drawing_area, &sx, &sy);
-    get_pointer(drawing_area, &sx, &sy);
+    Utils::get_pointer(drawing_area, &sx, &sy);
     gint surface_height = gtk_widget_get_allocated_height(drawing_area);
     gint surface_width = gtk_widget_get_allocated_width(drawing_area);
 
