@@ -153,7 +153,6 @@ class MultiPhotoPage : public PhotoSelectPage {
     get_photo_thumbnail(photo_state, ICON_WIDTH, ICON_HEIGHT);
     GtkTreeIter iter;
     gtk_tree_model_get_iter(GTK_TREE_MODEL(list_store), &iter, path);
-    gtk_tree_path_free(path);
     GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data(photo_state.get_pixels(),
         GDK_COLORSPACE_RGB,
         FALSE, 8, ICON_WIDTH, ICON_HEIGHT, ICON_STRIDE, pixbuf_destroy_cb, NULL);
@@ -828,6 +827,7 @@ num_photo_files = 100;
         default:
           break;
       }
+      gtk_tree_path_free(path);
     }
   }
 
@@ -854,6 +854,7 @@ num_photo_files = 100;
         gtk_icon_view_select_path(GTK_ICON_VIEW(widget), path);
         photo_state.set_is_selected(true);
       }
+      gtk_tree_path_free(path);
       count_tags();
       rebuild_tag_view();
       current_index = index;
@@ -872,6 +873,7 @@ num_photo_files = 100;
     gboolean has_item = gtk_icon_view_get_item_at_pos(GTK_ICON_VIEW(widget), x, y, &path, &cell);
     if (has_item) {
       index = gtk_tree_path_get_indices(path)[0];
+      gtk_tree_path_free(path);
     } else {
       index = -1;
     }
