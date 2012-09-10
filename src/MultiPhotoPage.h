@@ -37,31 +37,35 @@ namespace sql {
 class MultiPhotoPage : public PhotoSelectPage {
   public:
 
+  // This enum is used by GtkListStore
+  enum {
+    COL_PIXBUF,
+    NUM_COLS
+  };
+
     //! Holds the state of a single photo on a MultiPhotoPage
     class PhotoState {
-        int pos;
-        int row;
-        int col;
+        int index;
         bool is_selected;
         int surface_width;
         int surface_height;
         int rotation;
         unsigned char *pixels;
       public:
-        PhotoState(bool is_selected = false, int pos = 0, int row = 0, int col = 0) :
-            is_selected(is_selected), pos(pos), row(row), col(col), pixels(NULL),
+        PhotoState(bool is_selected = false, int index = 0) :
+            is_selected(is_selected), index(index), pixels(NULL),
             surface_width(0), surface_height(0) {};
-        ~PhotoState() { if (NULL != pixels) {free(pixels);} };
-        int get_pos() { return pos; };
-        int get_row() { return row; };
-        int get_col() { return col; };
+        ~PhotoState() { 
+          if (NULL != pixels) {
+            free(pixels);
+          }
+        };
+        int get_index() { return index; };
         int get_is_selected() { return is_selected; };
         void set_is_selected(bool b) { is_selected = b; };
         int get_surface_width() { return surface_width; };
         int get_surface_height() { return surface_width; };
         int get_rotation() { return rotation; };
-        void set_row(int row) { this->row = row; };
-        void set_col(int col) { this->col = col; };
         unsigned char * get_pixels() { return pixels; };
         void set_pixels(unsigned char *pixels, int surface_width,
             int surface_height, int rotation) {
@@ -83,16 +87,19 @@ class MultiPhotoPage : public PhotoSelectPage {
         }
     };
 
-    static const int DRAWING_AREA_WIDTH = 200;
-    static const int DRAWING_AREA_HEIGHT = 200;
-    static const int DRAWING_AREA_MARGIN = 3;
+    static const int ICON_WIDTH = 200;
+    static const int ICON_HEIGHT = 200;
+    static const int ICON_STRIDE = ICON_WIDTH * 3;
 
     Preferences *thePreferences;
     ConversionEngine conversionEngine;
     std::vector<std::string> photoFilenameVector;
+    std::map<int, PhotoState> photo_state_map;
     std::string project_name;
     sql::Connection *connection;
     PhotoFileCache *photoFileCache;
+    GtkListStore *list_store;
+    int current_index;
 
     GtkWidget *page_hbox;
     GtkWidget *page_vbox;
@@ -104,26 +111,23 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkWidget *tab_label_button;
     GtkWidget *tag_view_box;
     GtkWidget *exif_view_box;
-    GtkWidget *grid;
     GtkWidget *scrolled_window;
     std::string tags_position;
     std::string exifs_position;
     std::map<std::string, Utils::photo_tag_s> photo_tags;
     std::map<std::string, Utils::project_tag_s> project_tags;
-    std::map<GtkWidget *, PhotoState> event_box_map; // Map from event box to PhotoState
     std::map<std::string, int> all_tag_counts;
     std::map<std::string, int> set_tag_counts;
     std::map<std::string, int> clear_tag_counts;
     std::map<GtkWidget *, std::string> tag_button_map;
     std::map<std::string, std::map<std::string, Utils::photo_tag_s> > all_photo_tags_for_project;
-    int num_cols;
 
   MultiPhotoPage(sql::Connection *connection_, PhotoFileCache *photoFileCache_) :
       conversionEngine(photoFileCache_), 
       thePreferences((Preferences*)0),
       connection(connection_), photoFileCache(photoFileCache_),
-      tag_view_box(0),
-      exif_view_box(0), tags_position("left"), exifs_position("none"), num_cols(4) {
+      tag_view_box(0), current_index(0),
+      exif_view_box(0), tags_position("left"), exifs_position("left") {
   }
 
   const std::string &get_project_name() {
@@ -136,10 +140,9 @@ class MultiPhotoPage : public PhotoSelectPage {
     std::cout << "rotate called on MultiPhotoPage" << std::endl;
   }
 
-  virtual void rotate(GtkWidget *widget) {
-    GtkWidget *event_box = gtk_widget_get_parent(GTK_WIDGET(GTK_DRAWING_AREA(widget)));
-    PhotoState &photo_state = event_box_map[GTK_WIDGET(GTK_EVENT_BOX(event_box))];
-    std::string file_path = photoFilenameVector[photo_state.get_pos()];
+  virtual void rotate(GtkWidget *widget, int index, GtkTreePath *path, GtkCellRenderer *cell) {
+    PhotoState &photo_state = photo_state_map[index];
+    std::string file_path = photoFilenameVector[photo_state.get_index()];
     int rotation = photo_state.get_rotation();
     rotation += 1;
     if (rotation == 4) {
@@ -147,8 +150,15 @@ class MultiPhotoPage : public PhotoSelectPage {
     }
     Utils::set_rotation(connection, file_path, rotation);
     photo_state.clear_pixels();
-    // invalidate the drawing area so that it gets redrawn
-    gtk_widget_queue_draw(widget);
+    get_photo_thumbnail(photo_state, ICON_WIDTH, ICON_HEIGHT);
+    GtkTreeIter iter;
+    gtk_tree_model_get_iter(GTK_TREE_MODEL(list_store), &iter, path);
+    gtk_tree_path_free(path);
+    GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data(photo_state.get_pixels(),
+        GDK_COLORSPACE_RGB,
+        FALSE, 8, ICON_WIDTH, ICON_HEIGHT, ICON_STRIDE, pixbuf_destroy_cb, NULL);
+    // pixbuf is destroyed in pixbuf_destroy_cb
+    gtk_list_store_set(list_store, &iter, COL_PIXBUF, pixbuf, -1);
   }
 
   PhotoSelectPage *clone() {
@@ -228,7 +238,6 @@ class MultiPhotoPage : public PhotoSelectPage {
 
     // make a vbox to hold the page (page_vbox)
     page_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    g_signal_connect(page_vbox, "size-allocate", G_CALLBACK(page_vbox_size_allocate_cb), NULL);
     gtk_widget_show(page_vbox);
 
     // add the page_left_vbox to the page_hbox
@@ -241,68 +250,65 @@ class MultiPhotoPage : public PhotoSelectPage {
     // Add the ScrolledWindow
     scrolled_window = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
-        GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+        GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(scrolled_window),
         GTK_SHADOW_ETCHED_OUT);
     gtk_widget_show(GTK_WIDGET(scrolled_window));
     central_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_show(central_hbox);
-    gtk_box_pack_start(GTK_BOX(central_hbox), scrolled_window, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(central_hbox), scrolled_window, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(page_vbox), central_hbox, TRUE, TRUE, 0);
 
-    // Add the grid
-    grid = gtk_grid_new();
-    gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
-    gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
+    // Add the GtkIconView
+    list_store = gtk_list_store_new(NUM_COLS, GDK_TYPE_PIXBUF);
+    GtkTreeIter iter;
 
     int num_photo_files = photoFilenameVector.size();
+num_photo_files = 100;
 
     // Iterate over the photo files, make GtkEventBox, GtkDrawingArea, PhotoState for
     // each one, wire it up, etc
     for (int i = 0; i < num_photo_files; i++) {
-      int row = index_to_row(i);
-      int col = index_to_col(i);
-      GtkWidget *event_box = gtk_event_box_new();
-      GtkWidget *drawing_area = gtk_drawing_area_new();
-      gtk_widget_add_events(drawing_area, GDK_KEY_PRESS_MASK | GDK_ENTER_NOTIFY_MASK
-          | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK);
-      std::string tooltip_text = "[" + boost::lexical_cast<std::string>(i)
-          + "] " + photoFilenameVector[i];
-      gtk_widget_set_tooltip_text(drawing_area, tooltip_text.c_str());
-      gtk_widget_set_can_focus(drawing_area, TRUE);
-      g_signal_connect(event_box, "button-press-event", G_CALLBACK(event_box_clicked_cb), NULL);
-      g_signal_connect(drawing_area, "enter-notify-event", G_CALLBACK(drawing_area_enter_cb), NULL);
-      g_signal_connect(drawing_area, "leave-notify-event", G_CALLBACK(drawing_area_leave_cb), NULL);
-      g_signal_connect(drawing_area, "draw", G_CALLBACK(drawing_area_draw_cb), NULL);
-      g_signal_connect(drawing_area, "realize", G_CALLBACK(drawing_area_realize_cb), NULL);
-      gtk_widget_set_margin_left(drawing_area, DRAWING_AREA_MARGIN);
-      gtk_widget_set_margin_right(drawing_area, DRAWING_AREA_MARGIN);
-      gtk_widget_set_margin_top(drawing_area, DRAWING_AREA_MARGIN);
-      gtk_widget_set_margin_bottom(drawing_area, DRAWING_AREA_MARGIN);
-      gtk_widget_set_size_request(drawing_area, DRAWING_AREA_WIDTH, DRAWING_AREA_HEIGHT);
-      gtk_container_add(GTK_CONTAINER(event_box), drawing_area);
-      gtk_grid_attach(GTK_GRID(grid), event_box, col, row, 1, 1);
-      gtk_widget_show(drawing_area);
-      gtk_widget_show(event_box);
-      g_signal_connect(drawing_area, "key-press-event", G_CALLBACK(drawing_area_key_press_cb),
-          NULL);
-      PhotoState photo_state(false, i, row, col);
-      event_box_map[event_box] = photo_state;
+      PhotoState photo_state(false, i);
+      photo_state_map[i] = photo_state;
+      get_photo_thumbnail(photo_state_map[i], ICON_WIDTH, ICON_HEIGHT);
+      GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data(photo_state_map[i].get_pixels(),
+          GDK_COLORSPACE_RGB,
+          FALSE, 8, ICON_WIDTH, ICON_HEIGHT, ICON_STRIDE, pixbuf_destroy_cb, NULL);
+      // pixbuf is destroyed in pixbuf_destroy_cb
+      gtk_list_store_append(list_store, &iter);
+      gtk_list_store_set(list_store, &iter, COL_PIXBUF, pixbuf, -1);
     }
-    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window), grid);
+    GtkTreeModel *tree_model = GTK_TREE_MODEL(list_store);
+    GtkWidget *icon_view = gtk_icon_view_new_with_model (tree_model);
+    gtk_widget_add_events(icon_view, GDK_KEY_PRESS_MASK | GDK_ENTER_NOTIFY_MASK
+        | GDK_LEAVE_NOTIFY_MASK);
+
+    g_signal_connect(icon_view, "key-press-event", G_CALLBACK(icon_view_key_press_cb), 0);
+    g_signal_connect(icon_view, "size_allocate", G_CALLBACK(icon_view_size_allocate_cb), 0);
+    g_signal_connect(icon_view, "button-press-event", G_CALLBACK(icon_view_button_press_cb), 0);
+    g_signal_connect(icon_view, "enter-notify-event", G_CALLBACK(icon_view_enter_cb), NULL);
+    g_signal_connect(icon_view, "leave-notify-event", G_CALLBACK(icon_view_leave_cb), NULL);
+
+    gtk_icon_view_set_spacing(GTK_ICON_VIEW(icon_view), 11);
+    gtk_icon_view_set_item_width(GTK_ICON_VIEW(icon_view), ICON_WIDTH);
+    gtk_icon_view_set_row_spacing(GTK_ICON_VIEW(icon_view), 11);
+    gtk_icon_view_set_margin(GTK_ICON_VIEW(icon_view), 11);
+    gtk_icon_view_set_item_padding(GTK_ICON_VIEW(icon_view), 11);
+    gtk_icon_view_set_columns(GTK_ICON_VIEW(icon_view), -1);
+    gtk_icon_view_set_selection_mode (GTK_ICON_VIEW (icon_view), GTK_SELECTION_MULTIPLE);
+    gtk_container_add (GTK_CONTAINER (scrolled_window), icon_view);
+    gtk_widget_show_all(scrolled_window);
+    gtk_icon_view_set_pixbuf_column (GTK_ICON_VIEW (icon_view), COL_PIXBUF);
     gtk_widget_show(scrolled_window);
-    gtk_widget_show(grid);
 
     rebuild_tag_view();
     rebuild_exif_view();
   }
 
-  int index_to_row(int index) {
-    return index / num_cols;
-  }
-
-  int index_to_col(int index) {
-    return index % num_cols;
+  static void pixbuf_destroy_cb(guchar *pixels, gpointer data) {
+    printf("pixbuf_destroy_cb\n");
+    // TODO: We need to actually destroy the pixbuf here, I think
   }
 
   // Adds a tag view to the MultiPhotoPage. The tag view (tag_view_box) is put into
@@ -358,7 +364,9 @@ class MultiPhotoPage : public PhotoSelectPage {
     typedef std::pair<std::string, Utils::project_tag_s> map_entry_t;
     BOOST_FOREACH(map_entry_t map_entry, project_tags) {
       std::string name = map_entry.first;
-      GtkWidget *label = gtk_label_new(name.c_str());
+      std::string display_text(name + " (" +
+          boost::lexical_cast<std::string>(all_tag_counts[name]) + ")");
+      GtkWidget *label = gtk_label_new(display_text.c_str());
       gtk_widget_show(label);
       gtk_grid_attach(GTK_GRID(tag_view_tags_grid), label, 0, row_num, 1, 1);
       std::string set_label = "set (" +
@@ -412,14 +420,11 @@ class MultiPhotoPage : public PhotoSelectPage {
       }
     }
 
-    int pos = 0;
+    int index = 0;
     // Iterate through each photo file in the project
     BOOST_FOREACH(std::string filename, photoFilenameVector) {
       // get the photo file's PhotoState
-      int row = index_to_row(pos);
-      int col = index_to_col(pos);
-      GtkWidget *event_box = gtk_grid_get_child_at(GTK_GRID(grid), col, row);
-      PhotoState &photo_state = event_box_map[event_box];
+      PhotoState &photo_state = photo_state_map[index];
       // we want counts of the number of tags that will be newly set and cleard
       // so we only want to look at selected photos
       if (photo_state.get_is_selected()) {
@@ -435,7 +440,7 @@ class MultiPhotoPage : public PhotoSelectPage {
           }
 	}
       }
-      pos++;
+      index++;
     }
   }
 
@@ -540,7 +545,7 @@ class MultiPhotoPage : public PhotoSelectPage {
   std::map<std::string, std::string> get_exifs() {
     std::map<std::string, std::string> exifs;
 
-    std::string file_name = conversionEngine.getPhotoFilePath();
+    std::string file_name = photoFilenameVector[current_index];
     std::string exif_string = Utils::get_from_exifblob_by_filePath(connection, file_name);
 
     std::auto_ptr<xercesc::XercesDOMParser> parser (new xercesc::XercesDOMParser());
@@ -675,127 +680,17 @@ class MultiPhotoPage : public PhotoSelectPage {
 
     // Build the page
     build_page();
+    count_tags();
+    rebuild_tag_view();
 
     // Add it to the registry so we can find this object when we get a callback
     WidgetRegistry<PhotoSelectPage>::set_widget(page_hbox, this);
   } 
 
-  static void page_vbox_size_allocate_cb(GtkWidget *widget, GdkRectangle *allocation,
-      gpointer user_data) {
-    MultiPhotoPage *photoSelectPage =
-        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
-    if (0 != photoSelectPage) {
-      photoSelectPage->page_vbox_size_allocate(widget, allocation, user_data);
-    }
-  }
-
-  void page_vbox_size_allocate(GtkWidget *widget, GdkRectangle *allocation, gpointer user_data) {
-    std::cout << "page_vbox_size_allocate_cb" << std::endl;
-    std::cout << "width " << allocation->width << " height " << allocation->height << std::endl;
-    int max_columns = (allocation->width - 2) / (DRAWING_AREA_WIDTH + 2 * DRAWING_AREA_MARGIN);
-    std::cout << "max_columns " << max_columns << std::endl;
-    if (max_columns != num_cols) {
-      rebuild_grid(max_columns);
-    }
-  }
-
-  void rebuild_grid(int max_columns) {
-    std::cout << "rebuild_grid" << std::endl;
-    gtk_widget_hide(grid);
-    GList *widget_list = gtk_container_get_children(GTK_CONTAINER(grid));
-
-    std::list<GtkWidget *> event_box_list;
-    for (GList *p = widget_list; p != NULL; p = g_list_next(p)) {
-      GtkWidget *event_box = GTK_WIDGET(p->data);
-      g_object_ref((gpointer)event_box);
-      event_box_list.push_back(event_box);
-    }
-
-    GtkWidget *new_grid = gtk_grid_new();
-    BOOST_FOREACH(GtkWidget *event_box, event_box_list) {
-      PhotoState &photo_state = event_box_map[event_box];
-      int pos = photo_state.get_pos();
-      int row = pos / max_columns;
-      int col = pos % max_columns;
-      photo_state.set_row(row);
-      photo_state.set_col(col);
-      gtk_container_remove(GTK_CONTAINER(grid), event_box);
-      gtk_grid_attach(GTK_GRID(new_grid), GTK_WIDGET(GTK_EVENT_BOX(event_box)), col, row, 1, 1);
-      g_object_unref((gpointer)event_box);
-      gtk_widget_show(event_box);
-    }
-
-    gtk_widget_destroy(GTK_WIDGET(grid));
-    gtk_widget_show(new_grid);
-    gtk_widget_destroy(scrolled_window);
-    scrolled_window = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
-        GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-    gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(scrolled_window),
-        GTK_SHADOW_ETCHED_OUT);
-    gtk_widget_show(GTK_WIDGET(scrolled_window));
-    gtk_box_pack_start(GTK_BOX(central_hbox), scrolled_window, FALSE, FALSE, 0);
-
-    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window), new_grid);
-    grid = new_grid;
-    num_cols = max_columns;
-  }
-
-  static void drawing_area_realize_cb(GtkWidget *widget, gpointer user_data) {
-  }
-
-  static void drawing_area_draw_cb(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
-    MultiPhotoPage *photoSelectPage =
-        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
-    if (0 != photoSelectPage) {
-      photoSelectPage->drawing_area_draw(widget, cr, user_data);
-    }
-  }
-
-  static void drawing_area_key_press_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    MultiPhotoPage *photoSelectPage =
-        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
-    if (0 != photoSelectPage) {
-      photoSelectPage->drawing_area_key_press(widget, event, user_data);
-    }
-  }
-
-  void drawing_area_key_press(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    guint keyval = ((GdkEventKey *)event)->keyval;
-    switch (keyval) {
-      case 'r':
-        rotate(widget);
-      default:
-        break;
-    }
-  }
-
-  void drawing_area_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
-    GtkDrawingArea *drawing_area = GTK_DRAWING_AREA(widget);
-    GtkEventBox *event_box = GTK_EVENT_BOX(gtk_widget_get_parent(GTK_WIDGET(drawing_area)));
-    PhotoState &photo_state = event_box_map[GTK_WIDGET(event_box)];
-    gint surface_height = gtk_widget_get_allocated_height(GTK_WIDGET(drawing_area));
-    gint surface_width = gtk_widget_get_allocated_width(GTK_WIDGET(drawing_area));
-    if (photo_state.get_surface_width() == surface_width &&
-        photo_state.get_surface_height() == surface_height &&
-        NULL != photo_state.get_pixels()) {
-      // Do nothing, pixels are already computed
-    } else {
-      get_photo_thumbnail(photo_state, surface_width, surface_height);
-    }
-    int stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, surface_width);
-    cairo_surface_t *source_surface = cairo_image_surface_create_for_data(
-        photo_state.get_pixels(),
-        CAIRO_FORMAT_RGB24, surface_width, surface_height, stride);
-    cairo_set_source_surface(cr, source_surface, 0, 0);
-    cairo_paint(cr);
-    cairo_surface_destroy(source_surface);
-  }
-
   void get_photo_thumbnail(PhotoState &photo_state, int surface_width, int surface_height) {
       struct timespec t0;
     clock_gettime(CLOCK_MONOTONIC_RAW, &t0);
-    conversionEngine.go_to(photo_state.get_pos());
+    conversionEngine.go_to(photo_state.get_index());
     struct timespec t1;
     clock_gettime(CLOCK_MONOTONIC_RAW, &t1);
     std::string file_name = conversionEngine.getPhotoFilePath();
@@ -815,7 +710,17 @@ class MultiPhotoPage : public PhotoSelectPage {
     std::cout << "Time: goto=" << tdiff(t1,t0) << " getConvertedPhotoFile=" <<
         tdiff(t2,t1) << " scale_and_pan_and_rotate=" <<
         tdiff(t3,t2) << " total=" << tdiff(t3,t0) << std::endl;
-    photo_state.set_pixels(pixels, surface_width, surface_height, rotation);
+    
+    // Convert pixels to the format favored by GtkIconView
+    unsigned char *newpixels = (unsigned char *)malloc(surface_width * surface_height * 3);
+    unsigned char *p = newpixels;
+    for (int i = 0; i < surface_width * surface_height; i++) {
+      *p++ = pixels[4*i+2];
+      *p++ = pixels[4*i+1];
+      *p++ = pixels[4*i+0];
+    }
+    free(pixels);
+    photo_state.set_pixels(newpixels, surface_width, surface_height, rotation);
   }
 
   int tdiff(const struct timespec &endtime, const struct timespec &starttime) {
@@ -832,44 +737,6 @@ class MultiPhotoPage : public PhotoSelectPage {
       M = 1.0;
     }
   }
-
-  static gboolean
-  drawing_area_enter_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    gtk_grab_add(widget);
-  } 
-
-  static gboolean
-  drawing_area_leave_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    gtk_grab_remove(widget);
-  } 
-
-  static gboolean
-  event_box_clicked_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    MultiPhotoPage *photoSelectPage =
-        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
-    if (0 != photoSelectPage) {
-      photoSelectPage->event_box_clicked(widget);
-    }
-    return TRUE;
-  }
-
-  void
-  event_box_clicked(GtkWidget *widget) {
-    PhotoState &photo_state = event_box_map[widget];
-    GtkEventBox *event_box = GTK_EVENT_BOX(widget);
-    if (photo_state.get_is_selected()) {
-      gtk_widget_override_background_color(widget, GTK_STATE_FLAG_NORMAL, NULL);
-      photo_state.set_is_selected(false);
-    } else {
-      GdkRGBA rgba;
-      gdk_rgba_parse(&rgba, "red");
-      gtk_widget_override_background_color(widget, GTK_STATE_FLAG_NORMAL, &rgba);
-      photo_state.set_is_selected(true);
-    }
-    count_tags();
-    rebuild_tag_view();
-  }
-  
 
   static void tab_label_button_clicked_cb(GtkWidget *widget, gpointer data) {
     MultiPhotoPage *photoSelectPage = (MultiPhotoPage *)data;
@@ -888,18 +755,15 @@ class MultiPhotoPage : public PhotoSelectPage {
 
   void clear_button_clicked(GtkWidget *widget, gpointer data) {
     std::string tag_name = tag_button_map[widget];
-    int pos = 0;
+    int index = 0;
     BOOST_FOREACH(std::string file_name, photoFilenameVector) {
-      int row = index_to_row(pos);
-      int col = index_to_col(pos);
-      GtkWidget *event_box = gtk_grid_get_child_at(GTK_GRID(grid), col, row);
-      PhotoState &photo_state = event_box_map[event_box];
+      PhotoState &photo_state = photo_state_map[index];
       if (photo_state.get_is_selected()) {
         if (0 != all_photo_tags_for_project[file_name].count(tag_name)) {
           Utils::remove_tag_by_filename(connection, tag_name, file_name);
         }
       }
-      pos++;
+      index++;
     }
     count_tags();
     rebuild_tag_view();
@@ -915,22 +779,140 @@ class MultiPhotoPage : public PhotoSelectPage {
 
   void set_button_clicked(GtkWidget *widget, gpointer data) {
     std::string tag_name = tag_button_map[widget];
-    int pos = 0;
+    int index = 0;
     BOOST_FOREACH(std::string file_name, photoFilenameVector) {
-      int row = index_to_row(pos);
-      int col = index_to_col(pos);
-      GtkWidget *event_box = gtk_grid_get_child_at(GTK_GRID(grid), col, row);
-      PhotoState &photo_state = event_box_map[event_box];
+      PhotoState &photo_state = photo_state_map[index];
       if (photo_state.get_is_selected()) {
         if (0 == all_photo_tags_for_project[file_name].count(tag_name)) {
           Utils::add_tag_by_filename(connection, tag_name, file_name);
         }
       }
-      pos++;
+      index++;
     }
     count_tags();
     rebuild_tag_view();
   }
+
+  //! A hack to force the GtkIconView to re-layout. It sets it to 1 column then immediately
+  //! sets it back to it's correct number of columns.
+  static void icon_view_size_allocate_cb(GtkWidget *widget, GdkRectangle *allocation,
+      gpointer user_data) {
+    GtkIconView *icon_view = GTK_ICON_VIEW(widget);
+
+    gint num_cols = gtk_icon_view_get_columns(GTK_ICON_VIEW(widget));
+    gtk_icon_view_set_columns(GTK_ICON_VIEW(widget), 1);
+    gtk_icon_view_set_columns(GTK_ICON_VIEW(widget), num_cols);
+  }
+
+  static void icon_view_key_press_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    MultiPhotoPage *photoSelectPage =
+        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage->icon_view_key_press(widget, event, user_data);
+    }
+  }
+
+  void icon_view_key_press(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    GtkTreePath *path;
+    GtkCellRenderer *cell;
+    int index;
+    gint x, y;
+    find_pointer_coords(widget, &x, &y);
+    gboolean has_item = gtk_icon_view_get_item_at_pos(GTK_ICON_VIEW(widget), x, y, &path, &cell);
+    if (has_item) {
+      guint keyval = ((GdkEventKey *)event)->keyval;
+      switch (keyval) {
+        case 'r':
+          index = gtk_tree_path_get_indices(path)[0];
+          rotate(widget, index, path, cell);
+        default:
+          break;
+      }
+    }
+  }
+
+  gboolean static icon_view_button_press_cb(GtkWidget *widget,
+      GdkEvent *event, gpointer user_data) {
+    MultiPhotoPage *photoSelectPage =
+        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    if (0 != photoSelectPage) {
+      return photoSelectPage->icon_view_button_press(widget, event, user_data);
+    }
+  }
+
+  gboolean icon_view_button_press(GtkWidget *widget,
+      GdkEvent *event, gpointer user_data) {
+    int index = find_photo_index(widget);
+    if (-1 != index) {
+      PhotoState &photo_state = photo_state_map[index];
+      GtkTreePath *path = gtk_tree_path_new_from_indices(index, -1);
+      gboolean is_selected = gtk_icon_view_path_is_selected(GTK_ICON_VIEW(widget), path);
+      if (is_selected) {
+        gtk_icon_view_unselect_path(GTK_ICON_VIEW(widget), path);
+        photo_state.set_is_selected(false);
+      } else {
+        gtk_icon_view_select_path(GTK_ICON_VIEW(widget), path);
+        photo_state.set_is_selected(true);
+      }
+      count_tags();
+      rebuild_tag_view();
+      current_index = index;
+      rebuild_exif_view();
+    }
+    return TRUE;
+  }
+
+  //! Find the index (index of photo in the photoFileVector) of the icon under
+  //! the cursor in a GtkIconView. Returns -1 if the cursor is not over an icon.
+  int find_photo_index(GtkWidget *widget) {
+    gint x, y, index;
+    find_pointer_coords(widget, &x, &y);
+    GtkTreePath *path;
+    GtkCellRenderer *cell;
+    gboolean has_item = gtk_icon_view_get_item_at_pos(GTK_ICON_VIEW(widget), x, y, &path, &cell);
+    if (has_item) {
+      index = gtk_tree_path_get_indices(path)[0];
+    } else {
+      index = -1;
+    }
+    return index;
+  }
+
+  static void find_pointer_coords(GtkWidget *widget, gint *x, gint *y) {
+    gtk_widget_get_pointer(widget, x, y);
+    *x += gtk_adjustment_get_value(gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(widget)));
+    *y += gtk_adjustment_get_value(gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(widget)));
+  }
+
+  static gboolean
+  icon_view_enter_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    MultiPhotoPage *photoSelectPage =
+        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    if (0 != photoSelectPage) {
+      return photoSelectPage-> icon_view_enter(widget, event, user_data);
+    }
+  } 
+
+  //! grab the focus when the GtkIconView is entered. This lets it get keyboard events.
+  //! The grab is removed in icon_view_leave()
+  gboolean icon_view_enter(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    gtk_grab_add(widget);
+  }
+
+  static gboolean
+  icon_view_leave_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    MultiPhotoPage *photoSelectPage =
+        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    if (0 != photoSelectPage) {
+      return photoSelectPage-> icon_view_leave(widget, event, user_data);
+    }
+  } 
+
+  //! un-grab the focus when the GtkIconView is entered. This lets it get keyboard events.
+  //! Focus is  grabbed in icon_view_enter()
+  gboolean icon_view_leave(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    gtk_grab_remove(widget);
+  } 
 
   void quit();
 };
