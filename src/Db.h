@@ -1,5 +1,5 @@
-#ifndef UTILS_H__
-#define UTILS_H__
+#ifndef DB_H__
+#define DB_H__
 
 /* MySQL Connector/C++ specific headers */
 #include <driver.h>
@@ -513,4 +513,4 @@ class Db {
   }
 };
 
-#endif // UTILS_H__
+#endif // DB_H__
