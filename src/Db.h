@@ -17,7 +17,7 @@
 
 //! A class to hold some commonly used procedures.
 
-class Utils {
+class Db {
   public:
     struct photo_tag_s {
       // TODO: Someday we might want to put something here
@@ -385,7 +385,7 @@ class Utils {
     std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, checksum.c_str());
     int updateCount = prepared_statement->executeUpdate();
-    int64_t checksum_key = Utils::get_id_from_Checksum(connection, checksum);
+    int64_t checksum_key = Db::get_id_from_Checksum(connection, checksum);
     return checksum_key;
   }
 
@@ -418,7 +418,7 @@ class Utils {
     int64_t checksum_key) {
 
     // If it's already in the database, just return its id
-    int64_t photoFile_key = Utils::get_id_from_PhotoFile(connection, filePath, checksum_key);
+    int64_t photoFile_key = Db::get_id_from_PhotoFile(connection, filePath, checksum_key);
     if (photoFile_key != -1) {
       return photoFile_key;
     }

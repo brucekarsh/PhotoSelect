@@ -90,7 +90,7 @@ class DeleteProjectWindow {
     gtk_box_pack_end(GTK_BOX(button_hbox), accept_button, FALSE, FALSE, 0);
     gtk_box_pack_end(GTK_BOX(button_hbox), quit_button, FALSE, FALSE, 0);
 
-    std::list<std::string>project_names = Utils::get_project_names(connection);
+    std::list<std::string>project_names = Db::get_project_names(connection);
     GtkWidget* radio_button;
     first_radio_button = NULL;
     BOOST_FOREACH(std::string project_name, project_names) {
@@ -148,7 +148,7 @@ DeleteProjectWindow::accept() {
   if (0 == project_name.size()) {
     return;
   }
-  Utils::delete_project(connection, project_name);
+  Db::delete_project(connection, project_name);
   quit();
 }
 #endif // DELETEPROJECTWINDOW_H__

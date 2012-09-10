@@ -5,7 +5,7 @@
 #include <fstream>
 #include <boost/foreach.hpp>
 
-#include "Utils.h"
+#include "Db.h"
 #include "WidgetRegistry.h"
 
 class Preferences;
@@ -101,7 +101,7 @@ class OpenProjectWindow {
     gtk_box_pack_end(GTK_BOX(button_hbox), accept_button, FALSE, FALSE, 0);
     gtk_box_pack_end(GTK_BOX(button_hbox), quit_button, FALSE, FALSE, 0);
 
-    std::list<std::string> project_names = Utils::get_project_names(connection);
+    std::list<std::string> project_names = Db::get_project_names(connection);
     
     GtkWidget* radio_button;
     first_radio_button = NULL;
@@ -174,7 +174,7 @@ OpenProjectWindow::apply() {
   if (0 == project_name.size()) {
     return;
   }
-  std::vector<std::string> photoFilenameVector = Utils::get_project_photo_files(connection,
+  std::vector<std::string> photoFilenameVector = Db::get_project_photo_files(connection,
       project_name);
   SinglePhotoPage *photoSelectPage = new SinglePhotoPage(connection, photoFileCache);
   photoSelectPage->setup(photoFilenameVector, project_name, preferences);

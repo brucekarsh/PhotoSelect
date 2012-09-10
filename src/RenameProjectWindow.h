@@ -118,7 +118,7 @@ class RenameProjectWindow {
     gtk_box_pack_end(GTK_BOX(button_hbox), accept_button, FALSE, FALSE, 0);
     gtk_box_pack_end(GTK_BOX(button_hbox), quit_button, FALSE, FALSE, 0);
 
-    std::list<std::string> project_names = Utils::get_project_names(connection);
+    std::list<std::string> project_names = Db::get_project_names(connection);
     
     GtkWidget* radio_button;
     first_radio_button = NULL;
@@ -229,7 +229,7 @@ RenameProjectWindow::accept() {
     return;
   }
 
-  bool rename_was_successful = Utils::rename_project(connection,
+  bool rename_was_successful = Db::rename_project(connection,
       old_project_name, new_project_name);
   if (!rename_was_successful) {
     if (error_string.length() != 0) error_string += "\n";

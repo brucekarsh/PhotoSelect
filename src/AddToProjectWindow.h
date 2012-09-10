@@ -79,7 +79,7 @@ class AddToProjectWindow {
       return;
     }
     // get its project_id
-    long project_id = Utils::get_project_id(connection, project_name);
+    long project_id = Db::get_project_id(connection, project_name);
     if (project_id == -1) {
       query_view.set_error_label("Missing project id.");
       return;
@@ -97,7 +97,7 @@ class AddToProjectWindow {
       long photo_file_id = *id_iter;
       std::string photo_file_name = *filename_iter;
       ++id_iter;
-      Utils::add_photo_to_project(connection, project_id, photo_file_id);
+      Db::add_photo_to_project(connection, project_id, photo_file_id);
     }
     connection->commit();
     quit();

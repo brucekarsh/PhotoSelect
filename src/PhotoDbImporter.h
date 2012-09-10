@@ -27,7 +27,7 @@
 #include <xercesc/framework/MemBufFormatTarget.hpp>
 #include <iostream>
 
-#include "Utils.h"
+#include "Db.h"
 #include "XStr.h"
 
 XERCES_CPP_NAMESPACE_USE
@@ -124,8 +124,8 @@ class PhotoDbImporter {
   int
   insert_into_database() {
     BOOST_FOREACH(PhotoDbEntry photoDbEntry, photoDbEntries) {
-      int64_t checksum_key = Utils::insert_into_Checksum(connection, photoDbEntry.checksum);
-      int64_t photoFile_key = Utils::insert_into_PhotoFile(connection, photoDbEntry.filePath,
+      int64_t checksum_key = Db::insert_into_Checksum(connection, photoDbEntry.checksum);
+      int64_t photoFile_key = Db::insert_into_PhotoFile(connection, photoDbEntry.filePath,
           checksum_key);
 
       insert_into_exif_tables(photoDbEntry.exifEntries, checksum_key);
@@ -143,7 +143,7 @@ class PhotoDbImporter {
       int64_t checksum_key) {
     // insert into ExifBlob
     std::string xmlString = make_exif_xml_string(exifEntries);
-    Utils::insert_into_exifblob(connection, checksum_key, xmlString);
+    Db::insert_into_exifblob(connection, checksum_key, xmlString);
     // find a time from the exif data
     std::list<std::string> fields;
     fields.push_back(std::string("Exif.Image.DateTime"));
@@ -171,7 +171,7 @@ class PhotoDbImporter {
       camera_time = import_time;
     }
 
-    Utils::insert_into_time(connection, checksum_key, camera_time, camera_time);
+    Db::insert_into_time(connection, checksum_key, camera_time, camera_time);
   }
 
 std::string

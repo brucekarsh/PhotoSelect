@@ -64,7 +64,7 @@ open_initial_project(sql::Connection *connection, BaseWindow *base_window,
   if (0 == project_name.size()) {
     return;
   }
-  std::vector<std::string> photoFilenameVector = Utils::get_project_photo_files(connection,
+  std::vector<std::string> photoFilenameVector = Db::get_project_photo_files(connection,
       project_name);
   SinglePhotoPage *photoSelectPage = new SinglePhotoPage(connection, photoFileCache);
   photoSelectPage->setup(photoFilenameVector, project_name, preferences);
@@ -102,18 +102,18 @@ sql::Connection *
 open_database(std::string dbhost, std::string user, std::string password, std::string database) {
 
   /* initiate url, user, password and database variables */
-  sql::Driver *driver = Utils::get_driver_instance();
+  sql::Driver *driver = Db::get_driver_instance();
   if (0 == driver) {
     std::cerr <<  "get_driver_instance() failed.\n" << std::endl;
     exit(1);
   }
 
   std::string url=dbhost;
-  sql::Connection *connection = Utils::get_connection(driver, url, user, password);
+  sql::Connection *connection = Db::get_connection(driver, url, user, password);
   if (NULL == connection) {
     std::cerr << "driver -> connect() failed\n" << std::endl;
   } else {
-    Utils::set_schema(connection, database);
+    Db::set_schema(connection, database);
   }
   return connection;
 }

@@ -23,7 +23,7 @@
 #include <xercesc/framework/MemBufInputSource.hpp>
 #include <xercesc/util/OutOfMemoryException.hpp>
 
-#include "Utils.h"
+#include "Db.h"
 
 #define SNAP_TIME(T) struct timespec T; clock_gettime(CLOCK_MONOTONIC_RAW, &T);
 
@@ -114,13 +114,13 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkWidget *scrolled_window;
     std::string tags_position;
     std::string exifs_position;
-    std::map<std::string, Utils::photo_tag_s> photo_tags;
-    std::map<std::string, Utils::project_tag_s> project_tags;
+    std::map<std::string, Db::photo_tag_s> photo_tags;
+    std::map<std::string, Db::project_tag_s> project_tags;
     std::map<std::string, int> all_tag_counts;
     std::map<std::string, int> set_tag_counts;
     std::map<std::string, int> clear_tag_counts;
     std::map<GtkWidget *, std::string> tag_button_map;
-    std::map<std::string, std::map<std::string, Utils::photo_tag_s> > all_photo_tags_for_project;
+    std::map<std::string, std::map<std::string, Db::photo_tag_s> > all_photo_tags_for_project;
 
   MultiPhotoPage(sql::Connection *connection_, PhotoFileCache *photoFileCache_) :
       conversionEngine(photoFileCache_), 
@@ -148,7 +148,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     if (rotation == 4) {
       rotation = 0;
     }
-    Utils::set_rotation(connection, file_path, rotation);
+    Db::set_rotation(connection, file_path, rotation);
     photo_state.clear_pixels();
     get_photo_thumbnail(photo_state, ICON_WIDTH, ICON_HEIGHT);
     GtkTreeIter iter;
@@ -326,7 +326,7 @@ num_photo_files = 100;
     }
 
     // Get all the tags for this project
-    project_tags = Utils::get_project_tags(connection, project_name);
+    project_tags = Db::get_project_tags(connection, project_name);
 
     // Don't do anything if the tag view is turned off
     if (tags_position == "none") {
@@ -360,7 +360,7 @@ num_photo_files = 100;
     // Put check buttons in tag_view_tags_box, one for each tag in the project
     int row_num = 0;
     tag_button_map.clear();
-    typedef std::pair<std::string, Utils::project_tag_s> map_entry_t;
+    typedef std::pair<std::string, Db::project_tag_s> map_entry_t;
     BOOST_FOREACH(map_entry_t map_entry, project_tags) {
       std::string name = map_entry.first;
       std::string display_text(name + " (" +
@@ -408,11 +408,11 @@ num_photo_files = 100;
     set_tag_counts.clear();
     clear_tag_counts.clear();
     // Get the tags for all the files in this project
-    all_photo_tags_for_project = Utils::get_all_photo_tags_for_project(connection, project_name);
+    all_photo_tags_for_project = Db::get_all_photo_tags_for_project(connection, project_name);
 
     // Count the tags
-    BOOST_FOREACH(Utils::all_photo_tags_map_entry_t map_entry, all_photo_tags_for_project) {
-      typedef std::pair<std::string, Utils::photo_tag_s> tag_map_entry_t;
+    BOOST_FOREACH(Db::all_photo_tags_map_entry_t map_entry, all_photo_tags_for_project) {
+      typedef std::pair<std::string, Db::photo_tag_s> tag_map_entry_t;
       BOOST_FOREACH(tag_map_entry_t e, map_entry.second) {
         std::string tag_name = e.first;
         all_tag_counts[tag_name] += 1;
@@ -428,8 +428,8 @@ num_photo_files = 100;
       // so we only want to look at selected photos
       if (photo_state.get_is_selected()) {
         // get all of the tags for the photo
-        std::map<std::string, Utils::photo_tag_s> photo_tags = all_photo_tags_for_project[filename];
-        typedef std::pair<std::string, Utils::project_tag_s> map_entry_t;
+        std::map<std::string, Db::photo_tag_s> photo_tags = all_photo_tags_for_project[filename];
+        typedef std::pair<std::string, Db::project_tag_s> map_entry_t;
         BOOST_FOREACH(map_entry_t map_entry, project_tags) {
           std::string tag_name = map_entry.first;
           if (0 != photo_tags.count(tag_name)) {
@@ -545,7 +545,7 @@ num_photo_files = 100;
     std::map<std::string, std::string> exifs;
 
     std::string file_name = photoFilenameVector[current_index];
-    std::string exif_string = Utils::get_from_exifblob_by_filePath(connection, file_name);
+    std::string exif_string = Db::get_from_exifblob_by_filePath(connection, file_name);
 
     std::auto_ptr<xercesc::XercesDOMParser> parser (new xercesc::XercesDOMParser());
     parser->setValidationScheme(xercesc::XercesDOMParser::Val_Never);
@@ -693,7 +693,7 @@ num_photo_files = 100;
     struct timespec t1;
     clock_gettime(CLOCK_MONOTONIC_RAW, &t1);
     std::string file_name = conversionEngine.getPhotoFilePath();
-    int rotation = Utils::get_rotation(connection, conversionEngine.getPhotoFilePath());
+    int rotation = Db::get_rotation(connection, conversionEngine.getPhotoFilePath());
     ConvertedPhotoFile *convertedPhotoFile = conversionEngine.getConvertedPhotoFile(
         surface_width, surface_height, rotation); 
     struct timespec t2;
@@ -759,7 +759,7 @@ num_photo_files = 100;
       PhotoState &photo_state = photo_state_map[index];
       if (photo_state.get_is_selected()) {
         if (0 != all_photo_tags_for_project[file_name].count(tag_name)) {
-          Utils::remove_tag_by_filename(connection, tag_name, file_name);
+          Db::remove_tag_by_filename(connection, tag_name, file_name);
         }
       }
       index++;
@@ -783,7 +783,7 @@ num_photo_files = 100;
       PhotoState &photo_state = photo_state_map[index];
       if (photo_state.get_is_selected()) {
         if (0 == all_photo_tags_for_project[file_name].count(tag_name)) {
-          Utils::add_tag_by_filename(connection, tag_name, file_name);
+          Db::add_tag_by_filename(connection, tag_name, file_name);
         }
       }
       index++;

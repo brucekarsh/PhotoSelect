@@ -109,7 +109,7 @@ NewProjectWindow::accept() {
     return;
   }
   // Insert it into the database and get its id
-  long project_id = Utils::insert_into_project(connection, project_name);
+  long project_id = Db::insert_into_project(connection, project_name);
   if (project_id == -1) {
     query_view.set_error_label("Duplicate project name.");
     return;
@@ -131,7 +131,7 @@ NewProjectWindow::accept() {
       ++filename_iter) {
     long photo_file_id = *id_iter;
     ++id_iter;
-    Utils::add_photo_to_project(connection, project_id, photo_file_id);
+    Db::add_photo_to_project(connection, project_id, photo_file_id);
   }
   connection->commit();
 

@@ -21,7 +21,7 @@
 #include <xercesc/framework/MemBufInputSource.hpp>
 #include <xercesc/util/OutOfMemoryException.hpp>
 
-#include "Utils.h"
+#include "Db.h"
 
 class PhotoFileCache;
 class Preferences;
@@ -72,8 +72,8 @@ class SinglePhotoPage : public PhotoSelectPage {
     boolean calculated_initial_scaling;
     std::string tags_position;
     std::string exifs_position;
-    std::map<std::string, Utils::photo_tag_s> photo_tags;
-    std::map<std::string, Utils::project_tag_s> project_tags;
+    std::map<std::string, Db::photo_tag_s> photo_tags;
+    std::map<std::string, Db::project_tag_s> project_tags;
 
     //static const float ZOOMRATIO = 1.18920711500272106671;  // 2^(1/4)
 
@@ -276,10 +276,10 @@ class SinglePhotoPage : public PhotoSelectPage {
 
     // Get all the tags for this photo
     std::string file_name = conversionEngine.getPhotoFilePath();
-    photo_tags = Utils::get_photo_tags(connection, project_name, file_name);
+    photo_tags = Db::get_photo_tags(connection, project_name, file_name);
 
     // Get all the tags for this project
-    project_tags = Utils::get_project_tags(connection, project_name);
+    project_tags = Db::get_project_tags(connection, project_name);
 
     // Don't do anything if the tag view is turned off
     if (tags_position == "none") {
@@ -307,10 +307,10 @@ class SinglePhotoPage : public PhotoSelectPage {
     gtk_widget_show(tag_view_tags_box);
 
     // Put check buttons in tag_view_tags_box, one for each tag in the project
-    typedef std::pair<std::string, Utils::project_tag_s> map_entry_t;
+    typedef std::pair<std::string, Db::project_tag_s> map_entry_t;
     BOOST_FOREACH(map_entry_t map_entry, project_tags) {
       std::string name = map_entry.first;
-      Utils::project_tag_s project_tag = map_entry.second;
+      Db::project_tag_s project_tag = map_entry.second;
       // Make a button, pack it, show it and connect it.
       GtkWidget *button = gtk_check_button_new_with_label(name.c_str());
       gtk_box_pack_start(GTK_BOX(tag_view_tags_box), button, FALSE, FALSE, 0);
@@ -443,7 +443,7 @@ class SinglePhotoPage : public PhotoSelectPage {
     std::map<std::string, std::string> exifs;
 
     std::string file_name = conversionEngine.getPhotoFilePath();
-    std::string exif_string = Utils::get_from_exifblob_by_filePath(connection, file_name);
+    std::string exif_string = Db::get_from_exifblob_by_filePath(connection, file_name);
 
     std::auto_ptr<xercesc::XercesDOMParser> parser (new xercesc::XercesDOMParser());
     parser->setValidationScheme(xercesc::XercesDOMParser::Val_Never);
@@ -675,7 +675,7 @@ class SinglePhotoPage : public PhotoSelectPage {
       val = siz;
     }
     conversionEngine.go_to(val-1);   
-    rotation = Utils::get_rotation(connection, conversionEngine.getPhotoFilePath());
+    rotation = Db::get_rotation(connection, conversionEngine.getPhotoFilePath());
     calculated_initial_scaling = false;
     set_position_entry();
     gtk_widget_grab_focus(next_button);
@@ -792,7 +792,7 @@ class SinglePhotoPage : public PhotoSelectPage {
 
   void next() {
     conversionEngine.next();   
-    rotation = Utils::get_rotation(connection, conversionEngine.getPhotoFilePath());
+    rotation = Db::get_rotation(connection, conversionEngine.getPhotoFilePath());
     calculated_initial_scaling = false;
     set_position_entry();
     rebuild_tag_view();
@@ -802,7 +802,7 @@ class SinglePhotoPage : public PhotoSelectPage {
 
   void back() {
     conversionEngine.back();   
-    rotation = Utils::get_rotation(connection, conversionEngine.getPhotoFilePath());
+    rotation = Db::get_rotation(connection, conversionEngine.getPhotoFilePath());
     calculated_initial_scaling = false;
     set_position_entry();
     rebuild_tag_view();
@@ -815,7 +815,7 @@ class SinglePhotoPage : public PhotoSelectPage {
     if (rotation == 4) {
       rotation = 0;
     }
-    Utils::set_rotation(connection, conversionEngine.getPhotoFilePath(), rotation);
+    Db::set_rotation(connection, conversionEngine.getPhotoFilePath(), rotation);
     invalidate_image();
   }
 
@@ -937,8 +937,8 @@ class SinglePhotoPage : public PhotoSelectPage {
     std::string tag_name = gtk_button_get_label(GTK_BUTTON(togglebutton));
     bool active = gtk_toggle_button_get_active(togglebutton);
     std::string file_name = conversionEngine.getPhotoFilePath();
-    project_tags = Utils::get_project_tags(connection, project_name);
-    photo_tags = Utils::get_photo_tags(connection, project_name, file_name);
+    project_tags = Db::get_project_tags(connection, project_name);
+    photo_tags = Db::get_photo_tags(connection, project_name, file_name);
 
     // Ignore this click if it's for a tag that's not in our project
     if (0 == project_tags.count(tag_name)) {
@@ -946,9 +946,9 @@ class SinglePhotoPage : public PhotoSelectPage {
     }
 
     if (active) {
-      Utils::add_tag_by_filename(connection, tag_name, file_name);
+      Db::add_tag_by_filename(connection, tag_name, file_name);
     } else {
-      Utils::remove_tag_by_filename(connection, tag_name, file_name);
+      Db::remove_tag_by_filename(connection, tag_name, file_name);
     }
   }
 };
