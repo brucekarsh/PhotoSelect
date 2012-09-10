@@ -48,42 +48,28 @@ class MultiPhotoPage : public PhotoSelectPage {
     class PhotoState {
         int index;
         bool is_selected;
-        int surface_width;
-        int surface_height;
         int rotation;
-        unsigned char *pixels;
+        GdkPixbuf *pixbuf;
       public:
         PhotoState(bool is_selected = false, int index = 0) :
-            is_selected(is_selected), index(index), pixels(NULL),
-            surface_width(0), surface_height(0) {};
-        ~PhotoState() { 
-          if (NULL != pixels) {
-            free(pixels);
-          }
-        };
+            is_selected(is_selected), index(index), pixbuf(NULL)
+            {};
+        ~PhotoState() { clear_pixbuf(); };
         int get_index() { return index; };
         int get_is_selected() { return is_selected; };
         void set_is_selected(bool b) { is_selected = b; };
-        int get_surface_width() { return surface_width; };
-        int get_surface_height() { return surface_width; };
         int get_rotation() { return rotation; };
-        unsigned char * get_pixels() { return pixels; };
-        void set_pixels(unsigned char *pixels, int surface_width,
-            int surface_height, int rotation) {
-          clear_pixels();
-	  this->pixels = pixels;
-          this->surface_width = surface_width;
-          this->surface_height = surface_height;
+        GdkPixbuf* get_pixbuf() { return pixbuf; };
+        void set_pixbuf(GdkPixbuf *pixbuf, int rotation) {
+          clear_pixbuf();
+	  this->pixbuf = pixbuf;
           this->rotation = rotation;
         }
-        void clear_pixels() {
-          if (pixels) {
-            free(pixels);
-            pixels = 0;
+        void clear_pixbuf() {
+          if (pixbuf) {
+            g_object_unref(G_OBJECT(pixbuf));
+            pixbuf = 0;
           }
-          surface_width = 0;
-          surface_height = 0;
-          surface_height = 0;
           rotation = 0;
         }
     };
@@ -112,6 +98,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkWidget *tab_label_button;
     GtkWidget *tag_view_box;
     GtkWidget *exif_view_box;
+    GtkWidget *icon_view;
     GtkWidget *scrolled_window;
     std::string tags_position;
     std::string exifs_position;
@@ -150,15 +137,11 @@ class MultiPhotoPage : public PhotoSelectPage {
       rotation = 0;
     }
     Db::set_rotation(connection, file_path, rotation);
-    photo_state.clear_pixels();
+    photo_state.clear_pixbuf();
     get_photo_thumbnail(photo_state, ICON_WIDTH, ICON_HEIGHT);
     GtkTreeIter iter;
     gtk_tree_model_get_iter(GTK_TREE_MODEL(list_store), &iter, path);
-    GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data(photo_state.get_pixels(),
-        GDK_COLORSPACE_RGB,
-        FALSE, 8, ICON_WIDTH, ICON_HEIGHT, ICON_STRIDE, pixbuf_destroy_cb, NULL);
-    // pixbuf is destroyed in pixbuf_destroy_cb
-    gtk_list_store_set(list_store, &iter, COL_PIXBUF, pixbuf, -1);
+    gtk_list_store_set(list_store, &iter, COL_PIXBUF, photo_state.get_pixbuf(), -1);
   }
 
   PhotoSelectPage *clone() {
@@ -264,23 +247,19 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkTreeIter iter;
 
     int num_photo_files = photoFilenameVector.size();
-num_photo_files = 100;
+num_photo_files = 20;
 
     // Iterate over the photo files, make GtkEventBox, GtkDrawingArea, PhotoState for
     // each one, wire it up, etc
     for (int i = 0; i < num_photo_files; i++) {
-      PhotoState photo_state(false, i);
-      photo_state_map[i] = photo_state;
+      photo_state_map[i] = PhotoState(false, i);
+      PhotoState &photo_state = photo_state_map[i];
       get_photo_thumbnail(photo_state_map[i], ICON_WIDTH, ICON_HEIGHT);
-      GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data(photo_state_map[i].get_pixels(),
-          GDK_COLORSPACE_RGB,
-          FALSE, 8, ICON_WIDTH, ICON_HEIGHT, ICON_STRIDE, pixbuf_destroy_cb, NULL);
-      // pixbuf is destroyed in pixbuf_destroy_cb
       gtk_list_store_append(list_store, &iter);
-      gtk_list_store_set(list_store, &iter, COL_PIXBUF, pixbuf, -1);
+      gtk_list_store_set(list_store, &iter, COL_PIXBUF, photo_state.get_pixbuf(), -1);
     }
     GtkTreeModel *tree_model = GTK_TREE_MODEL(list_store);
-    GtkWidget *icon_view = gtk_icon_view_new_with_model (tree_model);
+    icon_view = gtk_icon_view_new_with_model (tree_model);
     gtk_widget_add_events(icon_view, GDK_KEY_PRESS_MASK | GDK_ENTER_NOTIFY_MASK
         | GDK_LEAVE_NOTIFY_MASK);
 
@@ -307,8 +286,7 @@ num_photo_files = 100;
   }
 
   static void pixbuf_destroy_cb(guchar *pixels, gpointer data) {
-    printf("pixbuf_destroy_cb\n");
-    // TODO: We need to actually destroy the pixbuf here, I think
+    free(pixels);
   }
 
   // Adds a tag view to the MultiPhotoPage. The tag view (tag_view_box) is put into
@@ -720,7 +698,9 @@ num_photo_files = 100;
       *p++ = pixels[4*i+0];
     }
     free(pixels);
-    photo_state.set_pixels(newpixels, surface_width, surface_height, rotation);
+    GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data(newpixels, GDK_COLORSPACE_RGB,
+        FALSE, 8, ICON_WIDTH, ICON_HEIGHT, ICON_STRIDE, pixbuf_destroy_cb, NULL);
+    photo_state.set_pixbuf(pixbuf, rotation);
   }
 
   int tdiff(const struct timespec &endtime, const struct timespec &starttime) {
@@ -860,6 +840,8 @@ num_photo_files = 100;
       rebuild_tag_view();
       current_index = index;
       rebuild_exif_view();
+      // make sure that the icon_view retains the keyboard focus (the rebuilds sometimes steal it)
+      gtk_grab_add(icon_view);
     }
     return TRUE;
   }
