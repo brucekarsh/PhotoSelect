@@ -152,6 +152,12 @@ class MultiPhotoPage : public PhotoSelectPage {
     return cloned_photo_select_page;
   }
 
+  SinglePhotoPage *openSinglePhotoPage() {
+    SinglePhotoPage *single_photo_select_page = new SinglePhotoPage(connection, photoFileCache);
+    single_photo_select_page->setup(photoFilenameVector, project_name, thePreferences);
+    return single_photo_select_page;
+  }
+
   GtkWidget *
   get_notebook_page() {
     return page_hbox;
@@ -247,7 +253,6 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkTreeIter iter;
 
     int num_photo_files = photoFilenameVector.size();
-num_photo_files = 20;
 
     // Iterate over the photo files, make GtkEventBox, GtkDrawingArea, PhotoState for
     // each one, wire it up, etc
@@ -266,6 +271,7 @@ num_photo_files = 20;
     g_signal_connect(icon_view, "key-press-event", G_CALLBACK(icon_view_key_press_cb), 0);
     g_signal_connect(icon_view, "size_allocate", G_CALLBACK(icon_view_size_allocate_cb), 0);
     g_signal_connect(icon_view, "button-press-event", G_CALLBACK(icon_view_button_press_cb), 0);
+    g_signal_connect(icon_view, "popup-menu", G_CALLBACK(icon_view_popup_menu_cb), 0);
     g_signal_connect(icon_view, "enter-notify-event", G_CALLBACK(icon_view_enter_cb), NULL);
     g_signal_connect(icon_view, "leave-notify-event", G_CALLBACK(icon_view_leave_cb), NULL);
 
@@ -821,8 +827,22 @@ num_photo_files = 20;
     }
   }
 
-  gboolean icon_view_button_press(GtkWidget *widget,
-      GdkEvent *event, gpointer user_data) {
+  //! Object callback for a mouse button press
+  gboolean icon_view_button_press(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    if (event->type == GDK_BUTTON_PRESS && event->button.button == 1) {
+      return icon_view_button_press_left(widget, event, user_data);
+    } else if (event->type == GDK_BUTTON_PRESS && event->button.button == 3) {
+      return icon_view_button_press_right(widget, event, user_data);
+    } else if (event->type == GDK_2BUTTON_PRESS && event->button.button == 1) {
+      int index = find_photo_index(widget);
+      open_single_photo_page(index);
+    } else {
+    }
+    return false;
+  }
+
+  //! Object callback for a LEFT mouse button press
+  gboolean icon_view_button_press_left(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     int index = find_photo_index(widget);
     if (-1 != index) {
       PhotoState &photo_state = photo_state_map[index];
@@ -846,6 +866,12 @@ num_photo_files = 20;
     return TRUE;
   }
 
+  //! Object callback for a RIGHT mouse button press
+  gboolean icon_view_button_press_right(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    view_icon_view_popup_menu(widget, (GdkEventButton*)event, user_data);
+    return TRUE;
+  }
+
   //! Find the index (index of photo in the photoFileVector) of the icon under
   //! the cursor in a GtkIconView. Returns -1 if the cursor is not over an icon.
   int find_photo_index(GtkWidget *widget) {
@@ -861,6 +887,61 @@ num_photo_files = 20;
       index = -1;
     }
     return index;
+  }
+
+  static gboolean icon_view_popup_menu_cb(GtkWidget *widget, gpointer user_data) {
+    MultiPhotoPage *photoSelectPage =
+        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    if (0 != photoSelectPage) {
+      return photoSelectPage-> icon_view_popup_menu(widget, user_data);
+    }
+  }
+
+  gboolean icon_view_popup_menu(GtkWidget *widget, gpointer user_data) {
+    view_icon_view_popup_menu(widget, (GdkEventButton*)0, user_data);
+    return true;
+  }
+
+  void view_icon_view_popup_menu(GtkWidget *widget, GdkEventButton *event, gpointer userdata) {
+    GtkWidget *menu = gtk_menu_new();
+
+    GtkWidget *menuitem1 = gtk_menu_item_new_with_label("Open Image Viewer");
+    g_signal_connect(menuitem1, "activate", (GCallback) icon_view_popup_activate_cb, widget);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem1);
+
+    GtkWidget *menuitem2 = gtk_menu_item_new_with_label("Do something else");
+    g_signal_connect(menuitem2, "activate", (GCallback) icon_view_popup_activate_cb, widget);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem2);
+
+    gtk_widget_show_all(menu);
+    gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, (event != NULL) ? event->button : 0,
+        gdk_event_get_time((GdkEvent*)event));
+  }
+
+  static void icon_view_popup_activate_cb(GtkMenuItem *menu_item, gpointer user_data) {
+    GtkWidget *widget = (GtkWidget *)user_data;
+    MultiPhotoPage *photoSelectPage =
+        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage-> icon_view_popup_activate(menu_item, user_data);
+    }
+  }
+
+  void icon_view_popup_activate(GtkMenuItem *menu_item, gpointer user_data) {
+    std::string label = gtk_menu_item_get_label(menu_item);
+    if (label == "Open Image Viewer") {
+      GtkWidget *widget = (GtkWidget*) user_data;
+      int index = find_photo_index(widget);
+      if (-1 != index) {
+        open_single_photo_page(index);
+      }
+    }
+  }
+
+  void open_single_photo_page(int index) {
+      SinglePhotoPage *single_photo_page = openSinglePhotoPage();
+      single_photo_page->set_position(index+1); // (set_position is 1-based)
+      add_page_to_base_window(single_photo_page);
   }
 
   static void find_pointer_coords(GtkWidget *widget, gint *x, gint *y) {
@@ -900,6 +981,7 @@ num_photo_files = 20;
   } 
 
   void quit();
+  void add_page_to_base_window(PhotoSelectPage *photo_page);
 };
 
 #include "BaseWindow.h"
@@ -908,6 +990,14 @@ num_photo_files = 20;
     BaseWindow *baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(page_hbox));
     if (NULL != baseWindow) {
       baseWindow->remove_page(page_hbox);
-    }
+    };
   }
+
+  inline void MultiPhotoPage::add_page_to_base_window(PhotoSelectPage *photo_page) {
+    BaseWindow *baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(page_hbox));
+    if (NULL != baseWindow) {
+      baseWindow->add_page(photo_page->get_tab_label(),
+          photo_page->get_notebook_page(), project_name);
+    }
+  };
 #endif  // MULTIPHOTOPAGE_H__

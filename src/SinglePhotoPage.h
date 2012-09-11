@@ -658,6 +658,11 @@ class SinglePhotoPage : public PhotoSelectPage {
   position_entry_activate() {
     std::string valstr = gtk_entry_get_text(GTK_ENTRY(position_entry));
     int val = atoi(valstr.c_str());
+    set_position(val);
+  }
+
+  void
+  set_position(int val) {
     if (val < 1) {
       val = 1;
     }
