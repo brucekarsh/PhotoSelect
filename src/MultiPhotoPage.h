@@ -261,7 +261,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkTreeIter iter;
 
     int num_photo_files = photoFilenameVector.size();
-num_photo_files = 40;
+num_photo_files = 50;
 
     // Iterate over the photo files, make GtkEventBox, GtkDrawingArea, PhotoState for
     // each one, wire it up, etc
@@ -918,9 +918,19 @@ num_photo_files = 40;
     g_signal_connect(menuitem1, "activate", (GCallback) icon_view_popup_activate_cb, widget);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem1);
 
-    GtkWidget *menuitem2 = gtk_menu_item_new_with_label("Do something else");
-    g_signal_connect(menuitem2, "activate", (GCallback) icon_view_popup_activate_cb, widget);
+    GtkWidget *menuitem2 = gtk_menu_item_new_with_label("Tags");
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem2);
+
+    GtkWidget *menu2 = gtk_menu_new();
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(menuitem2), menu2);
+
+    typedef std::pair<std::string, Db::project_tag_s> map_entry_t;
+    BOOST_FOREACH(map_entry_t map_entry, project_tags) {
+      std::string name = map_entry.first;
+      GtkWidget *menuitem = gtk_check_menu_item_new_with_label(name.c_str());
+      gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), true);
+      gtk_menu_shell_append(GTK_MENU_SHELL(menu2), menuitem);
+    }
 
     gtk_widget_show_all(menu);
     gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, (event != NULL) ? event->button : 0,
