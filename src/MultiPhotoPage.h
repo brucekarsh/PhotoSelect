@@ -74,8 +74,8 @@ class MultiPhotoPage : public PhotoSelectPage {
         }
     };
 
-    static const int ICON_WIDTH = 200;
-    static const int ICON_HEIGHT = 200;
+    static const int ICON_WIDTH = 400;
+    static const int ICON_HEIGHT = 300;
     static const int ICON_STRIDE = ICON_WIDTH * 3;
 
     Preferences *thePreferences;
