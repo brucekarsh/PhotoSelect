@@ -76,8 +76,6 @@ class SinglePhotoPage : public PhotoSelectPage {
     std::map<std::string, Db::photo_tag_s> photo_tags;
     std::map<std::string, Db::project_tag_s> project_tags;
 
-    //static const float ZOOMRATIO = 1.18920711500272106671;  // 2^(1/4)
-
   SinglePhotoPage(sql::Connection *connection_, PhotoFileCache *photoFileCache_) :
       conversionEngine(photoFileCache_), 
       rotation(0), drawing_area(0), thePreferences((Preferences*)0),
