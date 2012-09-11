@@ -84,6 +84,14 @@ class SinglePhotoPage : public PhotoSelectPage {
       exif_view_box(0), tags_position("right"), exifs_position("right") {
   }
 
+  ~SinglePhotoPage() {
+    if (page_hbox) {
+      // It's important to forget ourself from the WidgetRegistry. If not, we will
+      // get odd crashes when our widget's address is reused.
+      WidgetRegistry<PhotoSelectPage>::forget_widget(page_hbox);
+    }
+  }
+
   const std::string &get_project_name() {
     return project_name;
   }
@@ -954,5 +962,6 @@ class SinglePhotoPage : public PhotoSelectPage {
     if (NULL != baseWindow) {
       baseWindow->remove_page(page_hbox);
     }
+    delete this;
   }
 #endif  // SINGLEPHOTOPAGE_H__

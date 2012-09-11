@@ -118,6 +118,14 @@ class MultiPhotoPage : public PhotoSelectPage {
       exif_view_box(0), tags_position("left"), exifs_position("left") {
   }
 
+  ~MultiPhotoPage() {
+    if (page_hbox) {
+      // It's important to forget ourself from the WidgetRegistry. If not, we will
+      // get odd crashes when our widget's address is reused.
+      WidgetRegistry<PhotoSelectPage>::forget_widget(page_hbox);
+    }
+  }
+
   const std::string &get_project_name() {
     return project_name;
   }
@@ -253,6 +261,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkTreeIter iter;
 
     int num_photo_files = photoFilenameVector.size();
+num_photo_files = 40;
 
     // Iterate over the photo files, make GtkEventBox, GtkDrawingArea, PhotoState for
     // each one, wire it up, etc
@@ -991,6 +1000,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     if (NULL != baseWindow) {
       baseWindow->remove_page(page_hbox);
     };
+    delete this;
   }
 
   inline void MultiPhotoPage::add_page_to_base_window(PhotoSelectPage *photo_page) {
