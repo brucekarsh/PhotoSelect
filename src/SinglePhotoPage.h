@@ -193,8 +193,16 @@ class SinglePhotoPage : public PhotoSelectPage {
     g_signal_connect(drawing_area, "scroll-event", G_CALLBACK(drawing_area_scroll_cb), NULL);
     g_signal_connect(drawing_area, "motion-notify-event",
         G_CALLBACK(drawing_area_motion_notify_cb), NULL);
+    
+    g_signal_connect(drawing_area, "key-press-event",
+        G_CALLBACK(drawing_area_key_press_cb), NULL);
+    g_signal_connect(drawing_area, "enter-notify-event",
+        G_CALLBACK(drawing_area_enter_cb), NULL);
+    g_signal_connect(drawing_area, "leave-notify-event",
+        G_CALLBACK(drawing_area_leave_cb), NULL);
     gtk_widget_add_events(drawing_area, GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
-        | GDK_SCROLL_MASK | GDK_BUTTON_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK);
+        | GDK_SCROLL_MASK | GDK_BUTTON_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK
+        | GDK_KEY_PRESS_MASK | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
 
     // make an hbox (button_hbox) to hold the buttons, etc and add it to page_vbox
     button_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -264,6 +272,68 @@ class SinglePhotoPage : public PhotoSelectPage {
     rebuild_tag_view();
     rebuild_exif_view();
     g_signal_connect(position_entry, "activate", G_CALLBACK(position_entry_activate_cb), 0);
+  }
+
+  static gboolean drawing_area_key_press_cb(GtkWidget *widget, GdkEvent *event,
+      gpointer user_data) {
+    SinglePhotoPage *photoSelectPage =
+        (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    if (0 != photoSelectPage) {
+      return photoSelectPage->drawing_area_key_press(widget, event, user_data);
+    }
+    return false;
+  }
+
+  gboolean drawing_area_key_press(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    bool ret = FALSE;
+    guint keyval = ((GdkEventKey *)event)->keyval;
+    switch (keyval) {
+      case 'n':
+        next();
+        ret = true;
+        break;
+      case 'b':
+        back();
+        ret = true;
+        break;
+      case 'r':
+        rotate();
+        ret = true;
+        break;
+      default:
+        break;
+    }
+    return ret;
+  }
+
+  static gboolean
+  drawing_area_enter_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    SinglePhotoPage *photoSelectPage =
+        (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    if (0 != photoSelectPage) {
+      return photoSelectPage-> drawing_area_enter(widget, event, user_data);
+    }
+  }
+
+  //! grab the focus when the GtkDrawingArea is entered. This lets it get keyboard events.
+  //! The grab is removed in drawing_area_leave()
+  gboolean drawing_area_enter(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    gtk_grab_add(widget);
+  }
+
+  static gboolean
+  drawing_area_leave_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    SinglePhotoPage *photoSelectPage =
+        (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    if (0 != photoSelectPage) {
+      return photoSelectPage-> drawing_area_leave(widget, event, user_data);
+    }
+  }
+
+  //! un-grab the focus when the GtkDrawingArea is left. This lets it get keyboard events.
+  //! Focus is  grabbed in drawing_area_enter()
+  gboolean drawing_area_leave(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    gtk_grab_remove(widget);
   }
 
   // Adds a tag view to the SinglePhotoPage. The tag view (tag_view_box) is put into
@@ -790,6 +860,9 @@ class SinglePhotoPage : public PhotoSelectPage {
     rebuild_tag_view();
     rebuild_exif_view();
     invalidate_image();
+    // make sure that the drawing_area retains the keyboard focus (the rebuilds sometimes steal it)
+    gtk_grab_add(drawing_area);
+
   }
 
   void back() {
@@ -800,6 +873,8 @@ class SinglePhotoPage : public PhotoSelectPage {
     rebuild_tag_view();
     rebuild_exif_view();
     invalidate_image();
+    // make sure that the drawing_area retains the keyboard focus (the rebuilds sometimes steal it)
+    gtk_grab_add(drawing_area);
   }
 
   void rotate() {
@@ -809,6 +884,8 @@ class SinglePhotoPage : public PhotoSelectPage {
     }
     Db::set_rotation(connection, conversionEngine.getPhotoFilePath(), rotation);
     invalidate_image();
+    // make sure that the drawing_area retains the keyboard focus (the rebuilds sometimes steal it)
+    gtk_grab_add(drawing_area);
   }
 
   void gimp() {

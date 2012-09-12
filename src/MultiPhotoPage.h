@@ -131,12 +131,6 @@ class MultiPhotoPage : public PhotoSelectPage {
     return project_name;
   }
 
-  virtual void back() {}
-  virtual void next() {}
-  virtual void rotate() {
-    std::cout << "rotate called on MultiPhotoPage" << std::endl;
-  }
-
   virtual void rotate(GtkWidget *widget, int index, GtkTreePath *path, GtkCellRenderer *cell) {
     PhotoState &photo_state = photo_state_map[index];
     std::string file_path = photoFilenameVector[photo_state.get_index()];
@@ -1035,7 +1029,7 @@ num_photo_files = 50;
     }
   } 
 
-  //! un-grab the focus when the GtkIconView is entered. This lets it get keyboard events.
+  //! un-grab the focus when the GtkIconView is left. This lets it get keyboard events.
   //! Focus is  grabbed in icon_view_enter()
   gboolean icon_view_leave(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     gtk_grab_remove(widget);
