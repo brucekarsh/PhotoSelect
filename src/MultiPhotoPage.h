@@ -390,12 +390,7 @@ num_photo_files = 50;
       gtk_box_pack_start(GTK_BOX(page_left_vbox), tag_view_box, TRUE, TRUE, 0);
     } else if (tags_position == "right") {
       gtk_box_pack_start(GTK_BOX(page_right_vbox), tag_view_box, TRUE, TRUE, 0);
-    } else if (tags_position == "top") {
-      gtk_box_pack_start(GTK_BOX(page_vbox), tag_view_box, TRUE, TRUE, 0);
-      gtk_box_reorder_child(GTK_BOX(page_vbox), tag_view_box, 0);
-    } else if (tags_position == "bottom") {
-      gtk_box_pack_start(GTK_BOX(page_vbox), tag_view_box, FALSE, FALSE, 0);
-    }
+    } 
   }
 
   void count_tags() {
@@ -514,11 +509,6 @@ num_photo_files = 50;
       gtk_box_pack_start(GTK_BOX(page_left_vbox), exif_view_box, TRUE, TRUE, 0);
     } else if (exifs_position == "right") {
       gtk_box_pack_start(GTK_BOX(page_right_vbox), exif_view_box, TRUE, TRUE, 0);
-    } else if (exifs_position == "top") {
-      gtk_box_pack_start(GTK_BOX(page_vbox), exif_view_box, FALSE, FALSE, 0);
-      gtk_box_reorder_child(GTK_BOX(page_vbox), exif_view_box, 0);
-    } else if (exifs_position == "bottom") {
-      gtk_box_pack_start(GTK_BOX(page_vbox), exif_view_box, FALSE, FALSE, 0);
     }
   }
 

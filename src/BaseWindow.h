@@ -258,7 +258,7 @@ class BaseWindow {
 
     // Put some choices into the view_tags_menu
     GSList *group = NULL;
-    std::string view_tags_menu_item_labels[] = { "none", "left", "right", "top", "bottom"};
+    std::string view_tags_menu_item_labels[] = { "none", "left", "right" };
     BOOST_FOREACH(std::string label, view_tags_menu_item_labels) {
       GtkWidget *item = gtk_radio_menu_item_new_with_label(group, label.c_str());
       if (label == "right") {
@@ -272,7 +272,7 @@ class BaseWindow {
 
     // Put some choices into the view_exif_menu
     group = NULL;
-    std::string view_exif_menu_item_labels[] = { "none", "left", "right", "top", "bottom"};
+    std::string view_exif_menu_item_labels[] = { "none", "left", "right" };
     BOOST_FOREACH(std::string label, view_exif_menu_item_labels) {
       GtkWidget *item = gtk_radio_menu_item_new_with_label(group, label.c_str());
       if (label == "right") {
