@@ -92,6 +92,10 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkWidget *page_vbox;
     GtkWidget *page_left_vbox;
     GtkWidget *page_right_vbox;
+    GtkWidget *tags_left_hbox;
+    GtkWidget *tags_right_hbox;
+    GtkWidget *exif_left_hbox;
+    GtkWidget *exif_right_hbox;
     GtkWidget *central_hbox;
     GtkWidget *tab_label_hbox;
     GtkWidget *tab_label_label;
@@ -116,7 +120,7 @@ class MultiPhotoPage : public PhotoSelectPage {
       thePreferences((Preferences*)0),
       connection(connection_), photoFileCache(photoFileCache_),
       tag_view_box(0), current_index(0),
-      exif_view_box(0), tags_position("left"), exifs_position("left") {
+      exif_view_box(0), tags_position("right"), exifs_position("right") {
   }
 
   ~MultiPhotoPage() {
@@ -228,6 +232,16 @@ class MultiPhotoPage : public PhotoSelectPage {
     gtk_widget_show(page_left_vbox);
     gtk_widget_show(page_right_vbox);
 
+    // make left and right hboxes for exif and tags
+    tags_left_hbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    tags_right_hbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    exif_left_hbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    exif_right_hbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_show(tags_left_hbox);
+    gtk_widget_show(tags_right_hbox);
+    gtk_widget_show(exif_left_hbox);
+    gtk_widget_show(exif_right_hbox);
+
     // make a vbox to hold the page (page_vbox)
     page_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_show(page_vbox);
@@ -238,6 +252,12 @@ class MultiPhotoPage : public PhotoSelectPage {
     gtk_box_pack_start(GTK_BOX(page_hbox), page_vbox, TRUE, TRUE, 0);
     // add the page_right_vbox to the page_hbox
     gtk_box_pack_start(GTK_BOX(page_hbox), page_right_vbox, FALSE, FALSE, 0);
+
+    // add the exif and tags hboxes to the left and right vboxes
+    gtk_box_pack_start(GTK_BOX(page_left_vbox), tags_left_hbox, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(page_left_vbox), exif_left_hbox, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(page_right_vbox), tags_right_hbox, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(page_right_vbox), exif_right_hbox, TRUE, TRUE, 0);
 
     // Add the ScrolledWindow
     scrolled_window = gtk_scrolled_window_new(NULL, NULL);
@@ -338,10 +358,6 @@ num_photo_files = 50;
         GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_widget_show(tag_view_scrolled_window);
 
-    // Make a box (tag_view_tags_box) to go into the scrolled window
-    //tag_view_tags_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    //gtk_widget_show(tag_view_tags_box);
-
     // Make a grid to hold the tag
     GtkWidget* tag_view_tags_grid = gtk_grid_new();
     gtk_widget_show(tag_view_tags_grid);
@@ -381,9 +397,9 @@ num_photo_files = 50;
 
     // Put the tag_view_box into the page_hbox.
     if (tags_position == "left") {
-      gtk_box_pack_start(GTK_BOX(page_left_vbox), tag_view_box, TRUE, TRUE, 0);
+      gtk_box_pack_start(GTK_BOX(tags_left_hbox), tag_view_box, TRUE, TRUE, 0);
     } else if (tags_position == "right") {
-      gtk_box_pack_start(GTK_BOX(page_right_vbox), tag_view_box, TRUE, TRUE, 0);
+      gtk_box_pack_start(GTK_BOX(tags_right_hbox), tag_view_box, TRUE, TRUE, 0);
     } 
   }
 
@@ -500,9 +516,9 @@ num_photo_files = 50;
 
     // Put the exif_view_box into the page_hbox.
     if (exifs_position == "left") {
-      gtk_box_pack_start(GTK_BOX(page_left_vbox), exif_view_box, TRUE, TRUE, 0);
+      gtk_box_pack_start(GTK_BOX(exif_left_hbox), exif_view_box, TRUE, TRUE, 0);
     } else if (exifs_position == "right") {
-      gtk_box_pack_start(GTK_BOX(page_right_vbox), exif_view_box, TRUE, TRUE, 0);
+      gtk_box_pack_start(GTK_BOX(exif_right_hbox), exif_view_box, TRUE, TRUE, 0);
     }
   }
 

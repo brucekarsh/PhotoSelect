@@ -771,16 +771,19 @@ class SinglePhotoPage : public PhotoSelectPage {
     }
   }
 
-  void
+  gboolean
   drawing_area_scroll(GdkEvent *event) {
     if (event->scroll.direction == GDK_SCROLL_UP) {
       zoom(ZOOMRATIO);
     } else if (event->scroll.direction == GDK_SCROLL_DOWN) {
       zoom(1.0/ZOOMRATIO);
+    } else if (event->scroll.direction == GDK_SCROLL_SMOOTH) {
+      // ignore GDK_SCROLL_SMOOTH
     } else {
       std::cout << "don't know which way to scroll" << std::endl;
     }
     invalidate_image();
+    return true;
   }
 
   void
@@ -977,12 +980,13 @@ class SinglePhotoPage : public PhotoSelectPage {
       photoSelectPage->drawing_area_button_release(event);
     }
   }
-  static void
+  static gboolean
   drawing_area_scroll_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
     SinglePhotoPage *photoSelectPage = (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
-      photoSelectPage->drawing_area_scroll(event);
+      return photoSelectPage->drawing_area_scroll(event);
     }
+    return false;
   }
   static void
   drawing_area_motion_notify_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
