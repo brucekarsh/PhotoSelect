@@ -108,6 +108,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     std::map<std::string, int> set_tag_counts;
     std::map<std::string, int> clear_tag_counts;
     std::map<GtkWidget *, std::string> tag_button_map;
+    // all_photo_tags_for_project[file_name][tag_name] -> photo_tag_s. (photo_tag_s is empty)
     std::map<std::string, std::map<std::string, Db::photo_tag_s> > all_photo_tags_for_project;
 
   MultiPhotoPage(sql::Connection *connection_, PhotoFileCache *photoFileCache_) :
@@ -912,10 +913,17 @@ num_photo_files = 50;
   }
 
   void view_icon_view_popup_menu(GtkWidget *widget, GdkEventButton *event, gpointer userdata) {
+    int index = find_photo_index(widget);
+    if (-1 == index) {
+      return;
+    }
+    std::string file_name = photoFilenameVector[index];
+
     GtkWidget *menu = gtk_menu_new();
 
     GtkWidget *menuitem1 = gtk_menu_item_new_with_label("Open Image Viewer");
-    g_signal_connect(menuitem1, "activate", (GCallback) icon_view_popup_activate_cb, widget);
+    g_signal_connect(menuitem1, "activate",
+        (GCallback) icon_view_popup_open_image_viewer_activate_cb, widget);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem1);
 
     GtkWidget *menuitem2 = gtk_menu_item_new_with_label("Tags");
@@ -924,37 +932,76 @@ num_photo_files = 50;
     GtkWidget *menu2 = gtk_menu_new();
     gtk_menu_item_set_submenu(GTK_MENU_ITEM(menuitem2), menu2);
 
+    // all_photo_tags_for_project[file_name][tag_name] -> photo_tag_s. (photo_tag_s is empty)
+    std::map<std::string, Db::photo_tag_s> tag_map = all_photo_tags_for_project[file_name];
     typedef std::pair<std::string, Db::project_tag_s> map_entry_t;
     BOOST_FOREACH(map_entry_t map_entry, project_tags) {
-      std::string name = map_entry.first;
-      GtkWidget *menuitem = gtk_check_menu_item_new_with_label(name.c_str());
-      gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), true);
+      std::string tag_name = map_entry.first;
+      GtkWidget *menuitem = gtk_check_menu_item_new_with_label(tag_name.c_str());
+      g_object_set_data_full(G_OBJECT(menuitem), "file_name", new std::string(file_name),
+          delete_string);
+      if (tag_map.count(tag_name)) {
+        gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), true);
+      }
       gtk_menu_shell_append(GTK_MENU_SHELL(menu2), menuitem);
+      g_signal_connect(menuitem, "toggled", (GCallback) icon_view_popup_tag_toggled_cb, widget);
     }
+    g_signal_connect(menu, "deactivate", (GCallback) icon_view_popup_deactivate_cb, widget);
 
     gtk_widget_show_all(menu);
     gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, (event != NULL) ? event->button : 0,
         gdk_event_get_time((GdkEvent*)event));
   }
 
-  static void icon_view_popup_activate_cb(GtkMenuItem *menu_item, gpointer user_data) {
+  static void delete_string(void *vs) {
+    std::string *s = (std::string *) vs;
+    free (s);
+  }
+
+  static void icon_view_popup_open_image_viewer_activate_cb(GtkMenuItem *menu_item,
+      gpointer user_data) {
     GtkWidget *widget = (GtkWidget *)user_data;
     MultiPhotoPage *photoSelectPage =
         (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
-      photoSelectPage-> icon_view_popup_activate(menu_item, user_data);
+      photoSelectPage->icon_view_popup_open_image_viewer_activate(menu_item, user_data);
     }
   }
 
-  void icon_view_popup_activate(GtkMenuItem *menu_item, gpointer user_data) {
+  void icon_view_popup_open_image_viewer_activate(GtkMenuItem *menu_item, gpointer user_data) {
     std::string label = gtk_menu_item_get_label(menu_item);
-    if (label == "Open Image Viewer") {
-      GtkWidget *widget = (GtkWidget*) user_data;
-      int index = find_photo_index(widget);
-      if (-1 != index) {
-        open_single_photo_page(index);
-      }
+    GtkWidget *widget = (GtkWidget*) user_data;
+    int index = find_photo_index(widget);
+    if (-1 != index) {
+      open_single_photo_page(index);
     }
+  }
+
+  static void icon_view_popup_deactivate_cb(GtkMenuShell *menu_item, gpointer user_data) {
+    g_object_ref_sink(G_OBJECT(menu_item));
+    g_object_unref(G_OBJECT(menu_item));
+  }
+    
+  static void icon_view_popup_tag_toggled_cb(GtkMenuItem *menu_item, gpointer user_data) {
+    GtkWidget *widget = (GtkWidget *)user_data;
+    MultiPhotoPage *photoSelectPage =
+        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage->icon_view_popup_tag_toggled(menu_item, user_data);
+    }
+  }
+
+  void icon_view_popup_tag_toggled(GtkMenuItem *menu_item, gpointer user_data) {
+    std::string tag_name = gtk_menu_item_get_label(menu_item);
+    GtkWidget *widget = (GtkWidget*) user_data;
+    std::string file_name(*(std::string *)g_object_get_data(G_OBJECT(menu_item), "file_name"));
+    if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(menu_item))) {
+      Db::add_tag_by_filename(connection, tag_name, file_name);
+    } else {
+      Db::remove_tag_by_filename(connection, tag_name, file_name);
+    }
+    count_tags();
+    rebuild_tag_view();
   }
 
   void open_single_photo_page(int index) {
