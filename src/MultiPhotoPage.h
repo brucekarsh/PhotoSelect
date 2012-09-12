@@ -790,15 +790,17 @@ num_photo_files = 50;
     gtk_icon_view_set_columns(GTK_ICON_VIEW(widget), num_cols);
   }
 
-  static void icon_view_key_press_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+  static gboolean icon_view_key_press_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     MultiPhotoPage *photoSelectPage =
         (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
-      photoSelectPage->icon_view_key_press(widget, event, user_data);
+      return photoSelectPage->icon_view_key_press(widget, event, user_data);
     }
+    return false;
   }
 
-  void icon_view_key_press(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+  gboolean icon_view_key_press(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    gboolean ret = false;
     GtkTreePath *path;
     GtkCellRenderer *cell;
     int index;
@@ -807,15 +809,18 @@ num_photo_files = 50;
     gboolean has_item = gtk_icon_view_get_item_at_pos(GTK_ICON_VIEW(widget), x, y, &path, &cell);
     if (has_item) {
       guint keyval = ((GdkEventKey *)event)->keyval;
+      guint state = ((GdkEventKey *)event)->state;
       switch (keyval) {
         case 'r':
           index = gtk_tree_path_get_indices(path)[0];
           rotate(widget, index, path, cell);
+          ret = true;
         default:
           break;
       }
       gtk_tree_path_free(path);
     }
+    return ret;
   }
 
   gboolean static icon_view_button_press_cb(GtkWidget *widget,
