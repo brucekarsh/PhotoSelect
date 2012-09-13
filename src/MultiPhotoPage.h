@@ -365,28 +365,37 @@ num_photo_files = 50;
     // Put check buttons in tag_view_tags_box, one for each tag in the project
     int row_num = 0;
     tag_button_map.clear();
+    std::string file_name = photoFilenameVector[current_index];
     typedef std::pair<std::string, Db::project_tag_s> map_entry_t;
+    // all_photo_tags_for_project[file_name][tag_name] -> photo_tag_s. (photo_tag_s is empty)
+    std::map<std::string, Db::photo_tag_s> tag_map = all_photo_tags_for_project[file_name];
     BOOST_FOREACH(map_entry_t map_entry, project_tags) {
       std::string name = map_entry.first;
+      if (tag_map.count(name)) {
+        GtkWidget *image = gtk_image_new_from_stock(GTK_STOCK_YES, GTK_ICON_SIZE_BUTTON);
+        gtk_widget_show(image);
+        gtk_grid_attach(GTK_GRID(tag_view_tags_grid), image, 0, row_num, 1, 1);
+      }
       std::string display_text(name + " (" +
           boost::lexical_cast<std::string>(all_tag_counts[name]) + ")");
       GtkWidget *label = gtk_label_new(display_text.c_str());
+      gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.5);
       gtk_widget_show(label);
-      gtk_grid_attach(GTK_GRID(tag_view_tags_grid), label, 0, row_num, 1, 1);
+      gtk_grid_attach(GTK_GRID(tag_view_tags_grid), label, 1, row_num, 1, 1);
       std::string set_label = "set (" +
           boost::lexical_cast<std::string>(set_tag_counts[name]) + ")";
       GtkWidget *set_button = gtk_button_new_with_label(set_label.c_str());
       tag_button_map[set_button] = name;
       g_signal_connect(set_button, "clicked", G_CALLBACK(set_button_clicked_cb), NULL);
       gtk_widget_show(set_button);
-      gtk_grid_attach(GTK_GRID(tag_view_tags_grid), set_button, 1, row_num, 1, 1);
+      gtk_grid_attach(GTK_GRID(tag_view_tags_grid), set_button, 2, row_num, 1, 1);
       std::string clear_label = "clear (" +
           boost::lexical_cast<std::string>(clear_tag_counts[name]) + ")";
       GtkWidget *clear_button = gtk_button_new_with_label(clear_label.c_str());
       tag_button_map[clear_button] = name;
       g_signal_connect(clear_button, "clicked", G_CALLBACK(clear_button_clicked_cb), NULL);
       gtk_widget_show(clear_button);
-      gtk_grid_attach(GTK_GRID(tag_view_tags_grid), clear_button, 2, row_num, 1, 1);
+      gtk_grid_attach(GTK_GRID(tag_view_tags_grid), clear_button, 3, row_num, 1, 1);
       row_num++;
     }
 
