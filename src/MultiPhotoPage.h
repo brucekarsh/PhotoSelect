@@ -276,6 +276,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkTreeIter iter;
 
     int num_photo_files = photoFilenameVector.size();
+num_photo_files = 12;
 
     // Iterate over the photo files, make GtkEventBox, GtkDrawingArea, PhotoState for
     // each one, wire it up, etc
@@ -387,16 +388,22 @@ class MultiPhotoPage : public PhotoSelectPage {
       tag_button_map[set_button] = name;
       g_signal_connect(set_button, "clicked", G_CALLBACK(set_button_clicked_cb), NULL);
       gtk_widget_show(set_button);
-      gtk_grid_attach(GTK_GRID(tag_view_tags_grid), set_button, 2, row_num, 1, 1);
+      gtk_grid_attach(GTK_GRID(tag_view_tags_grid), set_button, 3, row_num, 1, 1);
       std::string clear_label = "clear (" +
           boost::lexical_cast<std::string>(clear_tag_counts[name]) + ")";
       GtkWidget *clear_button = gtk_button_new_with_label(clear_label.c_str());
       tag_button_map[clear_button] = name;
       g_signal_connect(clear_button, "clicked", G_CALLBACK(clear_button_clicked_cb), NULL);
       gtk_widget_show(clear_button);
-      gtk_grid_attach(GTK_GRID(tag_view_tags_grid), clear_button, 3, row_num, 1, 1);
+      gtk_grid_attach(GTK_GRID(tag_view_tags_grid), clear_button, 4, row_num, 1, 1);
       row_num++;
     }
+    int num_rows = row_num;
+    GtkWidget *separator = gtk_separator_new(GTK_ORIENTATION_VERTICAL);
+    gtk_widget_set_margin_left(separator, 5);
+    gtk_widget_set_margin_right(separator, 5);
+    gtk_widget_show(separator);
+    gtk_grid_attach(GTK_GRID(tag_view_tags_grid), separator, 2, 0, 1, num_rows);
 
     // Put the tag_view_scrolled_window into the tag_view_box.
     gtk_box_pack_start(GTK_BOX(tag_view_box), tag_view_scrolled_window, TRUE, TRUE, 0);
