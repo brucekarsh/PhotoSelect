@@ -9,7 +9,6 @@
 #include "ConversionEngine.h"
 #include <boost/foreach.hpp>
 #include <gtk/gtk.h>
-//#include <cairo-xlib.h>
 #include <boost/lexical_cast.hpp>
 
 #include <xercesc/parsers/XercesDOMParser.hpp>
@@ -50,8 +49,6 @@ class SinglePhotoPage : public PhotoSelectPage {
     GtkWidget *page_right_vbox;
     GtkWidget *drawing_area;
     GtkWidget *button_hbox;
-    GtkWidget *keep_button;
-    GtkWidget *drop_button;
     GtkWidget *next_button;
     GtkWidget *back_button;
     GtkWidget *rotate_button;
@@ -209,17 +206,7 @@ class SinglePhotoPage : public PhotoSelectPage {
     gtk_widget_show(button_hbox);
     gtk_box_pack_start(GTK_BOX(page_vbox), button_hbox, FALSE, FALSE, 0);
 
-    // add Keep, Drop, Next, Back, Rotate and Gimp buttons to button_hbox
-    keep_button = gtk_button_new_with_label("Keep");
-    gtk_widget_show(keep_button);
-    gtk_box_pack_start(GTK_BOX(button_hbox), keep_button, FALSE, FALSE, 0);
-    g_signal_connect(keep_button, "clicked", G_CALLBACK(keep_button_clicked_cb), 0);
-    
-    drop_button = gtk_button_new_with_label("Drop");
-    gtk_widget_show(drop_button);
-    gtk_box_pack_start(GTK_BOX(button_hbox), drop_button, FALSE, FALSE, 0);
-    g_signal_connect(drop_button, "clicked", G_CALLBACK(drop_button_clicked_cb), 0);
-    
+    // add Next, Back, Rotate and Gimp buttons to button_hbox
     next_button = gtk_button_new_with_label("Next");
     gtk_widget_show(next_button);
     gtk_box_pack_start(GTK_BOX(button_hbox), next_button, FALSE, FALSE, 0);
@@ -415,7 +402,6 @@ class SinglePhotoPage : public PhotoSelectPage {
   }
 
   void rebuild_exif_view() {
-    // TODO WRITEME
     GtkWidget *exif_view_scrolled_window = NULL;
     GtkWidget *exif_view_exifs_grid = NULL;
 
@@ -523,7 +509,8 @@ class SinglePhotoPage : public PhotoSelectPage {
       xercesc::DOMNode * documentElement = domDocument->getDocumentElement();
       
       xercesc::DOMNode *child;
-      for (child = documentElement->getFirstChild(); child != NULL; child = child->getNextSibling()) {
+      for (child = documentElement->getFirstChild(); child != NULL;
+          child = child->getNextSibling()) {
         char *node_name = xercesc::XMLString::transcode(child->getNodeName());
         xercesc::DOMNode::NodeType node_type = child->getNodeType();
         if (node_type == xercesc::DOMNode::ELEMENT_NODE && !strcmp("t", node_name)) {
@@ -847,14 +834,6 @@ class SinglePhotoPage : public PhotoSelectPage {
     free(transformed_image);
   }
 
-  void keep() {
-    // TODO WRITEME or DELETEME
-  }
-
-  void drop() {
-    // TODO WRITEME or DELETEME
-  }
-
   void next() {
     conversionEngine.next();   
     rotation = Db::get_rotation(connection, conversionEngine.getPhotoFilePath());
@@ -902,23 +881,10 @@ class SinglePhotoPage : public PhotoSelectPage {
     }
   }
 
-  static void keep_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
-    if (0 != photoSelectPage) {
-      photoSelectPage -> keep();
-    }
-  }
-
-  static void drop_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
-    if (0 != photoSelectPage) {
-      photoSelectPage -> drop();
-    }
-  }
-
   static void
   next_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    SinglePhotoPage *photoSelectPage =
+        (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> next();
     }
@@ -926,7 +892,8 @@ class SinglePhotoPage : public PhotoSelectPage {
 
   static void
   back_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *)
+        WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> back();
     }
@@ -934,7 +901,8 @@ class SinglePhotoPage : public PhotoSelectPage {
 
   static void
   rotate_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *)
+        WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> rotate();
     }
@@ -942,7 +910,8 @@ class SinglePhotoPage : public PhotoSelectPage {
 
   static void
   gimp_button_clicked_cb(GtkWidget *widget, gpointer data) {
-    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *)
+        WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> gimp();
     }
@@ -952,7 +921,8 @@ class SinglePhotoPage : public PhotoSelectPage {
 
   static void
   drawing_area_draw_cb(GtkWidget *widget, cairo_t *cr, gpointer data) {
-    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *)
+        WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage -> redraw_image();
     }
@@ -960,7 +930,8 @@ class SinglePhotoPage : public PhotoSelectPage {
 
   static void
   position_entry_activate_cb(GtkWidget *widget, gpointer data) {
-    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *)
+        WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->position_entry_activate();
     }
@@ -968,21 +939,24 @@ class SinglePhotoPage : public PhotoSelectPage {
 
   static void
   drawing_area_button_press_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
-    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *)
+        WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->drawing_area_button_press(event);
     }
   }
   static void
   drawing_area_button_release_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
-    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *)
+        WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->drawing_area_button_release(event);
     }
   }
   static gboolean
   drawing_area_scroll_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
-    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *)
+        WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       return photoSelectPage->drawing_area_scroll(event);
     }
@@ -990,7 +964,8 @@ class SinglePhotoPage : public PhotoSelectPage {
   }
   static void
   drawing_area_motion_notify_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
-    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *)
+        WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->drawing_area_motion_notify(event);
     }
@@ -998,7 +973,8 @@ class SinglePhotoPage : public PhotoSelectPage {
 
   static void
   tag_button_clicked_cb(GtkToggleButton *togglebutton, gpointer user_data) {
-    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(
+    SinglePhotoPage *photoSelectPage = (SinglePhotoPage *)
+        WidgetRegistry<PhotoSelectPage>::get_object(
         GTK_WIDGET(togglebutton));
     if (0 != photoSelectPage) {
       photoSelectPage->tag_button_clicked(togglebutton, user_data);
