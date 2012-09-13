@@ -26,6 +26,8 @@ main(int argc, char **argv)
   Preferences preferences;
   PhotoFileCache photoFileCache;
 
+  gdk_threads_init();
+  gdk_threads_enter();
   gtk_init(&argc, &argv);
 
   // Initialize the XML4C2 system.
@@ -54,6 +56,7 @@ main(int argc, char **argv)
   }
 
   gtk_main();
+  gdk_threads_leave ();
 }
 
 void
