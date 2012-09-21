@@ -7,6 +7,7 @@
 #include "MultiPhotoPage.h"
 #include "Preferences.h"
 #include "PhotoFileCache.h"
+#include "WorkList.h"
 
 namespace sql {
   class Driver;
@@ -18,6 +19,8 @@ void open_initial_project(sql::Connection *connection, BaseWindow *base_window,
 std::string get_last_project_name();
 sql::Connection *
 open_database(std::string dbhost, std::string user, std::string password, std::string database);
+void start_thread();
+void *thread_proc(void *arg);
 
 using namespace std;
 
@@ -25,6 +28,7 @@ main(int argc, char **argv)
 {
   Preferences preferences;
   PhotoFileCache photoFileCache;
+  WorkList worklist;
 
   gdk_threads_init();
   gdk_threads_enter();
@@ -54,6 +58,8 @@ main(int argc, char **argv)
   if (connection) {
     open_initial_project(connection, baseWindow, &preferences, &photoFileCache);
   }
+
+  start_thread();
 
   gtk_main();
   gdk_threads_leave ();
@@ -119,4 +125,25 @@ open_database(std::string dbhost, std::string user, std::string password, std::s
     Db::set_schema(connection, database);
   }
   return connection;
+}
+
+pthread_t tid;
+std::string arg = "Hi There";
+
+void start_thread() {
+  cout << "start_thread entered" << std::endl;
+  pthread_create(&tid, NULL, thread_proc, &arg);
+}
+
+void *thread_proc(void *arg) {
+  std::string *s = (std::string *)arg;
+  int i = 0;
+  while(1) {
+    gdk_threads_enter();
+    std::cout << i << " " << *s << std::endl;
+    gdk_threads_leave();
+    sleep(1);
+    ++i;
+  }
+  return NULL;
 }

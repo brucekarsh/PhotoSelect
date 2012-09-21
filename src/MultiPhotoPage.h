@@ -557,7 +557,7 @@ num_photo_files = 12;
     std::string file_name = photoFilenameVector[current_index];
     std::string exif_string = Db::get_from_exifblob_by_filePath(connection, file_name);
 
-    std::auto_ptr<xercesc::XercesDOMParser> parser (new xercesc::XercesDOMParser());
+    std::unique_ptr<xercesc::XercesDOMParser> parser (new xercesc::XercesDOMParser());
     parser->setValidationScheme(xercesc::XercesDOMParser::Val_Never);
 
     bool ret = parse_json_string(parser.get(), exif_string);
@@ -654,7 +654,7 @@ num_photo_files = 12;
   //! Parse a json string into a DOM using Xerces
   bool parse_json_string(xercesc::XercesDOMParser* parser, std::string json_string) {
     static const char * memBufId = "someId";
-    std::auto_ptr<xercesc::MemBufInputSource> memBufIS (new xercesc::MemBufInputSource(
+    std::unique_ptr<xercesc::MemBufInputSource> memBufIS (new xercesc::MemBufInputSource(
         (const XMLByte*)json_string.c_str(), json_string.length(), memBufId, false));
     try {
         parser->parse(*memBufIS);

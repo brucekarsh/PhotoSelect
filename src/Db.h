@@ -36,10 +36,10 @@ class Db {
         "INNER JOIN TagChecksum ON (TagChecksum.tagId = Tag.id) "
         "INNER JOIN PhotoFile ON (TagChecksum.checksumId = PhotoFile.checksumId) "
         "WHERE (Project.name = ? and PhotoFile.filePath = ?)";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, project_name);
     prepared_statement->setString(2, file_name);
-    std::auto_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
+    std::unique_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
     while (rs->next()) {
       photo_tag_s tag;
       std::string name = rs->getString(1);
@@ -61,9 +61,9 @@ class Db {
         "INNER JOIN Tag ON (Tag.id = TagChecksum.tagId) "
         "WHERE (Project.name = ?) "
         "ORDER BY PhotoFile.filePath ";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, project_name);
-    std::auto_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
+    std::unique_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
     while (rs->next()) {
       std::string filePath = rs->getString(1);
       std::string tag = rs->getString(2);
@@ -80,9 +80,9 @@ class Db {
         "INNER JOIN ProjectTag ON (Tag.id = ProjectTag.tagId) "
         "INNER JOIN Project ON (ProjectTag.projectId = Project.id) "
         "WHERE (Project.name = ?)";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, project_name);
-    std::auto_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
+    std::unique_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
     while (rs->next()) {
       project_tag_s tag;
       std::string name = rs->getString(1);
@@ -94,8 +94,8 @@ class Db {
   static inline std::set<std::string> get_all_tags(sql::Connection *connection) {
     std::set<std::string> tags;
     std::string sql = "SELECT DISTINCT Tag.name FROM Tag";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
-    std::auto_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
     while (rs->next()) {
       std::string name = rs->getString(1);
       tags.insert(name);
@@ -105,7 +105,7 @@ class Db {
 
   static inline void insert_tag(sql::Connection *connection, std::string tag_name) {
     std::string sql = "INSERT INTO Tag(name) VALUE(?)";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, tag_name);
     try {
         prepared_statement->execute();
@@ -121,7 +121,7 @@ class Db {
         "AND Project.name=? "
         "AND ProjectTag.projectId = Project.id "
         "AND ProjectTag.tagId = Tag.id";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1,tag_name);
     prepared_statement->setString(2,project_name);
     try {
@@ -135,7 +135,7 @@ class Db {
       std::string project_name) {
     std::string sql = "INSERT INTO ProjectTag(tagId, projectId) "
         "SELECT Tag.id, Project.id FROM Tag, Project WHERE Tag.name=? AND Project.name=?";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1,tag_name);
     prepared_statement->setString(2,project_name);
     try {
@@ -152,10 +152,10 @@ class Db {
         "FROM Rotation INNER JOIN Checksum on (Checksum.id = Rotation.checksumId) "
         "INNER JOIN PhotoFile ON (Checksum.id=PhotoFile.checksumId) "
         "WHERE PhotoFile.filePath=?";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, photoFileName);
     try {
-        std::auto_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
+        std::unique_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
         if (rs->next()) {
           angle = rs->getDouble(1);
         }
@@ -170,7 +170,7 @@ class Db {
         "FROM Checksum INNER JOIN PhotoFile ON (Checksum.id=PhotoFile.checksumId) "
         "WHERE PhotoFile.filePath=? "
         "ON DUPLICATE KEY UPDATE angle=?";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setDouble(1, rotation);
     prepared_statement->setString(2, photoFileName);
     prepared_statement->setDouble(3, rotation);
@@ -185,18 +185,18 @@ class Db {
   insert_into_project(sql::Connection *connection, std::string project_name) {
 
     std::string project_insert_sql = "INSERT INTO Project (name) VALUES(?)";
-    std::auto_ptr<sql::PreparedStatement> project_insert_prepared_statement(
+    std::unique_ptr<sql::PreparedStatement> project_insert_prepared_statement(
         connection->prepareStatement(project_insert_sql));
 
     std::string get_last_id_sql = "SELECT LAST_INSERT_ID() as id";
-    std::auto_ptr<sql::PreparedStatement> get_last_id_prepared_statement(
+    std::unique_ptr<sql::PreparedStatement> get_last_id_prepared_statement(
         connection->prepareStatement(get_last_id_sql));
 
     long projectId = -1;
     try {
       project_insert_prepared_statement->setString(1, project_name);
       project_insert_prepared_statement->execute();
-      std::auto_ptr<sql::ResultSet> rs(get_last_id_prepared_statement->executeQuery());
+      std::unique_ptr<sql::ResultSet> rs(get_last_id_prepared_statement->executeQuery());
       if (rs->next()) {
         projectId = rs->getInt64("id");
       }
@@ -209,12 +209,12 @@ class Db {
   get_project_id(sql::Connection *connection, std::string project_name) {
 
     std::string sql = "SELECT id from Project where name = ?";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
 
     long project_id = -1;
     try {
       prepared_statement->setString(1,project_name);
-      std::auto_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
+      std::unique_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
       if (rs->next()) {
         project_id = rs->getInt64("id");
       }
@@ -226,8 +226,8 @@ class Db {
   static inline std::list<std::string> get_project_names(sql::Connection *connection) {
     std::list<std::string> project_names;
     std::string sql = "SELECT DISTINCT name FROM Project ";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
-    std::auto_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
     while (rs->next()) {
       std::string project_name = rs->getString(1);
       project_names.push_back(project_name);
@@ -238,7 +238,7 @@ class Db {
   static inline bool delete_project(sql::Connection *connection, std::string project_name) {
     bool result = false;;
     std::string sql = "DELETE FROM Project WHERE name = ?";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     try {
       prepared_statement->setString(1, project_name);
       prepared_statement->execute();
@@ -254,7 +254,7 @@ class Db {
       std::string new_project_name) {
     bool result = false;
     std::string sql = "UPDATE Project SET name=? WHERE name=?";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, new_project_name);
     prepared_statement->setString(2, old_project_name);
     try {
@@ -272,7 +272,7 @@ class Db {
   static inline void
   add_photo_to_project(sql::Connection *connection, long project_id, long photo_file_id) {
     std::string sql = "INSERT INTO ProjectPhotoFile (projectId, photoFileId) VALUES(?,?)";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setInt64(1, project_id);
     prepared_statement->setInt64(2, photo_file_id);
     prepared_statement->execute();
@@ -289,9 +289,9 @@ class Db {
         "INNER JOIN Time ON (PhotoFile.checksumId = Time.checksumId) "
         "WHERE Project.name = ? "
         "ORDER by Time.adjustedDateTime, filePath ";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, project_name);
-    std::auto_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
+    std::unique_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
     while ( rs->next()) {
       std::string file_path = rs->getString(1);
       project_photo_files.push_back(file_path);
@@ -306,7 +306,7 @@ class Db {
         "SELECT DISTINCT Tag.id as tagId, Checksum.id as checksumId "
         "FROM Tag, Checksum, PhotoFile "
         "WHERE Tag.name = ? AND PhotoFile.filePath = ? AND Checksum.id = PhotoFile.checksumId";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, tag_name);
     prepared_statement->setString(2, file_name);
     prepared_statement->execute();
@@ -321,7 +321,7 @@ class Db {
         "WHERE Tag.name = ? AND PhotoFile.filePath = ? "
         "AND Checksum.id = PhotoFile.checksumId AND TagChecksum.checksumId=Checksum.id "
         "AND TagChecksum.tagId=Tag.id";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, tag_name);
     prepared_statement->setString(2, file_name);
     prepared_statement->execute();
@@ -335,7 +335,7 @@ class Db {
     std::string sql = "INSERT IGNORE INTO Time(checksumId, originalDateTime, adjustedDateTime ) "
         "Values(?,?,?) "
         "ON DUPLICATE KEY UPDATE originalDateTime=?, adjustedDateTime=?";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setInt64(1, checksum_id);
     prepared_statement->setString(2, original_date_time);
     prepared_statement->setString(3, adjusted_date_time);
@@ -348,7 +348,7 @@ class Db {
   static inline void
   insert_into_exifblob(sql::Connection *connection, long checksum_id, std::string xml_string) {
     std::string sql = "INSERT IGNORE INTO ExifBlob(checksumId, value) Values (?,?)";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setInt64(1, checksum_id);
     prepared_statement->setString(2, xml_string);
     prepared_statement->executeUpdate();
@@ -359,9 +359,9 @@ class Db {
     std::string sql = "SELECT value from PhotoFile "
         "INNER JOIN ExifBlob ON (PhotoFile.checksumId = ExifBlob.checksumId) "
         "WHERE PhotoFile.filePath = ?";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, filePath);
-    std::auto_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
+    std::unique_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
     bool has_first = rs->first();
     if (!has_first) {
       std::cout << "Cannot get a result set in get_from_exifblob_by_filePath" << std::endl;
@@ -382,7 +382,7 @@ class Db {
   static inline int64_t
   insert_into_Checksum(sql::Connection *connection, const std::string &checksum) {
     std::string sql = "INSERT IGNORE INTO Checksum(checksum) Values (?)";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, checksum.c_str());
     int updateCount = prepared_statement->executeUpdate();
     int64_t checksum_key = Db::get_id_from_Checksum(connection, checksum);
@@ -392,9 +392,9 @@ class Db {
   static inline int64_t
   get_id_from_Checksum(sql::Connection *connection, const std::string &checksum) {
     std::string sql = "SELECT id FROM Checksum where checksum = ?";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, checksum);
-    std::auto_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
+    std::unique_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
 
     bool has_first = rs->first();
     if (!has_first) {
@@ -424,7 +424,7 @@ class Db {
     }
 
     std::string sql = "REPLACE INTO PhotoFile(filePath, checksumId) Values (?,?)";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, filePath.c_str());
     prepared_statement->setInt64(2, checksum_key);
     int updateCount = prepared_statement->executeUpdate();
@@ -437,10 +437,10 @@ class Db {
   get_id_from_PhotoFile(sql::Connection *connection, const std::string &filePath,
       int64_t checksum_key) {
     std::string sql = "SELECT id FROM PhotoFile where filePath = ? and checksumId = ?";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, filePath.c_str());
     prepared_statement->setInt64(2, checksum_key);
-    std::auto_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
+    std::unique_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
     bool has_first = rs -> first();
     if (has_first) {
       bool is_first = rs->isFirst();
@@ -488,7 +488,7 @@ class Db {
     std::string sql = "DELETE FROM ProjectPhotoFile "
         "WHERE (ProjectPhotoFile.projectId = ?) "
         "AND (ProjectPhotoFile.photoFileId= ?)";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     try {
       prepared_statement->setInt64(1, project_id);
       prepared_statement->setInt64(2, photo_file_id);
@@ -503,7 +503,7 @@ class Db {
 
   static inline void delete_known_tag(sql::Connection *connection, std::string tag_name) {
     std::string sql = "DELETE FROM Tag WHERE Tag.name=? ";
-    std::auto_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1,tag_name);
     try {
         prepared_statement->execute();
