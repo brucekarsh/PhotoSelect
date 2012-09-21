@@ -16,9 +16,6 @@ class WorkList {
         bool operator==(const WorkItem &rhs) const {
           return rhs.ticket_number == ticket_number;
         }
-        bool operator<(const WorkItem &rhs) const {
-          return rhs.ticket_number < ticket_number;
-        }
         long ticket_number;
     };
 
@@ -32,33 +29,6 @@ class WorkList {
       // Now add it
       priority_by_work_item_map[work_item] = priority;
       work_item_by_priority_map.insert(work_item_by_priority_entry_t(priority, work_item));
-    }
-
-    void delete_work_item(WorkItem work_item) {
-      // Find it in the priority_by_work_item_map
-      priority_by_work_item_iterator_t it = priority_by_work_item_map.find(work_item);
-
-      // Make sure that it's there
-      if (it != priority_by_work_item_map.end()) {
-
-        // It's there.  Remember its priority so we can find more quickly it in the
-        // work_item_by_priority_map. Then erase it.
-        long priority = it->second;
-        priority_by_work_item_map.erase(it);
-
-        // Now look through the entries with its priority in the work_item_by_priority_map and
-        // erase it there too.
-        std::pair<work_item_by_priority_iterator_t, work_item_by_priority_iterator_t>
-            equal_range = work_item_by_priority_map.equal_range(priority);
-        for (work_item_by_priority_iterator_t p = equal_range.first; p != equal_range.second; ) {
-          if ((*p).second == work_item) {
-            work_item_by_priority_map.erase(p);
-            break;
-          } else {
-            ++p;
-          }
-        }
-      }
     }
 
     void delete_work_by_ticket_number(long ticket_number) {
@@ -111,6 +81,34 @@ class WorkList {
       boost::lock_guard<boost::mutex> member_lock(class_mutex);
     }
   private:
+
+    void delete_work_item(WorkItem work_item) {
+      // Find it in the priority_by_work_item_map
+      priority_by_work_item_iterator_t it = priority_by_work_item_map.find(work_item);
+
+      // Make sure that it's there
+      if (it != priority_by_work_item_map.end()) {
+
+        // It's there.  Remember its priority so we can find more quickly it in the
+        // work_item_by_priority_map. Then erase it.
+        long priority = it->second;
+        priority_by_work_item_map.erase(it);
+
+        // Now look through the entries with its priority in the work_item_by_priority_map and
+        // erase it there too.
+        std::pair<work_item_by_priority_iterator_t, work_item_by_priority_iterator_t>
+            equal_range = work_item_by_priority_map.equal_range(priority);
+        for (work_item_by_priority_iterator_t p = equal_range.first; p != equal_range.second; ) {
+          if ((*p).second == work_item) {
+            work_item_by_priority_map.erase(p);
+            break;
+          } else {
+            ++p;
+          }
+        }
+      }
+    }
+
     boost::mutex class_mutex;
 
     typedef std::unordered_map<WorkItem, long>           priority_by_work_item_map_t;
