@@ -8,18 +8,11 @@
 #include <functional>
 #include <stdio.h>
 #include <stdlib.h>
+#include "WorkItem.h"
 
 class WorkList {
   public:
-    class WorkItem {
-      public:
-        bool operator==(const WorkItem &rhs) const {
-          return rhs.ticket_number == ticket_number;
-        }
-        long ticket_number;
-    };
-
-    void add_work(WorkItem work_item, long priority) {
+    void add_work(const WorkItem &work_item, long priority) {
       boost::lock_guard<boost::mutex> member_lock(class_mutex);
       // TODO: assert work_item.ticket_number != 0;
 
@@ -77,12 +70,12 @@ class WorkList {
       return have_item;
     }
 
-    void complete_work_item(WorkItem work_item) {
+    void complete_work_item(const WorkItem &work_item) {
       boost::lock_guard<boost::mutex> member_lock(class_mutex);
     }
   private:
 
-    void delete_work_item(WorkItem work_item) {
+    void delete_work_item(const WorkItem &work_item) {
       // Find it in the priority_by_work_item_map
       priority_by_work_item_iterator_t it = priority_by_work_item_map.find(work_item);
 

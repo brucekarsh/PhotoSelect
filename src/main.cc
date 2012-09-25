@@ -24,11 +24,12 @@ void *thread_proc(void *arg);
 
 using namespace std;
 
+WorkList work_list;
+
 main(int argc, char **argv)
 {
   Preferences preferences;
   PhotoFileCache photoFileCache;
-  WorkList worklist;
 
   gdk_threads_init();
   gdk_threads_enter();

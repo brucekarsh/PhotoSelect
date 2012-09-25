@@ -25,6 +25,9 @@
 
 #include "Db.h"
 #include "Utils.h"
+#include "WorkList.h"
+
+extern WorkList work_list;
 
 #define SNAP_TIME(T) struct timespec T; clock_gettime(CLOCK_MONOTONIC_RAW, &T);
 
@@ -286,6 +289,9 @@ num_photo_files = 12;
       get_photo_thumbnail(photo_state_map[i], ICON_WIDTH, ICON_HEIGHT);
       gtk_list_store_append(list_store, &iter);
       gtk_list_store_set(list_store, &iter, COL_PIXBUF, photo_state.get_pixbuf(), -1);
+      WorkItem work_item(1, i, this); // TODO set ticket_number to a correct value
+      long priority = 7; // TODO set priority to tod
+      work_list.add_work(work_item, priority);
     }
     GtkTreeModel *tree_model = GTK_TREE_MODEL(list_store);
     icon_view = gtk_icon_view_new_with_model (tree_model);
