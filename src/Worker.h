@@ -19,13 +19,18 @@ class Worker {
 
     void do_work() {
       while(1) {
-        bool blocking = true;
-        WorkItem work_item;
-        bool b = work_list.get_next_work_item(work_item, blocking);
-        if (b) {
-          process_work_item(work_item);
-        } else {
-          std::cout << "No workitem" << std::endl;
+        try {
+          bool blocking = true;
+          WorkItem work_item;
+          bool b = work_list.get_next_work_item(work_item, blocking);
+          if (b) {
+            process_work_item(work_item);
+          } else {
+            std::cout << "No workitem" << std::endl;
+          }
+        } catch(int signum) {
+	  // The workList has shut down. We just exit the thread.
+          break;
         }
       }
     }

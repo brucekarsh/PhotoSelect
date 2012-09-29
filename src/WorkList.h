@@ -12,6 +12,9 @@
 
 class WorkList {
   public:
+
+    WorkList() : is_shutdown(false) {}
+
     void add_work(const WorkItem &work_item, long priority) {
       boost::lock_guard<boost::mutex> member_lock(class_mutex);
       // TODO: assert work_item.ticket_number != 0;
@@ -59,10 +62,18 @@ class WorkList {
       return !priority_by_work_item_map.empty();
     }
 
-    bool get_next_work_item(WorkItem &work_item, bool is_blocking) {
+    void shutdown_work_list() {
+      is_shutdown = true;
+    }
+
+    //! Throws zero if the WorkList is shut down.
+    bool get_next_work_item(WorkItem &work_item, bool is_blocking) throw(int) {
       boost::lock_guard<boost::mutex> member_lock(class_mutex);
       bool have_item = false;
       do {
+        if (is_shutdown) {
+          throw(0);
+        }
         work_item_by_priority_iterator_t it = work_item_by_priority_map.begin();
         if (it != work_item_by_priority_map.end()) {
           work_item = it->second;
@@ -119,6 +130,7 @@ class WorkList {
     typedef std::multimap<long, WorkItem>::iterator work_item_by_priority_iterator_t;
     typedef std::pair<long, WorkItem>          work_item_by_priority_entry_t;
     work_item_by_priority_map_t work_item_by_priority_map;
+    bool is_shutdown;
 };
 
 #endif  // WORKLIST_H__

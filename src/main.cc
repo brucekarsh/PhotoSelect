@@ -62,13 +62,19 @@ main(int argc, char **argv)
     open_initial_project(connection, baseWindow, &preferences, &photoFileCache);
   }
 
+  list<boost::thread *> worker_list;
   const int NWORKERS = 2;
   for (int i = 0; i < NWORKERS; i++) {
-    new boost::thread(*new Worker());
+    boost::thread * thread = new boost::thread(*new Worker());
+    worker_list.push_back(thread);
   }
 
   gtk_main();
   gdk_threads_leave ();
+  work_list.shutdown_work_list();
+  BOOST_FOREACH(boost::thread *worker, worker_list) {
+    worker->join();
+  }
 }
 
 void
