@@ -73,11 +73,5 @@ class Worker {
         g_object_unref(pixbuf);
       }
     }
-
-//    void start() {
-//      //m_thread = boost::shared_ptr<boost::thread>(new boost::thread(*this));
-//      m_thread = boost::shared_ptr<boost::thread>(
-//          new boost::thread(boost::bind(&Worker::do_work, this)));
-//    }
 };
 #endif  // WORKER_H__
