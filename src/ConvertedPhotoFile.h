@@ -48,7 +48,7 @@ class ConvertedPhotoFile {
   }
 
   //! Construct with libjpeg scaling, but don't scale more that the display size
-  ConvertedPhotoFile(std::string &photoFilePath, int display_width, int display_height,
+  ConvertedPhotoFile(const std::string &photoFilePath, int display_width, int display_height,
       int rotation) : photoFilePath(photoFilePath) {
 
     read_JPEG_header(photoFilePath.c_str());
@@ -88,7 +88,6 @@ class ConvertedPhotoFile {
     cinfo.scale_num = num;
     cinfo.scale_denom = denom;
     jpeg_calc_output_dimensions(&cinfo);
-    std::cout << "libjpeg scaling: " << cinfo.scale_num << "/" << cinfo.scale_denom << std::endl;
   }
 
   ~ConvertedPhotoFile() { 

@@ -30,7 +30,10 @@ class WorkList {
       // Go through work_item_by_priority_map and delete matching entries
       for (work_item_by_priority_iterator_t it = work_item_by_priority_map.begin();
           it != work_item_by_priority_map.end(); ) {
-        work_item_by_priority_iterator_t next_it = ++it; // get the next iterator before invalidate
+
+        work_item_by_priority_iterator_t next_it = it; // get the next iterator before invalidate
+        next_it++;
+
         if (it->second.ticket_number == ticket_number) {
 	    work_item_by_priority_map.erase(it);
         }
@@ -40,7 +43,10 @@ class WorkList {
       // Go through priority_by_work_item_map and delete matching entries
       for (priority_by_work_item_iterator_t it = priority_by_work_item_map.begin();
           it != priority_by_work_item_map.end(); ) {
-        priority_by_work_item_iterator_t next_it = ++it; // get the next iterator before invalidate
+
+        priority_by_work_item_iterator_t next_it = it; // get the next iterator before invalidate
+        next_it++;
+
         if (it->first.ticket_number == ticket_number) {
 	    priority_by_work_item_map.erase(it);
         }

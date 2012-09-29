@@ -10,6 +10,7 @@
 #include "ConversionEngine.h"
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/thread.hpp>
 #include <gtk/gtk.h>
 //#include <cairo-xlib.h>
 #include <boost/lexical_cast.hpp>
@@ -26,8 +27,10 @@
 #include "Db.h"
 #include "Utils.h"
 #include "WorkList.h"
+#include "TicketRegistry.h"
 
 extern WorkList work_list;
+extern TicketRegistry ticket_registry;
 
 #define SNAP_TIME(T) struct timespec T; clock_gettime(CLOCK_MONOTONIC_RAW, &T);
 
@@ -41,11 +44,21 @@ namespace sql {
 class MultiPhotoPage : public PhotoSelectPage {
   public:
 
-  // This enum is used by GtkListStore
-  enum {
-    COL_PIXBUF,
-    NUM_COLS
-  };
+    // This enum is used by GtkListStore
+    enum {
+      COL_PIXBUF,
+      NUM_COLS
+    };
+
+    // This struct represents entries in the pixbuf_map. The pixbuf_map is a map keyed by
+    // the index (sequence number on the page of a thumbnail). Each entry is a thumbnail
+    // passed in asynchronously be a Worker. They are rendered and removed by an idle callback.
+    struct PixbufMapEntry {
+      PixbufMapEntry(GdkPixbuf *pixbuf = NULL, int rotation = 0)
+          : pixbuf(pixbuf), rotation(rotation) {};
+      GdkPixbuf *pixbuf;
+      int rotation;
+    };
 
     //! Holds the state of a single photo on a MultiPhotoPage
     class PhotoState {
@@ -85,11 +98,16 @@ class MultiPhotoPage : public PhotoSelectPage {
     ConversionEngine conversionEngine;
     std::vector<std::string> photoFilenameVector;
     std::map<int, PhotoState> photo_state_map;
+    std::map<int, PixbufMapEntry> pixbuf_map;
     std::string project_name;
     sql::Connection *connection;
     PhotoFileCache *photoFileCache;
     GtkListStore *list_store;
     int current_index;
+    boost::mutex class_mutex;
+    long ticket_number; // TicketRegistry ticket number
+    gint idle_id;
+
 
     GtkWidget *page_hbox;
     GtkWidget *page_vbox;
@@ -124,9 +142,20 @@ class MultiPhotoPage : public PhotoSelectPage {
       connection(connection_), photoFileCache(photoFileCache_),
       tag_view_box(0), current_index(0),
       exif_view_box(0), tags_position("right"), exifs_position("right") {
+    ticket_number = ticket_registry.new_ticket();
   }
 
   ~MultiPhotoPage() {
+    // Get rid of all our work on the WorkList. (There still may be some work in progress)
+    work_list.delete_work_by_ticket_number(ticket_number);
+    // Unreference our ticket_number and wait for everyone else to do so as well
+    // That ensures that we cannot get callbacks from the Workers. The work in progress
+    // will be balked by the Workers because they can't get a reference to the ticket.
+    ticket_registry.unreference_ticket(ticket_number);
+    ticket_registry.wait_for_ticket(ticket_number);
+    if (idle_id) {
+      g_source_remove(idle_id);
+    }
     if (page_hbox) {
       // It's important to forget ourself from the WidgetRegistry. If not, we will
       // get odd crashes when our widget's address is reused.
@@ -276,25 +305,26 @@ class MultiPhotoPage : public PhotoSelectPage {
 
     // Add the GtkIconView
     list_store = gtk_list_store_new(NUM_COLS, GDK_TYPE_PIXBUF);
+    GtkTreeModel *tree_model = GTK_TREE_MODEL(list_store);
+    icon_view = gtk_icon_view_new_with_model (tree_model);
     GtkTreeIter iter;
 
     int num_photo_files = photoFilenameVector.size();
-num_photo_files = 12;
 
     // Iterate over the photo files, make GtkEventBox, GtkDrawingArea, PhotoState for
     // each one, wire it up, etc
     for (int i = 0; i < num_photo_files; i++) {
       photo_state_map[i] = PhotoState(false, i);
-      PhotoState &photo_state = photo_state_map[i];
-      get_photo_thumbnail(photo_state_map[i], ICON_WIDTH, ICON_HEIGHT);
+
+      GdkPixbuf *pixbuf = gtk_widget_render_icon_pixbuf(GTK_WIDGET(icon_view),
+          GTK_STOCK_MISSING_IMAGE, (GtkIconSize)-1);
       gtk_list_store_append(list_store, &iter);
-      gtk_list_store_set(list_store, &iter, COL_PIXBUF, photo_state.get_pixbuf(), -1);
-      WorkItem work_item(1, i, this); // TODO set ticket_number to a correct value
+      gtk_list_store_set(list_store, &iter, COL_PIXBUF, pixbuf, -1);
+      int rotation = Db::get_rotation(connection, photoFilenameVector[i]);
+      WorkItem work_item(ticket_number, i,rotation,  this);
       long priority = 7; // TODO set priority to tod
       work_list.add_work(work_item, priority);
     }
-    GtkTreeModel *tree_model = GTK_TREE_MODEL(list_store);
-    icon_view = gtk_icon_view_new_with_model (tree_model);
     gtk_widget_add_events(icon_view, GDK_KEY_PRESS_MASK | GDK_ENTER_NOTIFY_MASK
         | GDK_LEAVE_NOTIFY_MASK);
 
@@ -319,6 +349,59 @@ num_photo_files = 12;
 
     rebuild_tag_view();
     rebuild_exif_view();
+  }
+
+  static gboolean idle_cb(gpointer data) {
+    MultiPhotoPage *multiPhotoPage = (MultiPhotoPage *)data;
+    if (multiPhotoPage) {
+      return multiPhotoPage->idle();
+    }
+    return false;
+  }
+
+  gboolean idle() {
+    int index;
+    int rotation;
+    GdkPixbuf *pixbuf;
+    {
+      boost::lock_guard<boost::mutex> member_lock(class_mutex); 
+      if (pixbuf_map.empty()) {
+        idle_id = 0;
+        return false;
+      }
+      std::map<int, PixbufMapEntry>::iterator it = pixbuf_map.begin();
+      index = it->first;
+      pixbuf = (it->second).pixbuf;
+      rotation = (it->second).rotation;
+      pixbuf_map.erase(it);
+    }
+    apply_thumbnail(index, pixbuf, rotation);
+    return true;
+  }
+
+  //! Puts a thumbnail in the pixbuf_map. Thumbnails are then rendered via the idle callback.
+  //! We don't render them asynchronously from the worker thread because that causes too much
+  //! flashing.
+  void set_thumbnail(int index, GdkPixbuf *pixbuf, int rotation) {
+    boost::lock_guard<boost::mutex> member_lock(class_mutex); 
+    if (pixbuf_map.empty()) {
+      idle_id = g_idle_add(idle_cb, (gpointer)this);
+    }
+    pixbuf_map[index] = PixbufMapEntry(pixbuf, rotation);
+  }
+  // TODO acquire auto lock
+
+  void apply_thumbnail(int index, GdkPixbuf *pixbuf, int rotation) {
+    PhotoState &photo_state = photo_state_map[index];
+    photo_state.set_pixbuf(pixbuf, rotation);
+    gdk_threads_enter();
+    GtkTreePath *path =
+        gtk_tree_path_new_from_string(boost::lexical_cast<std::string>(index).c_str());
+    GtkTreeIter iter;
+    gtk_tree_model_get_iter(GTK_TREE_MODEL(list_store), &iter, path);
+    gtk_tree_path_free(path);
+    gtk_list_store_set(list_store, &iter, COL_PIXBUF, photo_state.get_pixbuf(), -1);
+    gdk_threads_leave();
   }
 
   static void pixbuf_destroy_cb(guchar *pixels, gpointer data) {
@@ -748,7 +831,7 @@ num_photo_files = 12;
   }
 
   void calculate_scaling(double &M, int image_width, int image_height,
-      int surface_width, int surface_height) {
+      int surface_width, int surface_height) const {
     M = MIN((double) surface_width / image_width, (double) surface_height / image_height);
     if (0.0 == M) {
       M = 1.0;
@@ -1074,6 +1157,10 @@ num_photo_files = 12;
 
   void quit();
   void add_page_to_base_window(PhotoSelectPage *photo_page);
+
+  std::string get_photofile_name(int index) const {
+    return photoFilenameVector[index];
+  }
 };
 
 #include "BaseWindow.h"

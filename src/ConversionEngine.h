@@ -40,7 +40,7 @@ class ConversionEngine {
     return convertedPhotoFile;
   }
 
-  //! Gets a ConvertedPhotoFile for a thumbnail given a path to a file representing a photo.
+  //! Gets a ConvertedPhotoFile for a thumbnail for the file at the current position.
   //! It does not try to cache anything. It tries to scale the image, but not so much
   //! that i becomes smaller than the specified display size.
   //! 
@@ -49,12 +49,31 @@ class ConversionEngine {
   //! \param display_height height of the display
   /// \return A convertedPhotoFile (which could still be converting)
   ///         or an UnknownCovertedPhotoFile if it cannot convert the file.
-  ConvertedPhotoFile *getConvertedPhotoFile(int display_width, int display_height, int rotation) {
+  ConvertedPhotoFile *getConvertedPhotoFile(int display_width, int display_height,
+      int rotation) const {
     if (photoFilenameVectorPosition <0
         || photoFilenameVectorPosition >= photoFilenameVector.size()) {
       return NULL;
     }
     std::string photoFilename = photoFilenameVector[photoFilenameVectorPosition];
+    return getConvertedPhotoFile(photoFilename, display_width, display_height, rotation);
+  }
+
+  //! Like ConvertedPhotoFile(int, int, int), but it accepts a filename instead of 
+  //! using the current position.
+  //! Gets a ConvertedPhotoFile for a thumbnail given a path to a file representing a photo.
+  //! It does not try to cache anything. It tries to scale the image, but not so much
+  //! that i becomes smaller than the specified display size.
+  //! 
+  //! If it can't do that either, it returns an UnknownConvertedPhotoFile.
+  //! \param photoFilename the file from which to get a thumbnail.
+  //! \param display_width width of the display
+  //! \param display_height height of the display
+  /// \return A convertedPhotoFile (which could still be converting)
+  ///         or an UnknownCovertedPhotoFile if it cannot convert the file.
+
+  static ConvertedPhotoFile *getConvertedPhotoFile(const std::string &photoFilename,
+      int display_width, int display_height, int rotation) {
     ConvertedPhotoFile * convertedPhotoFile = new ConvertedPhotoFile(photoFilename,
         display_width, display_height, rotation);
     return convertedPhotoFile;

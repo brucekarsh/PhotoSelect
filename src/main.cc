@@ -8,6 +8,8 @@
 #include "Preferences.h"
 #include "PhotoFileCache.h"
 #include "WorkList.h"
+#include "Worker.h"
+#include "TicketRegistry.h"
 
 namespace sql {
   class Driver;
@@ -25,6 +27,7 @@ void *thread_proc(void *arg);
 using namespace std;
 
 WorkList work_list;
+TicketRegistry ticket_registry;
 
 main(int argc, char **argv)
 {
@@ -60,7 +63,13 @@ main(int argc, char **argv)
     open_initial_project(connection, baseWindow, &preferences, &photoFileCache);
   }
 
-  start_thread();
+  const int NWORKERS = 8;
+  for (int i = 0; i < NWORKERS; i++) {
+    //Worker *worker = new Worker();
+    //worker->start();
+    new boost::thread(*new Worker());
+  }
+  //start_thread();
 
   gtk_main();
   gdk_threads_leave ();
