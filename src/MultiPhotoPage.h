@@ -153,8 +153,11 @@ class MultiPhotoPage : public PhotoSelectPage {
     // will be balked by the Workers because they can't get a reference to the ticket.
     ticket_registry.unreference_ticket(ticket_number);
     ticket_registry.wait_for_ticket(ticket_number);
-    if (idle_id) {
-      g_source_remove(idle_id);
+    {
+      boost::lock_guard<boost::mutex> member_lock(class_mutex); 
+      if (idle_id) {
+        g_source_remove(idle_id);
+      }
     }
     if (page_hbox) {
       // It's important to forget ourself from the WidgetRegistry. If not, we will
@@ -353,6 +356,7 @@ class MultiPhotoPage : public PhotoSelectPage {
 
   static gboolean idle_cb(gpointer data) {
     MultiPhotoPage *multiPhotoPage = (MultiPhotoPage *)data;
+    BOOST_ASSERT(multiPhotoPage);
     if (multiPhotoPage) {
       return multiPhotoPage->idle();
     }
@@ -362,18 +366,20 @@ class MultiPhotoPage : public PhotoSelectPage {
   gboolean idle() {
     int index;
     int rotation;
+    bool is_now_empty;
     GdkPixbuf *pixbuf;
     {
       boost::lock_guard<boost::mutex> member_lock(class_mutex); 
-      if (pixbuf_map.empty()) {
-        idle_id = 0;
-        return false;
-      }
+      BOOST_ASSERT(!pixbuf_map.empty());
       std::map<int, PixbufMapEntry>::iterator it = pixbuf_map.begin();
       index = it->first;
       pixbuf = (it->second).pixbuf;
       rotation = (it->second).rotation;
       pixbuf_map.erase(it);
+      if (pixbuf_map.empty()) {
+        g_source_remove(idle_id);
+        idle_id = 0;
+      }
     }
     apply_thumbnail(index, pixbuf, rotation);
     return true;
