@@ -733,17 +733,24 @@ class SinglePhotoPage : public PhotoSelectPage {
     invalidate_image();
   }
 
-  void
+  gboolean
   drawing_area_button_press(GdkEvent *event) {
     int button = event->button.button;
-    if (button == 1) {
+    int event_type = event->type;
+    gboolean ret = false;
+    if (event_type == GDK_BUTTON_PRESS && button == 1) {
       drag_start_x = event->button.x;
       drag_start_y = event->button.y;
       drag_is_active = true;
+      ret = true;
+    } else if (event_type == GDK_2BUTTON_PRESS && button == 1) {
+      open_multi_photo_page(conversionEngine.get_position());
+      ret = true;
     }
+    return ret;
   }
 
-  void
+  gboolean
   drawing_area_button_release(GdkEvent *event) {
     int button = event->button.button;
     if (button == 1 && drag_is_active) {
@@ -755,7 +762,9 @@ class SinglePhotoPage : public PhotoSelectPage {
       Dy += deltaY;
       invalidate_image();
       drag_is_active = false;
+      return true;
     }
+    return false;
   }
 
   gboolean
@@ -918,6 +927,8 @@ class SinglePhotoPage : public PhotoSelectPage {
   }
 
   void quit();
+  void add_page_to_base_window(PhotoSelectPage *photo_page);
+  void open_multi_photo_page(int index);
 
   static void
   drawing_area_draw_cb(GtkWidget *widget, cairo_t *cr, gpointer data) {
@@ -937,22 +948,26 @@ class SinglePhotoPage : public PhotoSelectPage {
     }
   }
 
-  static void
+  static gboolean
   drawing_area_button_press_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
     SinglePhotoPage *photoSelectPage = (SinglePhotoPage *)
         WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
-      photoSelectPage->drawing_area_button_press(event);
+      return photoSelectPage->drawing_area_button_press(event);
     }
+    return false;
   }
-  static void
+
+  static gboolean
   drawing_area_button_release_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
     SinglePhotoPage *photoSelectPage = (SinglePhotoPage *)
         WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
-      photoSelectPage->drawing_area_button_release(event);
+      return photoSelectPage->drawing_area_button_release(event);
     }
+    return false;
   }
+
   static gboolean
   drawing_area_scroll_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
     SinglePhotoPage *photoSelectPage = (SinglePhotoPage *)
@@ -962,6 +977,7 @@ class SinglePhotoPage : public PhotoSelectPage {
     }
     return false;
   }
+
   static void
   drawing_area_motion_notify_cb(GtkWidget *widget, GdkEvent *event, gpointer data) {
     SinglePhotoPage *photoSelectPage = (SinglePhotoPage *)
@@ -1003,6 +1019,7 @@ class SinglePhotoPage : public PhotoSelectPage {
 };
 
 #include "BaseWindow.h"
+#include "MultiPhotoPage.h"
 
   inline void SinglePhotoPage::quit() {
     BaseWindow *baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(drawing_area));
@@ -1010,5 +1027,20 @@ class SinglePhotoPage : public PhotoSelectPage {
       baseWindow->remove_page(page_hbox);
     }
     delete this;
+  }
+
+  inline void SinglePhotoPage::add_page_to_base_window(PhotoSelectPage *photo_page) {
+    BaseWindow *baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(page_hbox));
+    if (NULL != baseWindow) {
+      baseWindow->add_page(photo_page->get_tab_label(),
+          photo_page->get_notebook_page(), project_name);
+    }
+  };
+
+  inline void SinglePhotoPage::open_multi_photo_page(int index) {
+    MultiPhotoPage *multi_photo_page = new MultiPhotoPage(connection, photoFileCache);
+    multi_photo_page->setup(photoFilenameVector, project_name, thePreferences);
+    multi_photo_page->set_position(index+1); // (set_position is 1-based)
+    add_page_to_base_window(multi_photo_page);
   }
 #endif  // SINGLEPHOTOPAGE_H__

@@ -28,7 +28,6 @@
 #include "Utils.h"
 #include "WorkList.h"
 #include "TicketRegistry.h"
-#include "SinglePhotoPage.h"
 
 extern WorkList work_list;
 extern TicketRegistry ticket_registry;
@@ -37,6 +36,7 @@ extern TicketRegistry ticket_registry;
 
 class PhotoFileCache;
 class Preferences;
+class SinglePhotoPage;
   
 namespace sql {
   class Connection;
@@ -193,12 +193,6 @@ class MultiPhotoPage : public PhotoSelectPage {
     cloned_photo_select_page->set_tags_position(tags_position);
     cloned_photo_select_page->set_exifs_position(exifs_position);
     return cloned_photo_select_page;
-  }
-
-  SinglePhotoPage *openSinglePhotoPage() {
-    SinglePhotoPage *single_photo_select_page = new SinglePhotoPage(connection, photoFileCache);
-    single_photo_select_page->setup(photoFilenameVector, project_name, thePreferences);
-    return single_photo_select_page;
   }
 
   GtkWidget *
@@ -944,6 +938,10 @@ class MultiPhotoPage : public PhotoSelectPage {
     return ret;
   }
 
+  void set_position(int val) {
+    // TODO WRITEME
+  }
+
   gboolean static icon_view_button_press_cb(GtkWidget *widget,
       GdkEvent *event, gpointer user_data) {
     MultiPhotoPage *photoSelectPage =
@@ -1120,12 +1118,6 @@ class MultiPhotoPage : public PhotoSelectPage {
     rebuild_tag_view();
   }
 
-  void open_single_photo_page(int index) {
-      SinglePhotoPage *single_photo_page = openSinglePhotoPage();
-      single_photo_page->set_position(index+1); // (set_position is 1-based)
-      add_page_to_base_window(single_photo_page);
-  }
-
   static void find_pointer_coords(GtkWidget *widget, gint *x, gint *y) {
     Utils::get_pointer(widget, x, y);
     *x += gtk_adjustment_get_value(gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(widget)));
@@ -1164,6 +1156,7 @@ class MultiPhotoPage : public PhotoSelectPage {
 
   void quit();
   void add_page_to_base_window(PhotoSelectPage *photo_page);
+  void open_single_photo_page(int index);
 
   std::string get_photofile_name(int index) const {
     return photoFilenameVector[index];
@@ -1171,6 +1164,7 @@ class MultiPhotoPage : public PhotoSelectPage {
 };
 
 #include "BaseWindow.h"
+#include "SinglePhotoPage.h"
 
   inline void MultiPhotoPage::quit() {
     BaseWindow *baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(page_hbox));
@@ -1187,4 +1181,11 @@ class MultiPhotoPage : public PhotoSelectPage {
           photo_page->get_notebook_page(), project_name);
     }
   };
+
+  inline void MultiPhotoPage::open_single_photo_page(int index) {
+      SinglePhotoPage *single_photo_page = new SinglePhotoPage(connection, photoFileCache);
+      single_photo_page->setup(photoFilenameVector, project_name, thePreferences);
+      single_photo_page->set_position(index+1); // (set_position is 1-based)
+      add_page_to_base_window(single_photo_page);
+  }
 #endif  // MULTIPHOTOPAGE_H__
