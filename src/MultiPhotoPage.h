@@ -301,6 +301,11 @@ class MultiPhotoPage : public PhotoSelectPage {
     gtk_box_pack_start(GTK_BOX(central_hbox), scrolled_window, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(page_vbox), central_hbox, TRUE, TRUE, 0);
 
+    // Find the GtkScrolledWindow's vadjustment so we can watch for visiblity changes
+    // in the GtkIconVew
+    GtkAdjustment *vadjustment =
+        gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(scrolled_window));
+
     // Add the GtkIconView
     list_store = gtk_list_store_new(NUM_COLS, GDK_TYPE_PIXBUF);
     GtkTreeModel *tree_model = GTK_TREE_MODEL(list_store);
@@ -332,6 +337,8 @@ class MultiPhotoPage : public PhotoSelectPage {
     g_signal_connect(icon_view, "popup-menu", G_CALLBACK(icon_view_popup_menu_cb), 0);
     g_signal_connect(icon_view, "enter-notify-event", G_CALLBACK(icon_view_enter_cb), NULL);
     g_signal_connect(icon_view, "leave-notify-event", G_CALLBACK(icon_view_leave_cb), NULL);
+    g_signal_connect(vadjustment, "value-changed", G_CALLBACK(scroll_view_value_changed_cb),
+        (gpointer) this);
 
     gtk_icon_view_set_spacing(GTK_ICON_VIEW(icon_view), 11);
     gtk_icon_view_set_item_width(GTK_ICON_VIEW(icon_view), ICON_WIDTH);
@@ -347,6 +354,26 @@ class MultiPhotoPage : public PhotoSelectPage {
 
     rebuild_tag_view();
     rebuild_exif_view();
+  }
+
+  static void scroll_view_value_changed_cb(GtkAdjustment *adjustment, gpointer user_data) {
+    MultiPhotoPage *photoSelectPage = (MultiPhotoPage *) user_data;
+    if (0 != photoSelectPage) {
+      photoSelectPage->scroll_view_value_changed(adjustment, user_data);
+    }
+  }
+
+  void scroll_view_value_changed(GtkAdjustment *adjustment, gpointer user_data) {
+    printf("value_changed\n");
+    GtkTreePath *start_path;
+    GtkTreePath *end_path;
+    gboolean b = gtk_icon_view_get_visible_range(GTK_ICON_VIEW(icon_view), &start_path, &end_path);
+    if (b) {
+      printf("start %s ", gtk_tree_path_to_string(start_path));
+      printf("end %s\n", gtk_tree_path_to_string(end_path));
+    } else {
+      printf("not available\n");
+    }
   }
 
   static gboolean idle_cb(gpointer data) {
