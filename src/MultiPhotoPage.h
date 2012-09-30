@@ -28,6 +28,7 @@
 #include "Utils.h"
 #include "WorkList.h"
 #include "TicketRegistry.h"
+#include "SinglePhotoPage.h"
 
 extern WorkList work_list;
 extern TicketRegistry ticket_registry;

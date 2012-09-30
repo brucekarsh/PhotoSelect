@@ -166,7 +166,7 @@ class OpenProjectWindow {
 };
 
 #include "BaseWindow.h"
-#include "SinglePhotoPage.h"
+#include "MultiPhotoPage.h"
 
 inline  void
 OpenProjectWindow::apply() {
@@ -176,9 +176,10 @@ OpenProjectWindow::apply() {
   }
   std::vector<std::string> photoFilenameVector = Db::get_project_photo_files(connection,
       project_name);
-  SinglePhotoPage *photoSelectPage = new SinglePhotoPage(connection, photoFileCache);
-  photoSelectPage->setup(photoFilenameVector, project_name, preferences);
-  baseWindow->add_page(photoSelectPage->get_tab_label(),
-      photoSelectPage->get_notebook_page(), project_name);
+  MultiPhotoPage *multiPhotoPage = new MultiPhotoPage(connection, photoFileCache);
+  multiPhotoPage->setup(photoFilenameVector, project_name, preferences);
+  baseWindow->add_page(multiPhotoPage->get_tab_label(),
+      multiPhotoPage->get_notebook_page(), project_name);
+
 }
 #endif // OPENPROJECTWINDOW_H__

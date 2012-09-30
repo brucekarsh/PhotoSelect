@@ -94,7 +94,7 @@ class BaseWindow {
 
   void run() {
     GtkWidget *notebook_ = gtk_notebook_new();
-    run(notebook_, GTK_WIN_POS_NONE, 500, 500);
+    run(notebook_, GTK_WIN_POS_NONE, 800, 500);
   }
 
   void run(GtkWidget *notebook_, GtkWindowPosition window_position, gint width, gint height) {

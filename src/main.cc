@@ -87,10 +87,6 @@ open_initial_project(sql::Connection *connection, BaseWindow *base_window,
   }
   std::vector<std::string> photoFilenameVector = Db::get_project_photo_files(connection,
       project_name);
-  SinglePhotoPage *photoSelectPage = new SinglePhotoPage(connection, photoFileCache);
-  photoSelectPage->setup(photoFilenameVector, project_name, preferences);
-  base_window->add_page(photoSelectPage->get_tab_label(),
-      photoSelectPage->get_notebook_page(), project_name);
   MultiPhotoPage *multiPhotoPage = new MultiPhotoPage(connection, photoFileCache);
   multiPhotoPage->setup(photoFilenameVector, project_name, preferences);
   base_window->add_page(multiPhotoPage->get_tab_label(),
