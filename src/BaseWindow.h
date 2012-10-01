@@ -288,6 +288,7 @@ class BaseWindow {
   }
 
   // Forward references
+  void quit_all_notebook_pages();
   std::string get_project_name();
   void file_project_new_activate();
   void file_project_add_to_activate();
@@ -457,6 +458,7 @@ class BaseWindow {
   void
   quit() {
     disconnect_signals();
+    quit_all_notebook_pages();
     // If we are the last BaseWindow, then stop the event loop
     long n_base_windows =  WidgetRegistry<BaseWindow>::count();
     if (1 == n_base_windows) {
@@ -565,6 +567,15 @@ BaseWindow::get_project_name() {
     }
   }
   return project_name;
+}
+
+inline void
+BaseWindow::quit_all_notebook_pages() {
+  while (gtk_notebook_get_n_pages(GTK_NOTEBOOK(notebook)) > 0) {
+    GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), 0);
+    PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
+    photo_select_page->quit();
+  }
 }
 
 inline void

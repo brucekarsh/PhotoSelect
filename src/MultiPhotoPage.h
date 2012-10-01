@@ -375,9 +375,6 @@ class MultiPhotoPage : public PhotoSelectPage {
     if (b) {
       int start_pos = atoi(gtk_tree_path_to_string(start_path));
       int end_pos = atoi(gtk_tree_path_to_string(end_path));
-      printf("start %d ", start_pos);
-      printf("end %d\n", end_pos);
-      std::cout << "pxibuf_map.size " << pixbuf_map.size() << std::endl;
       refresh_thumbnails(start_pos, end_pos);
     } else {
       printf("not available\n");
@@ -418,12 +415,18 @@ class MultiPhotoPage : public PhotoSelectPage {
   //! Puts a thumbnail in the pixbuf_map. Thumbnails are then rendered via the idle callback.
   //! We don't render them asynchronously from the worker thread because that causes too much
   //! flashing.
-  void set_thumbnail(int index, GdkPixbuf *pixbuf, int rotation) {
+  bool set_thumbnail(int index, GdkPixbuf *pixbuf, int rotation) {
     boost::lock_guard<boost::mutex> member_lock(class_mutex); 
+    // If the queue is too large, balk and the worker will try again later
+    int qsize = pixbuf_map.size();
+    if (qsize >= 10) {
+      return false;
+    }
     if (pixbuf_map.empty()) {
       idle_id = g_idle_add(idle_cb, (gpointer)this);
     }
     pixbuf_map[index] = PixbufMapEntry(pixbuf, rotation);
+    return true;
   }
   // TODO acquire auto lock
 

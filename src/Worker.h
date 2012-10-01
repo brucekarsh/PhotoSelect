@@ -12,6 +12,12 @@ class Worker {
   private:
     boost::shared_ptr<boost::thread> m_thread;
 
+  enum {
+    DELIVERY_OK,	  // Delivery succeeded
+    DELIVERY_REJECTED,    // Delivery failed. Retry will not work
+    DELIVERY_RETRY_LATER  // Delivery temporarily failed. queue is full
+  };
+
   public:
     void operator()() {
       do_work();
@@ -19,23 +25,36 @@ class Worker {
 
     void do_work() {
       while(1) {
+        WorkItem work_item;
+        bool b = false;
         try {
           bool blocking = true;
-          WorkItem work_item;
           bool b = work_list.get_next_work_item(work_item, blocking);
-          if (b) {
-            process_work_item(work_item);
-          } else {
-            std::cout << "No workitem" << std::endl;
-          }
+          BOOST_ASSERT(b);
         } catch(int signum) {
 	  // The workList has shut down. We just exit the thread.
           break;
         }
+        GdkPixbuf *pixbuf = build_pixbuf_from_work_item(work_item);
+        gboolean is_delivery_done = false;
+        while (!is_delivery_done) {
+          int delivery_result = deliver_pixbuf_to_multiphotopage(pixbuf, work_item);
+          if (delivery_result == DELIVERY_RETRY_LATER) {
+            // Recipient queue is full. Wait a while and try again
+            usleep(10000);
+          } else if (delivery_result == DELIVERY_REJECTED) {
+            // Recipient no longer exists
+            g_object_unref(pixbuf);
+            is_delivery_done = true;
+          } else {
+            // successfully delivered
+            is_delivery_done = true;
+          }
+        }
       }
     }
 
-    void process_work_item(const WorkItem &work_item) {
+    GdkPixbuf *build_pixbuf_from_work_item(const WorkItem &work_item) {
       int ICON_WIDTH = MultiPhotoPage::ICON_WIDTH;
       int ICON_HEIGHT = MultiPhotoPage::ICON_HEIGHT;
       int ICON_STRIDE = MultiPhotoPage::ICON_STRIDE;
@@ -64,14 +83,25 @@ class Worker {
       GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data(newpixels, GDK_COLORSPACE_RGB,
           FALSE, 8, ICON_WIDTH, ICON_HEIGHT, ICON_STRIDE, MultiPhotoPage::pixbuf_destroy_cb,
           NULL);
+      return pixbuf;
+    }
+
+    int deliver_pixbuf_to_multiphotopage(GdkPixbuf *pixbuf, const WorkItem& work_item) {
+      int ret = DELIVERY_OK;
       bool b = ticket_registry.reference_ticket(work_item.ticket_number);
-      if (b) {
-        (work_item.multiPhotoPage)->set_thumbnail(work_item.index, pixbuf, rotation);
-        ticket_registry.unreference_ticket(work_item.ticket_number);
-      } else {
+      if (!b) {
         // The class that we made this pixbuf for is gone, so we balk.
-        g_object_unref(pixbuf);
+        return DELIVERY_REJECTED;
       }
+      bool is_delivered = (work_item.multiPhotoPage)->set_thumbnail(work_item.index,
+          pixbuf, work_item.rotation);
+      if (is_delivered) {
+        ret = DELIVERY_OK;
+      } else {
+        ret = DELIVERY_RETRY_LATER;
+      }
+      ticket_registry.unreference_ticket(work_item.ticket_number);
+      return ret;
     }
 };
 #endif  // WORKER_H__

@@ -13,5 +13,6 @@ class PhotoSelectPage {
     virtual void rebuild_exif_view() = 0;
     virtual void set_exifs_position(const std::string position) = 0;
     virtual void set_tags_position(const std::string position) = 0;
+    virtual void quit() = 0;
 };
 #endif  // PHOTOSELECTPAGE_H__
