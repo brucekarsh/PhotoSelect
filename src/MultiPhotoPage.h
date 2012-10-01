@@ -315,8 +315,13 @@ class MultiPhotoPage : public PhotoSelectPage {
     int num_photo_files = photoFilenameVector.size();
 
     // Iterate over the photo files, make GtkEventBox, GtkDrawingArea, PhotoState for
-    // each one, wire it up, etc
-    for (int i = 0; i < num_photo_files; i++) {
+    // each one, wire it up, etc. We iterate in reverse order because images are rendered
+    // mostly last-in first-out. So this make them render from the top of the page towards
+    // the bottom.
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+    long priority = ts.tv_sec * 1000000 + ts.tv_nsec / 1000000;
+    for (int i = num_photo_files - 1; i >= 0; i--) {
       photo_state_map[i] = PhotoState(false, i);
 
       GdkPixbuf *pixbuf = gtk_widget_render_icon_pixbuf(GTK_WIDGET(icon_view),
@@ -325,7 +330,6 @@ class MultiPhotoPage : public PhotoSelectPage {
       gtk_list_store_set(list_store, &iter, COL_PIXBUF, pixbuf, -1);
       int rotation = Db::get_rotation(connection, photoFilenameVector[i]);
       WorkItem work_item(ticket_number, i,rotation,  this);
-      long priority = 7; // TODO set priority to tod
       work_list.add_work(work_item, priority);
     }
     gtk_widget_add_events(icon_view, GDK_KEY_PRESS_MASK | GDK_ENTER_NOTIFY_MASK

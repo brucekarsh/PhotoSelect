@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include "WorkItem.h"
 
+//! Maintains two lists of WorkItems, one priority -> WorkItem and one is WorkItem -> priority
 class WorkList {
   public:
 
@@ -89,8 +90,10 @@ class WorkList {
     bool gnwi(WorkItem &work_item) {
       boost::lock_guard<boost::mutex> member_lock(class_mutex);
       bool have_item = false;
-      work_item_by_priority_iterator_t it = work_item_by_priority_map.begin();
-      if (it != work_item_by_priority_map.end()) {
+      work_item_by_priority_reverse_iterator_t rit = work_item_by_priority_map.rbegin();
+      if (rit != work_item_by_priority_map.rend()) {
+        work_item_by_priority_iterator_t it = rit.base();
+        it--;
         work_item = it->second;
         work_item_by_priority_map.erase(it);
         priority_by_work_item_map.erase(work_item);
@@ -140,6 +143,8 @@ class WorkList {
 
     typedef std::multimap<long, WorkItem>           work_item_by_priority_map_t;
     typedef std::multimap<long, WorkItem>::iterator work_item_by_priority_iterator_t;
+    typedef std::multimap<long, WorkItem>::reverse_iterator
+        work_item_by_priority_reverse_iterator_t;
     typedef std::pair<long, WorkItem>          work_item_by_priority_entry_t;
     work_item_by_priority_map_t work_item_by_priority_map;
     bool is_shutdown;
