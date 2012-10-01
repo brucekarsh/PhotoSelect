@@ -176,8 +176,8 @@ class ImportWindow {
   }
 
   void
-  runUI() {
-    while (gtk_events_pending ()) {
+  runUI(int maxtimes) {
+    while (gtk_events_pending() && maxtimes-- > 0) {
       gtk_main_iteration ();
     } 
   }
@@ -190,7 +190,7 @@ class ImportWindow {
     gtk_label_set_text(GTK_LABEL(status_label), (std::string("status: processed ")
         + boost::lexical_cast<std::string>(process_count) + "\n").c_str());
     process_count++;
-    runUI();
+    runUI(100);
   }
 };
 
@@ -216,7 +216,7 @@ class ImportWindow {
     gtk_text_buffer_set_text(scrollTextBuffer, txt.c_str(), -1);
     gtk_label_set_text(GTK_LABEL(status_label), "status: Starting.");
     gtk_widget_show(scrollBox);
-    runUI();
+    runUI(100);
 
     for (p = file_list; NULL != p; p = p -> next) {
       std::cout << (char*)(p -> data) << std::endl;

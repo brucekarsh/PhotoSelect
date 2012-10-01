@@ -181,10 +181,10 @@ class QueryView {
     gtk_widget_set_sensitive(GTK_WIDGET(accept_button), FALSE);
     gtk_text_buffer_set_text(scrollTextBuffer, txt.c_str(), txt.size());
     gtk_label_set_text(GTK_LABEL(status_label), "status: Query started.");
-    runUI();
+    runUI(100);
     sql::ResultSet *rs = queryPreparedStatement->executeQuery();
     gtk_text_buffer_set_text(scrollTextBuffer, "", 0);
-    runUI();
+    runUI(100);
     int count = 0;
     int total_count = 0;
     std::string label;
@@ -204,7 +204,7 @@ class QueryView {
         label +=  boost::lexical_cast<std::string>(total_count);
         label += " image files so far";
         gtk_label_set_text(GTK_LABEL(status_label), label.c_str());
-        runUI();
+        runUI(100);
       }
     }
     label  = "status: Query finished. ";
@@ -212,7 +212,7 @@ class QueryView {
     label += " image files found";
     gtk_label_set_text(GTK_LABEL(status_label), label.c_str());
     gtk_widget_set_sensitive(GTK_WIDGET(accept_button), TRUE);
-    runUI();
+    runUI(100);
 
     return first_part + last_part;
   }
@@ -321,8 +321,8 @@ class QueryView {
   }
 
   void
-  runUI() {
-    while (gtk_events_pending ()) {
+  runUI(int maxtimes) {
+    while (gtk_events_pending() && maxtimes-- > 0) {
       gtk_main_iteration ();
     }
   }

@@ -341,7 +341,7 @@ exif_datetime_to_mysql_datetime(const std::string exif_datetime)
           if (process_count >= process_rate) {
 	    process_count = 0;
             importWindow -> pulseProgressBar();
-            importWindow -> runUI();
+            importWindow -> runUI(100);
             if (importWindow -> is_cancel_requested()) {
 	      return 0;
             }
@@ -381,13 +381,13 @@ exif_datetime_to_mysql_datetime(const std::string exif_datetime)
             process_count = 0;
             float fraction = (gdouble)total_process_count/(gdouble)file_count;
             importWindow -> setProgressBar(fraction);
-            importWindow -> runUI();
+            importWindow -> runUI(100);
           }
         }
       }
     }
 
-    if (process_count >= process_rate) {
+    if (process_count) {
       insert_into_database();
       process_count = 0;
     }

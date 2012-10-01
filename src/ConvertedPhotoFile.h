@@ -47,11 +47,17 @@ class ConvertedPhotoFile {
     height = cinfo.output_height;
   }
 
-  //! Construct with libjpeg scaling, but don't scale more that the display size
+  //! Construct with libjpeg scaling, but don't scale more than the display size
   ConvertedPhotoFile(const std::string &photoFilePath, int display_width, int display_height,
       int rotation) : photoFilePath(photoFilePath) {
 
     read_JPEG_header(photoFilePath.c_str());
+    if (NULL == infile) {
+      pixels = 0;
+      width = 0;
+      height = 0;
+      return;
+    }
     set_JPEG_scaling(display_width, display_height, rotation);
     pixels = read_JPEG_pixels();
     if(NULL == pixels) {
@@ -102,10 +108,11 @@ class ConvertedPhotoFile {
   typedef struct my_error_mgr * my_error_ptr;
 
   METHODDEF(void)
-  my_error_exit (j_common_ptr cinfo)
+  my_error_exit (j_common_ptr cinfo_param)
   {
-    my_error_ptr myerr = (my_error_ptr) cinfo->err;
-    (*cinfo->err->output_message) (cinfo);
+    std::cout << "in my_error_exit" << std::endl;
+    my_error_ptr myerr = (my_error_ptr) cinfo_param->err;
+    (*cinfo_param->err->output_message) (cinfo_param);
     longjmp(myerr->setjmp_buffer, 1);
   }
 
