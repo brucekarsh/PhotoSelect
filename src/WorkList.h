@@ -66,24 +66,36 @@ class WorkList {
       is_shutdown = true;
     }
 
+    //! Tries to get a WorkItem. Optionally blocks if none available.
     //! Throws zero if the WorkList is shut down.
     bool get_next_work_item(WorkItem &work_item, bool is_blocking) throw(int) {
+      while (1) {
+        bool have_item = gnwi(work_item);
+        if (have_item) {
+          return have_item;
+        }
+        if (is_shutdown) {
+          throw (0);
+        }
+        if (!is_blocking) {
+          return false;
+        }
+        usleep(10000); // TODO: Use a CV and wait for work to appear
+      }
+    }
+
+    //! Tries to get a WorkItem. If it can, it removes it an returns it.
+    //! \return true if it got a WorkItem, false otherwise
+    bool gnwi(WorkItem &work_item) {
       boost::lock_guard<boost::mutex> member_lock(class_mutex);
       bool have_item = false;
-      do {
-        if (is_shutdown) {
-          throw(0);
-        }
-        work_item_by_priority_iterator_t it = work_item_by_priority_map.begin();
-        if (it != work_item_by_priority_map.end()) {
-          work_item = it->second;
-          work_item_by_priority_map.erase(it);
-          priority_by_work_item_map.erase(work_item);
-          have_item = true;
-        } else {
-          usleep(10000); // TODO: Use a CV and wait for work to appear
-        }
-      } while (is_blocking && !have_item);
+      work_item_by_priority_iterator_t it = work_item_by_priority_map.begin();
+      if (it != work_item_by_priority_map.end()) {
+        work_item = it->second;
+        work_item_by_priority_map.erase(it);
+        priority_by_work_item_map.erase(work_item);
+        have_item = true;
+      }
       return have_item;
     }
 
