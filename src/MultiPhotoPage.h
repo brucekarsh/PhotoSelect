@@ -322,7 +322,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     // the bottom.
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-    long priority = ts.tv_sec * 1000000 + ts.tv_nsec / 1000000;
+    long priority = ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
     for (int i = num_photo_files - 1; i >= 0; i--) {
       photo_state_map[i] = PhotoState(false, i);
       g_object_ref(G_OBJECT(gtk_stock_missing_image));
@@ -369,7 +369,6 @@ class MultiPhotoPage : public PhotoSelectPage {
   }
 
   void scroll_view_value_changed(GtkAdjustment *adjustment, gpointer user_data) {
-    printf("value_changed\n");
     GtkTreePath *start_path;
     GtkTreePath *end_path;
     gboolean b = gtk_icon_view_get_visible_range(GTK_ICON_VIEW(icon_view), &start_path, &end_path);
@@ -378,6 +377,7 @@ class MultiPhotoPage : public PhotoSelectPage {
       int end_pos = atoi(gtk_tree_path_to_string(end_path));
       printf("start %d ", start_pos);
       printf("end %d\n", end_pos);
+      std::cout << "pxibuf_map.size " << pixbuf_map.size() << std::endl;
       refresh_thumbnails(start_pos, end_pos);
     } else {
       printf("not available\n");
@@ -1201,7 +1201,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     boost::lock_guard<boost::mutex> member_lock(class_mutex); 
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-    long priority = ts.tv_sec * 1000000 + ts.tv_nsec / 1000000;
+    long priority = ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
     for (int i = last; i >= first; i--) {
       PhotoState &photo_state = photo_state_map[i];
 
