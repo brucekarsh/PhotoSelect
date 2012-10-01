@@ -136,6 +136,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     std::map<GtkWidget *, std::string> tag_button_map;
     // all_photo_tags_for_project[file_name][tag_name] -> photo_tag_s. (photo_tag_s is empty)
     std::map<std::string, std::map<std::string, Db::photo_tag_s> > all_photo_tags_for_project;
+    GdkPixbuf *gtk_stock_missing_image;
 
   MultiPhotoPage(sql::Connection *connection_, PhotoFileCache *photoFileCache_) :
       conversionEngine(photoFileCache_), 
@@ -310,6 +311,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     list_store = gtk_list_store_new(NUM_COLS, GDK_TYPE_PIXBUF);
     GtkTreeModel *tree_model = GTK_TREE_MODEL(list_store);
     icon_view = gtk_icon_view_new_with_model (tree_model);
+    gtk_stock_missing_image =  gtk_widget_render_icon_pixbuf(GTK_WIDGET(icon_view), GTK_STOCK_MISSING_IMAGE, (GtkIconSize)-1);
     GtkTreeIter iter;
 
     int num_photo_files = photoFilenameVector.size();
@@ -323,11 +325,10 @@ class MultiPhotoPage : public PhotoSelectPage {
     long priority = ts.tv_sec * 1000000 + ts.tv_nsec / 1000000;
     for (int i = num_photo_files - 1; i >= 0; i--) {
       photo_state_map[i] = PhotoState(false, i);
-
-      GdkPixbuf *pixbuf = gtk_widget_render_icon_pixbuf(GTK_WIDGET(icon_view),
-          GTK_STOCK_MISSING_IMAGE, (GtkIconSize)-1);
+      g_object_ref(G_OBJECT(gtk_stock_missing_image));
+      photo_state_map[i].set_pixbuf(gtk_stock_missing_image, 0);
       gtk_list_store_append(list_store, &iter);
-      gtk_list_store_set(list_store, &iter, COL_PIXBUF, pixbuf, -1);
+      gtk_list_store_set(list_store, &iter, COL_PIXBUF, gtk_stock_missing_image, -1);
       int rotation = Db::get_rotation(connection, photoFilenameVector[i]);
       WorkItem work_item(ticket_number, i,rotation,  this);
       work_list.add_work(work_item, priority);
@@ -373,8 +374,11 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkTreePath *end_path;
     gboolean b = gtk_icon_view_get_visible_range(GTK_ICON_VIEW(icon_view), &start_path, &end_path);
     if (b) {
-      printf("start %s ", gtk_tree_path_to_string(start_path));
-      printf("end %s\n", gtk_tree_path_to_string(end_path));
+      int start_pos = atoi(gtk_tree_path_to_string(start_path));
+      int end_pos = atoi(gtk_tree_path_to_string(end_path));
+      printf("start %d ", start_pos);
+      printf("end %d\n", end_pos);
+      refresh_thumbnails(start_pos, end_pos);
     } else {
       printf("not available\n");
     }
@@ -1191,6 +1195,22 @@ class MultiPhotoPage : public PhotoSelectPage {
 
   std::string get_photofile_name(int index) const {
     return photoFilenameVector[index];
+  }
+
+  void refresh_thumbnails(int first, int last) {
+    boost::lock_guard<boost::mutex> member_lock(class_mutex); 
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+    long priority = ts.tv_sec * 1000000 + ts.tv_nsec / 1000000;
+    for (int i = last; i >= first; i--) {
+      PhotoState &photo_state = photo_state_map[i];
+
+      if (photo_state.get_pixbuf() == gtk_stock_missing_image) {
+        int rotation = Db::get_rotation(connection, photoFilenameVector[i]);
+        WorkItem work_item(ticket_number, i,rotation,  this);
+        work_list.add_work(work_item, priority);
+      }
+    }
   }
 };
 
