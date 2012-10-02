@@ -9,6 +9,7 @@
 #include "PhotoFileCache.h"
 #include "WorkList.h"
 #include "Worker.h"
+#include "StockThumbnails.h"
 #include "TicketRegistry.h"
 
 namespace sql {
@@ -26,6 +27,7 @@ void *thread_proc(void *arg);
 using namespace std;
 
 WorkList work_list;
+StockThumbnails *stock_thumbnails;
 TicketRegistry ticket_registry;
 
 main(int argc, char **argv)
@@ -36,6 +38,7 @@ main(int argc, char **argv)
   gdk_threads_init();
   gdk_threads_enter();
   gtk_init(&argc, &argv);
+  stock_thumbnails = new StockThumbnails();
 
   // Initialize the XML4C2 system.
   try {
@@ -75,6 +78,7 @@ main(int argc, char **argv)
   BOOST_FOREACH(boost::thread *worker, worker_list) {
     worker->join();
   }
+  delete stock_thumbnails;
 }
 
 void

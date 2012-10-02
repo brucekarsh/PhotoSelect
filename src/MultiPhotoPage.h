@@ -28,8 +28,10 @@
 #include "Utils.h"
 #include "WorkList.h"
 #include "TicketRegistry.h"
+#include "StockThumbnails.h"
 
 extern WorkList work_list;
+extern StockThumbnails *stock_thumbnails;
 extern TicketRegistry ticket_registry;
 
 #define SNAP_TIME(T) struct timespec T; clock_gettime(CLOCK_MONOTONIC_RAW, &T);
@@ -80,6 +82,7 @@ class MultiPhotoPage : public PhotoSelectPage {
         void set_pixbuf(GdkPixbuf *pixbuf, int rotation) {
           clear_pixbuf();
 	  this->pixbuf = pixbuf;
+          g_object_ref(G_OBJECT(pixbuf));
           this->rotation = rotation;
         }
         void clear_pixbuf() {
@@ -311,7 +314,8 @@ class MultiPhotoPage : public PhotoSelectPage {
     list_store = gtk_list_store_new(NUM_COLS, GDK_TYPE_PIXBUF);
     GtkTreeModel *tree_model = GTK_TREE_MODEL(list_store);
     icon_view = gtk_icon_view_new_with_model (tree_model);
-    gtk_stock_missing_image =  gtk_widget_render_icon_pixbuf(GTK_WIDGET(icon_view), GTK_STOCK_MISSING_IMAGE, (GtkIconSize)-1);
+    //gtk_stock_missing_image =  gtk_widget_render_icon_pixbuf(GTK_WIDGET(icon_view), GTK_STOCK_MISSING_IMAGE, (GtkIconSize)-1);
+    gtk_stock_missing_image = stock_thumbnails->get_loading_thumbnail();
     GtkTreeIter iter;
 
     int num_photo_files = photoFilenameVector.size();
@@ -325,7 +329,6 @@ class MultiPhotoPage : public PhotoSelectPage {
     long priority = ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
     for (int i = num_photo_files - 1; i >= 0; i--) {
       photo_state_map[i] = PhotoState(false, i);
-      g_object_ref(G_OBJECT(gtk_stock_missing_image));
       photo_state_map[i].set_pixbuf(gtk_stock_missing_image, 0);
       gtk_list_store_append(list_store, &iter);
       gtk_list_store_set(list_store, &iter, COL_PIXBUF, gtk_stock_missing_image, -1);

@@ -6,6 +6,9 @@
 #include <boost/thread.hpp>
 #include "WorkList.h"
 #include "ConversionEngine.h"
+#include "StockThumbnails.h"
+
+extern StockThumbnails *stock_thumbnails;
 extern WorkList work_list;
 
 class Worker {
@@ -66,11 +69,16 @@ class Worker {
           photofile_name, ICON_WIDTH, ICON_WIDTH, rotation);
       int width = convertedPhotoFile->width;
       int height = convertedPhotoFile->height;
+      if (width == 0 || height == 0) {
+        delete convertedPhotoFile;
+        return stock_thumbnails->get_bad_jpeg_thumbnail();
+      }
       double M;
       (work_item.multiPhotoPage)->calculate_scaling(M, width, height, ICON_WIDTH,
           ICON_HEIGHT);
       unsigned char *pixels = convertedPhotoFile->scale_and_pan_and_rotate(
           ICON_WIDTH, ICON_HEIGHT, M, 0.0, 0.0, rotation);
+      delete convertedPhotoFile;
       // Convert pixels to the format favored by GtkIconView
       unsigned char *newpixels = (unsigned char *)malloc(ICON_WIDTH * ICON_HEIGHT * 3);
       unsigned char *p = newpixels;
