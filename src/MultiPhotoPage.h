@@ -314,7 +314,6 @@ class MultiPhotoPage : public PhotoSelectPage {
     list_store = gtk_list_store_new(NUM_COLS, GDK_TYPE_PIXBUF);
     GtkTreeModel *tree_model = GTK_TREE_MODEL(list_store);
     icon_view = gtk_icon_view_new_with_model (tree_model);
-    //gtk_stock_missing_image =  gtk_widget_render_icon_pixbuf(GTK_WIDGET(icon_view), GTK_STOCK_MISSING_IMAGE, (GtkIconSize)-1);
     gtk_stock_missing_image = stock_thumbnails->get_loading_thumbnail();
     GtkTreeIter iter;
 
