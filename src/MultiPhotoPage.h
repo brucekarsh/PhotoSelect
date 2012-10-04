@@ -196,18 +196,33 @@ class MultiPhotoPage : public PhotoSelectPage {
     int index = 0;
     // Iterate through each photo file in the project
     BOOST_FOREACH(std::string filename, photoFilenameVector) {
-      // get the photo file's PhotoState
-      PhotoState &photo_state = photo_state_map[index];
-      if (photo_state.get_is_selected()) {
-          // unset it in the PhotoState
-          photo_state.set_is_selected(false);
-          //unset it in the icon view
-          GtkTreePath *path =
-              gtk_tree_path_new_from_string(boost::lexical_cast<std::string>(index).c_str());
-          gtk_icon_view_unselect_path(GTK_ICON_VIEW(icon_view), path);
-          gtk_tree_path_free(path);
-      }
+      select_thumbnail_by_index(index, false);
       index++;
+    }
+  }
+
+  void select_thumbnail_by_index(int index, bool new_state) {
+    PhotoState &photo_state = photo_state_map[index];
+    if (new_state) {
+      if (!photo_state.get_is_selected()) {
+        // set it in the PhotoState
+        photo_state.set_is_selected(true);
+        //set it in the icon view
+        GtkTreePath *path =
+            gtk_tree_path_new_from_string(boost::lexical_cast<std::string>(index).c_str());
+        gtk_icon_view_select_path(GTK_ICON_VIEW(icon_view), path);
+        gtk_tree_path_free(path);
+      }
+    } else /* !new_state */{
+      if (photo_state.get_is_selected()) {
+        // unset it in the PhotoState
+        photo_state.set_is_selected(false);
+        //unset it in the icon view
+        GtkTreePath *path =
+            gtk_tree_path_new_from_string(boost::lexical_cast<std::string>(index).c_str());
+        gtk_icon_view_unselect_path(GTK_ICON_VIEW(icon_view), path);
+        gtk_tree_path_free(path);
+      }
     }
   }
 
@@ -1095,6 +1110,11 @@ class MultiPhotoPage : public PhotoSelectPage {
 
     GtkWidget *menu = gtk_menu_new();
 
+    GtkWidget *menuitem0 = gtk_menu_item_new_with_label("Extend selection to here");
+    g_signal_connect(menuitem0, "activate",
+        (GCallback) icon_view_popup_extend_selection_activate_cb, widget);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem0);
+
     GtkWidget *menuitem1 = gtk_menu_item_new_with_label("Open Image Viewer");
     g_signal_connect(menuitem1, "activate",
         (GCallback) icon_view_popup_open_image_viewer_activate_cb, widget);
@@ -1132,6 +1152,16 @@ class MultiPhotoPage : public PhotoSelectPage {
     free (s);
   }
 
+  static void icon_view_popup_extend_selection_activate_cb(GtkMenuItem *menu_item,
+      gpointer user_data) {
+    GtkWidget *widget = (GtkWidget *)user_data;
+    MultiPhotoPage *photoSelectPage =
+        (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
+    if (0 != photoSelectPage) {
+      photoSelectPage->icon_view_popup_extend_selection_activate(menu_item, user_data);
+    }
+  }
+
   static void icon_view_popup_open_image_viewer_activate_cb(GtkMenuItem *menu_item,
       gpointer user_data) {
     GtkWidget *widget = (GtkWidget *)user_data;
@@ -1139,6 +1169,26 @@ class MultiPhotoPage : public PhotoSelectPage {
         (MultiPhotoPage *) WidgetRegistry<PhotoSelectPage>::get_object(widget);
     if (0 != photoSelectPage) {
       photoSelectPage->icon_view_popup_open_image_viewer_activate(menu_item, user_data);
+    }
+  }
+
+  void icon_view_popup_extend_selection_activate(GtkMenuItem *menu_item, gpointer user_data) {
+    std::string label = gtk_menu_item_get_label(menu_item);
+    GtkWidget *widget = (GtkWidget*) user_data;
+    int index = find_photo_index(widget);
+    if (-1 != index) { // make sure that we found the index of an icon
+      if (0 < index) { // make sure that there's at least one icon with a lower index
+        // find index of first icon that's less than index.
+        int startindex;
+        for (startindex = index - 1; startindex > 0; startindex--) {
+          if (photo_state_map[startindex].get_is_selected()) {
+            break;
+          }
+        }
+        for (int i = startindex; i <= index; i++) {
+          select_thumbnail_by_index(i, true);
+        }
+      }
     }
   }
 
