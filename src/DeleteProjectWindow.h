@@ -41,16 +41,16 @@ class DeleteProjectWindow {
 
   static void
   accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    DeleteProjectWindow *renameProjectWindow =
+    DeleteProjectWindow *deleteProjectWindow =
         WidgetRegistry<DeleteProjectWindow>::get_object(widget);
-    renameProjectWindow->accept();
+    deleteProjectWindow->accept();
   }
 
   static void
   quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data) {
-    DeleteProjectWindow *renameProjectWindow =
+    DeleteProjectWindow *deleteProjectWindow =
         WidgetRegistry<DeleteProjectWindow>::get_object(widget);
-    renameProjectWindow->quit();
+    deleteProjectWindow->quit();
   }
 
   void
