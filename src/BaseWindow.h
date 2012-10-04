@@ -41,6 +41,7 @@ class BaseWindow {
   GtkWidget *file_project_delete_menu_item;
   GtkWidget *file_quit_menu_item;
   GtkWidget *edit_preferences_menu_item;
+  GtkWidget *edit_unselect_all_menu_item;
   GtkWidget *edit_tags_menu_item;
   GtkWidget *view_tags_menu_item;
   GtkWidget *view_clone_menu_item;
@@ -217,6 +218,11 @@ class BaseWindow {
     gtk_container_add(GTK_CONTAINER(file_menu), file_quit_menu_item);
     gtk_widget_show(file_quit_menu_item);
 
+    // Put a menuitem (edit_unselect_all_menu_item) into edit_menu
+    edit_unselect_all_menu_item = gtk_menu_item_new_with_label("Unselect all");
+    gtk_container_add(GTK_CONTAINER(edit_menu), edit_unselect_all_menu_item);
+    gtk_widget_show(edit_unselect_all_menu_item);
+
     // Put a menuitem (edit_preferences_menu_item) into edit_menu
     edit_preferences_menu_item = gtk_menu_item_new_with_label("Preferences...");
     gtk_container_add(GTK_CONTAINER(edit_menu), edit_preferences_menu_item);
@@ -301,6 +307,7 @@ class BaseWindow {
   void clone_activate();
   void edit_tags_activate();
   void rebuild_all_tag_views();
+  void edit_unselect_all_activate();
 
   static void
   file_project_open_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
@@ -347,6 +354,14 @@ class BaseWindow {
     BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
     if (baseWindow) {
       baseWindow->file_project_delete_activate();
+    }
+  }
+
+  static void
+  edit_unselect_all_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
+    BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
+    if (baseWindow) {
+      baseWindow->edit_unselect_all_activate();
     }
   }
 
@@ -508,6 +523,8 @@ class BaseWindow {
     connect_signal(file_project_delete_menu_item, "activate",
         G_CALLBACK(file_project_delete_activate_cb), NULL);
     connect_signal(file_quit_menu_item, "activate", G_CALLBACK(quit_cb), NULL);
+    connect_signal(edit_unselect_all_menu_item, "activate",
+        G_CALLBACK(edit_unselect_all_activate_cb), NULL);
     connect_signal(edit_preferences_menu_item, "activate",
         G_CALLBACK(edit_preferences_activate_cb), NULL);
     connect_signal(edit_tags_menu_item, "activate",
@@ -691,7 +708,8 @@ BaseWindow::clone_activate() {
   if (photo_select_page) {
     PhotoSelectPage *cloned_photo_select_page = photo_select_page->clone();
     add_page(cloned_photo_select_page->get_tab_label(),
-        cloned_photo_select_page->get_notebook_page(), cloned_photo_select_page->get_project_name());
+        cloned_photo_select_page->get_notebook_page(),
+        cloned_photo_select_page->get_project_name());
   }
 }
 
@@ -704,6 +722,17 @@ BaseWindow::rebuild_all_tag_views() {
     if (photo_select_page) {
       photo_select_page->rebuild_tag_view();
     }
+  }
+}
+
+inline void
+BaseWindow::edit_unselect_all_activate() {
+  gint pagenum = gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
+  if (-1 == pagenum) return;
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), pagenum);
+  PhotoSelectPage *photo_select_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
+  if (photo_select_page) {
+    photo_select_page->edit_unselect_all_activate();
   }
 }
 #endif // BASEWINDOW_H__

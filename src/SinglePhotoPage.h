@@ -93,6 +93,10 @@ class SinglePhotoPage : public PhotoSelectPage {
     return project_name;
   }
 
+  void edit_unselect_all_activate() {
+    std::cout << "SinglePhotoPage::edit_unselect_all_activate" << std::endl;
+  }
+
   PhotoSelectPage *clone() {
     SinglePhotoPage *cloned_photo_select_page = new SinglePhotoPage(connection, photoFileCache);
     cloned_photo_select_page->setup(photoFilenameVector, project_name, thePreferences);

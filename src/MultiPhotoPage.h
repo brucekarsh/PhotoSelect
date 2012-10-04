@@ -191,6 +191,26 @@ class MultiPhotoPage : public PhotoSelectPage {
     gtk_list_store_set(list_store, &iter, COL_PIXBUF, photo_state.get_pixbuf(), -1);
   }
 
+  void edit_unselect_all_activate() {
+    std::cout << "MultiPhotoPage::edit_unselect_all_activate" << std::endl;
+    int index = 0;
+    // Iterate through each photo file in the project
+    BOOST_FOREACH(std::string filename, photoFilenameVector) {
+      // get the photo file's PhotoState
+      PhotoState &photo_state = photo_state_map[index];
+      if (photo_state.get_is_selected()) {
+          // unset it in the PhotoState
+          photo_state.set_is_selected(false);
+          //unset it in the icon view
+          GtkTreePath *path =
+              gtk_tree_path_new_from_string(boost::lexical_cast<std::string>(index).c_str());
+          gtk_icon_view_unselect_path(GTK_ICON_VIEW(icon_view), path);
+          gtk_tree_path_free(path);
+      }
+      index++;
+    }
+  }
+
   PhotoSelectPage *clone() {
     MultiPhotoPage *cloned_photo_select_page = new MultiPhotoPage(connection, photoFileCache);
     cloned_photo_select_page->setup(photoFilenameVector, project_name, thePreferences);
