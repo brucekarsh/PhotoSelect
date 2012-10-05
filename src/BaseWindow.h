@@ -14,6 +14,7 @@ class AddToProjectWindow;
 class RemoveFromProjectWindow;
 class RenameProjectWindow;
 class DeleteProjectWindow;
+class ExportProjectWindow;
 class EditTagsWindow;
 class PhotoFileCache;
 
@@ -39,6 +40,7 @@ class BaseWindow {
   GtkWidget *file_project_rename_menu_item;
   GtkWidget *file_project_remove_from_menu_item;
   GtkWidget *file_project_delete_menu_item;
+  GtkWidget *file_project_export_menu_item;
   GtkWidget *file_quit_menu_item;
   GtkWidget *edit_preferences_menu_item;
   GtkWidget *edit_unselect_all_menu_item;
@@ -213,6 +215,11 @@ class BaseWindow {
     gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_delete_menu_item);
     gtk_widget_show(file_project_delete_menu_item);
 
+    // Put a menuitem (file_project_export_menuitem) into file_project_menu
+    file_project_export_menu_item = gtk_menu_item_new_with_label("Export...");
+    gtk_container_add(GTK_CONTAINER(file_project_menu), file_project_export_menu_item);
+    gtk_widget_show(file_project_export_menu_item);
+
     // Put an imagemenuitem (file_quit_menu_item) into file_menu
     file_quit_menu_item = gtk_menu_item_new_with_label("Quit");
     gtk_container_add(GTK_CONTAINER(file_menu), file_quit_menu_item);
@@ -302,6 +309,7 @@ class BaseWindow {
   void file_project_open_activate();
   void file_project_rename_activate();
   void file_project_delete_activate();
+  void file_project_export_activate();
   void view_tags_toggled(GtkCheckMenuItem *checkmenuitem);
   void view_exif_toggled(GtkCheckMenuItem *checkmenuitem);
   void clone_activate();
@@ -354,6 +362,14 @@ class BaseWindow {
     BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
     if (baseWindow) {
       baseWindow->file_project_delete_activate();
+    }
+  }
+
+  static void
+  file_project_export_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
+    BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
+    if (baseWindow) {
+      baseWindow->file_project_export_activate();
     }
   }
 
@@ -522,6 +538,8 @@ class BaseWindow {
         G_CALLBACK(file_project_rename_activate_cb), NULL);
     connect_signal(file_project_delete_menu_item, "activate",
         G_CALLBACK(file_project_delete_activate_cb), NULL);
+    connect_signal(file_project_export_menu_item, "activate",
+        G_CALLBACK(file_project_export_activate_cb), NULL);
     connect_signal(file_quit_menu_item, "activate", G_CALLBACK(quit_cb), NULL);
     connect_signal(edit_unselect_all_menu_item, "activate",
         G_CALLBACK(edit_unselect_all_activate_cb), NULL);
@@ -566,6 +584,7 @@ class BaseWindow {
 #include "AddToProjectWindow.h"
 #include "RemoveFromProjectWindow.h"
 #include "DeleteProjectWindow.h"
+#include "ExportProjectWindow.h"
 #include "EditTagsWindow.h"
 #include "RenameProjectWindow.h"
 #include "PhotoSelectPage.h"
@@ -655,6 +674,19 @@ BaseWindow::file_project_delete_activate() {
       new DeleteProjectWindow(connection, thePreferences, this);
   deleteProjectWindow->run();
   // TODO make sure that deleteProjectWindow gets destroyed eventually.
+}
+
+inline void
+BaseWindow::file_project_export_activate() {
+  if (!connection) return;
+  std::string project_name = get_project_name();
+  if (0 == project_name.size()) {
+    return;
+  }
+  ExportProjectWindow* exportProjectWindow =
+      new ExportProjectWindow(connection, project_name, thePreferences, this);
+  exportProjectWindow->run();
+  // TODO make sure that exportProjectWindow gets destroyed eventually.
 }
 
 inline void

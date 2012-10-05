@@ -5,6 +5,7 @@ using namespace std;
 
 class BaseWindow;
 class DeleteProjectWindow;
+class ExportProjectWindow;
 class EditTagsWindow;
 class ImportWindow;
 class NewProjectWindow;
@@ -20,6 +21,7 @@ template<class T>  std::map<GtkWidget*, T*> WidgetRegistry<T>::widget_map;
 
 template class WidgetRegistry<BaseWindow>;
 template class WidgetRegistry<DeleteProjectWindow>;
+template class WidgetRegistry<ExportProjectWindow>;
 template class WidgetRegistry<EditTagsWindow>;
 template class WidgetRegistry<ImportWindow>;
 template class WidgetRegistry<NewProjectWindow>;
