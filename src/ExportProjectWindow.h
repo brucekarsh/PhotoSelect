@@ -60,6 +60,21 @@ class ExportProjectWindow {
     exportProjectWindow->accept();
   }
 
+  static void
+  export_all_button_toggled_cb(GtkToggleButton *togglebutton, gpointer user_data) {
+    ExportProjectWindow *exportProjectWindow =
+        WidgetRegistry<ExportProjectWindow>::get_object(GTK_WIDGET(togglebutton));
+    exportProjectWindow->export_all_button_toggled(togglebutton, user_data);
+  }
+
+  void
+  export_all_button_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
+    gboolean is_export_all_set = gtk_toggle_button_get_active(togglebutton);
+    BOOST_FOREACH (GtkWidget *label_button, label_buttons) {
+      gtk_widget_set_sensitive(label_button, !is_export_all_set);
+    }
+  }
+
   void
   run() {
     // Make a window with a vertical box (windowBox) in it.
@@ -77,6 +92,7 @@ class ExportProjectWindow {
 
     // Make some radio buttons and put them in windowBox
     export_all_button = gtk_radio_button_new_with_label(NULL, "all photos");
+    g_signal_connect(export_all_button, "toggled", G_CALLBACK(export_all_button_toggled_cb), NULL);
     GSList *export_button_group = gtk_radio_button_get_group(GTK_RADIO_BUTTON(export_all_button));
     export_labeled_button = gtk_radio_button_new_with_label(export_button_group,
         "only those with the following labels:");
@@ -92,6 +108,7 @@ class ExportProjectWindow {
       std::string tag_name = map_entry.first;
       GtkWidget *label_button = gtk_check_button_new_with_label(tag_name.c_str());
       gtk_widget_set_margin_left(label_button, 15);
+      gtk_widget_set_sensitive(label_button, false);
       gtk_box_pack_start(GTK_BOX(windowBox), label_button, FALSE, FALSE, 0);
       gtk_widget_show(label_button);
       label_buttons.push_back(label_button);
