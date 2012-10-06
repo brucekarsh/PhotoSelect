@@ -57,10 +57,11 @@ class MultiPhotoPage : public PhotoSelectPage {
     // the index (sequence number on the page of a thumbnail). Each entry is a thumbnail
     // passed in asynchronously be a Worker. They are rendered and removed by an idle callback.
     struct PixbufMapEntry {
-      PixbufMapEntry(GdkPixbuf *pixbuf = NULL, int rotation = 0)
-          : pixbuf(pixbuf), rotation(rotation) {};
+      PixbufMapEntry(GdkPixbuf *pixbuf = NULL, int rotation = 0, long priority = 0)
+          : pixbuf(pixbuf), rotation(rotation), priority(priority) {};
       GdkPixbuf *pixbuf;
       int rotation;
+      long priority;
     };
 
     //! Holds the state of a single photo on a MultiPhotoPage
@@ -354,21 +355,27 @@ class MultiPhotoPage : public PhotoSelectPage {
 
     int num_photo_files = photoFilenameVector.size();
 
-    // Iterate over the photo files, make GtkEventBox, GtkDrawingArea, PhotoState for
-    // each one, wire it up, etc. We iterate in reverse order because images are rendered
-    // mostly last-in first-out. So this make them render from the top of the page towards
-    // the bottom.
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
     long priority = ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
-    for (int i = num_photo_files - 1; i >= 0; i--) {
+
+    // Iterate over the photo files, make PhotoStates, set up the initial (missing image) icons,
+    // and captions
+    for (int i = 0; i < num_photo_files; i++) {
       photo_state_map[i] = PhotoState(false, i);
       photo_state_map[i].set_pixbuf(gtk_stock_missing_image, 0);
       gtk_list_store_append(list_store, &iter);
       gtk_list_store_set(list_store, &iter, COL_PIXBUF, gtk_stock_missing_image, -1);
+    }
+
+    // Iterate over the photo files make WorkItems and send them to the WorkList so the workers
+    // can fetch and transform them. We iterate in reverse order because images are rendered
+    // mostly last-in first-out. So this causes them render from the top of the page towards
+    // the bottom.
+    for (int i = num_photo_files - 1; i >= 0; i--) {
       int rotation = Db::get_rotation(connection, photoFilenameVector[i]);
-      WorkItem work_item(ticket_number, i,rotation,  this);
-      work_list.add_work(work_item, priority);
+      WorkItem work_item(ticket_number, i,rotation, priority, this);
+      work_list.add_work(work_item);
     }
     gtk_widget_add_events(icon_view, GDK_KEY_PRESS_MASK | GDK_ENTER_NOTIFY_MASK
         | GDK_LEAVE_NOTIFY_MASK);
@@ -435,7 +442,23 @@ class MultiPhotoPage : public PhotoSelectPage {
     {
       boost::lock_guard<boost::mutex> member_lock(class_mutex); 
       BOOST_ASSERT(!pixbuf_map.empty());
-      std::map<int, PixbufMapEntry>::iterator it = pixbuf_map.begin();
+
+      // Iterate through the pixbuf_map and find the entry with the largest priority
+      std::map<int, PixbufMapEntry>::iterator it;
+      std::map<int, PixbufMapEntry>::iterator largest_priority_it = pixbuf_map.begin();
+      long largest_priority = 0;
+      int largest_priority_n = 0;
+      int n = 0;
+      for (it = pixbuf_map.begin(); it != pixbuf_map.end(); ++it) {
+        long priority = (it->second).priority;
+        if (priority > largest_priority) {
+          largest_priority = priority;
+          largest_priority_it = it;
+          largest_priority_n = n;
+        }
+        n++;
+      }
+      it = largest_priority_it;
       index = it->first;
       pixbuf = (it->second).pixbuf;
       rotation = (it->second).rotation;
@@ -452,7 +475,7 @@ class MultiPhotoPage : public PhotoSelectPage {
   //! Puts a thumbnail in the pixbuf_map. Thumbnails are then rendered via the idle callback.
   //! We don't render them asynchronously from the worker thread because that causes too much
   //! flashing.
-  bool set_thumbnail(int index, GdkPixbuf *pixbuf, int rotation) {
+  bool set_thumbnail(int index, GdkPixbuf *pixbuf, int rotation, long priority) {
     boost::lock_guard<boost::mutex> member_lock(class_mutex); 
     // If the queue is too large, balk and the worker will try again later
     int qsize = pixbuf_map.size();
@@ -462,7 +485,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     if (pixbuf_map.empty()) {
       idle_id = g_idle_add(idle_cb, (gpointer)this);
     }
-    pixbuf_map[index] = PixbufMapEntry(pixbuf, rotation);
+    pixbuf_map[index] = PixbufMapEntry(pixbuf, rotation, priority);
     return true;
   }
   // TODO acquire auto lock
@@ -1282,8 +1305,8 @@ class MultiPhotoPage : public PhotoSelectPage {
 
       if (photo_state.get_pixbuf() == gtk_stock_missing_image) {
         int rotation = Db::get_rotation(connection, photoFilenameVector[i]);
-        WorkItem work_item(ticket_number, i,rotation,  this);
-        work_list.add_work(work_item, priority);
+        WorkItem work_item(ticket_number, i,rotation, priority, this);
+        work_list.add_work(work_item);
       }
     }
   }

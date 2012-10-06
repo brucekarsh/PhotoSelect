@@ -138,3 +138,5 @@ open_database(std::string dbhost, std::string user, std::string password, std::s
   }
   return connection;
 }
+
+int Worker::static_worker_num = 0;

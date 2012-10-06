@@ -14,6 +14,8 @@ extern WorkList work_list;
 class Worker {
   private:
     boost::shared_ptr<boost::thread> m_thread;
+    static int static_worker_num;
+    int my_worker_num;
 
   enum {
     DELIVERY_OK,	  // Delivery succeeded
@@ -22,6 +24,11 @@ class Worker {
   };
 
   public:
+    Worker() {
+      my_worker_num = static_worker_num;
+      static_worker_num++;
+    }
+
     void operator()() {
       do_work();
     }
@@ -44,7 +51,7 @@ class Worker {
           int delivery_result = deliver_pixbuf_to_multiphotopage(pixbuf, work_item);
           if (delivery_result == DELIVERY_RETRY_LATER) {
             // Recipient queue is full. Wait a while and try again
-            usleep(10000);
+            usleep(1000000);
           } else if (delivery_result == DELIVERY_REJECTED) {
             // Recipient no longer exists
             g_object_unref(pixbuf);
@@ -102,7 +109,7 @@ class Worker {
         return DELIVERY_REJECTED;
       }
       bool is_delivered = (work_item.multiPhotoPage)->set_thumbnail(work_item.index,
-          pixbuf, work_item.rotation);
+          pixbuf, work_item.rotation, work_item.priority);
       if (is_delivered) {
         ret = DELIVERY_OK;
       } else {
