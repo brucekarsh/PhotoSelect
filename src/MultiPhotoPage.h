@@ -50,6 +50,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     // This enum is used by GtkListStore
     enum {
       COL_PIXBUF,
+      COL_TEXT,
       NUM_COLS
     };
 
@@ -346,7 +347,7 @@ class MultiPhotoPage : public PhotoSelectPage {
         gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(scrolled_window));
 
     // Add the GtkIconView
-    list_store = gtk_list_store_new(NUM_COLS, GDK_TYPE_PIXBUF);
+    list_store = gtk_list_store_new(NUM_COLS, GDK_TYPE_PIXBUF, G_TYPE_STRING);
     GtkTreeModel *tree_model = GTK_TREE_MODEL(list_store);
     icon_view = gtk_icon_view_new_with_model (tree_model);
     gtk_stock_missing_image = stock_thumbnails->get_loading_thumbnail();
@@ -366,6 +367,8 @@ class MultiPhotoPage : public PhotoSelectPage {
       photo_state_map[i].set_pixbuf(gtk_stock_missing_image, 0);
       gtk_list_store_append(list_store, &iter);
       gtk_list_store_set(list_store, &iter, COL_PIXBUF, gtk_stock_missing_image, -1);
+      gtk_list_store_set(list_store, &iter, COL_TEXT,
+          boost::lexical_cast<std::string>(num_photo_files-i).c_str(), -1);
       int rotation = Db::get_rotation(connection, photoFilenameVector[i]);
       WorkItem work_item(ticket_number, i,rotation,  this);
       work_list.add_work(work_item, priority);
@@ -392,6 +395,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     gtk_container_add (GTK_CONTAINER (scrolled_window), icon_view);
     gtk_widget_show_all(scrolled_window);
     gtk_icon_view_set_pixbuf_column (GTK_ICON_VIEW (icon_view), COL_PIXBUF);
+    gtk_icon_view_set_text_column (GTK_ICON_VIEW (icon_view), COL_TEXT);
     gtk_widget_show(scrolled_window);
 
     rebuild_tag_view();
