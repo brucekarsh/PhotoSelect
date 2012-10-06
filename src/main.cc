@@ -89,10 +89,12 @@ open_initial_project(sql::Connection *connection, BaseWindow *base_window,
   if (0 == project_name.size()) {
     return;
   }
-  std::vector<std::string> photoFilenameVector = Db::get_project_photo_files(connection,
-      project_name);
+  std::vector<std::string> photoFilenameVector;
+  std::vector<std::string> adjusted_date_time_vector;
+  Db::get_project_photo_files(connection, project_name, photoFilenameVector,
+      adjusted_date_time_vector);
   MultiPhotoPage *multiPhotoPage = new MultiPhotoPage(connection, photoFileCache);
-  multiPhotoPage->setup(photoFilenameVector, project_name, preferences);
+  multiPhotoPage->setup(photoFilenameVector, adjusted_date_time_vector, project_name, preferences);
   base_window->add_page(multiPhotoPage->get_tab_label(),
       multiPhotoPage->get_notebook_page(), project_name);
 }
@@ -138,3 +140,5 @@ open_database(std::string dbhost, std::string user, std::string password, std::s
   }
   return connection;
 }
+
+int Worker::static_worker_num = 0;

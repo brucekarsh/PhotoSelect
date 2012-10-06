@@ -39,6 +39,7 @@ class SinglePhotoPage : public PhotoSelectPage {
     int rotation;
     ConversionEngine conversionEngine;
     std::vector<std::string> photoFilenameVector;
+    std::vector<std::string> adjusted_date_time_vector;
     std::string project_name;
     sql::Connection *connection;
     PhotoFileCache *photoFileCache;
@@ -99,7 +100,8 @@ class SinglePhotoPage : public PhotoSelectPage {
 
   PhotoSelectPage *clone() {
     SinglePhotoPage *cloned_photo_select_page = new SinglePhotoPage(connection, photoFileCache);
-    cloned_photo_select_page->setup(photoFilenameVector, project_name, thePreferences);
+    cloned_photo_select_page->setup(photoFilenameVector, adjusted_date_time_vector,
+        project_name, thePreferences);
     cloned_photo_select_page->set_tags_position(tags_position);
     cloned_photo_select_page->set_exifs_position(exifs_position);
     return cloned_photo_select_page;
@@ -623,7 +625,8 @@ class SinglePhotoPage : public PhotoSelectPage {
   }
 
 
-  void setup(std::vector<std::string> photoFilenameVector_, std::string project_name_,
+  void setup(std::vector<std::string> photoFilenameVector_,
+      std::vector<std::string> adjusted_date_time_vector, std::string project_name_,
       Preferences *thePreferences) {
     this->thePreferences = thePreferences;
     this->project_name = project_name_;
@@ -1043,7 +1046,7 @@ class SinglePhotoPage : public PhotoSelectPage {
 
   inline void SinglePhotoPage::open_multi_photo_page(int index) {
     MultiPhotoPage *multi_photo_page = new MultiPhotoPage(connection, photoFileCache);
-    multi_photo_page->setup(photoFilenameVector, project_name, thePreferences);
+    multi_photo_page->setup(photoFilenameVector, adjusted_date_time_vector, project_name, thePreferences);
     multi_photo_page->set_position(index+1); // (set_position is 1-based)
     add_page_to_base_window(multi_photo_page);
   }

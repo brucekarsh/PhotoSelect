@@ -7,17 +7,19 @@
 class MultiPhotoPage;
 class WorkItem {
   public:
-    WorkItem(long ticket_number = 0, int index = 0, int rotation = 0,
-        MultiPhotoPage *multiPhotoPage = NULL) : rotation(rotation), 
-        ticket_number(ticket_number), index(index), multiPhotoPage(multiPhotoPage) {};
+    WorkItem(long ticket_number = 0, int index = 0, int rotation = 0, long priority = 0,
+        MultiPhotoPage *multiPhotoPage = NULL) : rotation(rotation), priority(priority),
+        ticket_number(ticket_number), index(index), multiPhotoPage(multiPhotoPage) {
+    };
     long ticket_number;
     int index;
     int rotation;
+    long priority;
     MultiPhotoPage *multiPhotoPage;
     
     // Note thate operator == does not need to check rhs.multiPhotoPage == multiPhotoPage
     // because each multiPhotoPage should have its own unique ticket_number.
-    // Also note that rotation does not play a role in operator== or hash().
+    // Also note that rotation and priority do not play a role in operator== or hash().
     bool operator==(const WorkItem &rhs) const {
       return rhs.ticket_number == ticket_number 
           && rhs.index == index;

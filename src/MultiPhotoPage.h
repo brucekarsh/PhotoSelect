@@ -58,10 +58,11 @@ class MultiPhotoPage : public PhotoSelectPage {
     // the index (sequence number on the page of a thumbnail). Each entry is a thumbnail
     // passed in asynchronously be a Worker. They are rendered and removed by an idle callback.
     struct PixbufMapEntry {
-      PixbufMapEntry(GdkPixbuf *pixbuf = NULL, int rotation = 0)
-          : pixbuf(pixbuf), rotation(rotation) {};
+      PixbufMapEntry(GdkPixbuf *pixbuf = NULL, int rotation = 0, long priority = 0)
+          : pixbuf(pixbuf), rotation(rotation), priority(priority) {};
       GdkPixbuf *pixbuf;
       int rotation;
+      long priority;
     };
 
     //! Holds the state of a single photo on a MultiPhotoPage
@@ -102,6 +103,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     Preferences *thePreferences;
     ConversionEngine conversionEngine;
     std::vector<std::string> photoFilenameVector;
+    std::vector<std::string> adjusted_date_time_vector;
     std::map<int, PhotoState> photo_state_map;
     std::map<int, PixbufMapEntry> pixbuf_map;
     std::string project_name;
@@ -179,6 +181,7 @@ class MultiPhotoPage : public PhotoSelectPage {
   virtual void rotate(GtkWidget *widget, int index, GtkTreePath *path, GtkCellRenderer *cell) {
     PhotoState &photo_state = photo_state_map[index];
     std::string file_path = photoFilenameVector[photo_state.get_index()];
+    std::string adjusted_date_time = adjusted_date_time_vector[photo_state.get_index()];
     int rotation = photo_state.get_rotation();
     rotation += 1;
     if (rotation == 4) {
@@ -193,7 +196,6 @@ class MultiPhotoPage : public PhotoSelectPage {
   }
 
   void edit_unselect_all_activate() {
-    std::cout << "MultiPhotoPage::edit_unselect_all_activate" << std::endl;
     int index = 0;
     // Iterate through each photo file in the project
     BOOST_FOREACH(std::string filename, photoFilenameVector) {
@@ -229,7 +231,8 @@ class MultiPhotoPage : public PhotoSelectPage {
 
   PhotoSelectPage *clone() {
     MultiPhotoPage *cloned_photo_select_page = new MultiPhotoPage(connection, photoFileCache);
-    cloned_photo_select_page->setup(photoFilenameVector, project_name, thePreferences);
+    cloned_photo_select_page->setup(photoFilenameVector, adjusted_date_time_vector,
+        project_name, thePreferences);
     cloned_photo_select_page->set_tags_position(tags_position);
     cloned_photo_select_page->set_exifs_position(exifs_position);
     return cloned_photo_select_page;
@@ -355,23 +358,31 @@ class MultiPhotoPage : public PhotoSelectPage {
 
     int num_photo_files = photoFilenameVector.size();
 
-    // Iterate over the photo files, make GtkEventBox, GtkDrawingArea, PhotoState for
-    // each one, wire it up, etc. We iterate in reverse order because images are rendered
-    // mostly last-in first-out. So this make them render from the top of the page towards
-    // the bottom.
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
     long priority = ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
-    for (int i = num_photo_files - 1; i >= 0; i--) {
+
+    // Iterate over the photo files, make PhotoStates, set up the initial (missing image) icons,
+    // and captions
+    for (int i = 0; i < num_photo_files; i++) {
+      std::string adjusted_date_time = adjusted_date_time_vector[i];
       photo_state_map[i] = PhotoState(false, i);
       photo_state_map[i].set_pixbuf(gtk_stock_missing_image, 0);
       gtk_list_store_append(list_store, &iter);
       gtk_list_store_set(list_store, &iter, COL_PIXBUF, gtk_stock_missing_image, -1);
-      gtk_list_store_set(list_store, &iter, COL_TEXT,
-          boost::lexical_cast<std::string>(num_photo_files-i).c_str(), -1);
+      std::string caption((boost::lexical_cast<std::string>(i + 1)
+          + " " + adjusted_date_time));
+      gtk_list_store_set(list_store, &iter, COL_TEXT, caption.c_str(), -1);
+    }
+
+    // Iterate over the photo files make WorkItems and send them to the WorkList so the workers
+    // can fetch and transform them. We iterate in reverse order because images are rendered
+    // mostly last-in first-out. So this causes them render from the top of the page towards
+    // the bottom.
+    for (int i = num_photo_files - 1; i >= 0; i--) {
       int rotation = Db::get_rotation(connection, photoFilenameVector[i]);
-      WorkItem work_item(ticket_number, i,rotation,  this);
-      work_list.add_work(work_item, priority);
+      WorkItem work_item(ticket_number, i,rotation, priority, this);
+      work_list.add_work(work_item);
     }
     gtk_widget_add_events(icon_view, GDK_KEY_PRESS_MASK | GDK_ENTER_NOTIFY_MASK
         | GDK_LEAVE_NOTIFY_MASK);
@@ -440,7 +451,23 @@ class MultiPhotoPage : public PhotoSelectPage {
     {
       boost::lock_guard<boost::mutex> member_lock(class_mutex); 
       BOOST_ASSERT(!pixbuf_map.empty());
-      std::map<int, PixbufMapEntry>::iterator it = pixbuf_map.begin();
+
+      // Iterate through the pixbuf_map and find the entry with the largest priority
+      std::map<int, PixbufMapEntry>::iterator it;
+      std::map<int, PixbufMapEntry>::iterator largest_priority_it = pixbuf_map.begin();
+      long largest_priority = 0;
+      int largest_priority_n = 0;
+      int n = 0;
+      for (it = pixbuf_map.begin(); it != pixbuf_map.end(); ++it) {
+        long priority = (it->second).priority;
+        if (priority > largest_priority) {
+          largest_priority = priority;
+          largest_priority_it = it;
+          largest_priority_n = n;
+        }
+        n++;
+      }
+      it = largest_priority_it;
       index = it->first;
       pixbuf = (it->second).pixbuf;
       rotation = (it->second).rotation;
@@ -457,7 +484,7 @@ class MultiPhotoPage : public PhotoSelectPage {
   //! Puts a thumbnail in the pixbuf_map. Thumbnails are then rendered via the idle callback.
   //! We don't render them asynchronously from the worker thread because that causes too much
   //! flashing.
-  bool set_thumbnail(int index, GdkPixbuf *pixbuf, int rotation) {
+  bool set_thumbnail(int index, GdkPixbuf *pixbuf, int rotation, long priority) {
     boost::lock_guard<boost::mutex> member_lock(class_mutex); 
     // If the queue is too large, balk and the worker will try again later
     int qsize = pixbuf_map.size();
@@ -467,7 +494,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     if (pixbuf_map.empty()) {
       idle_id = g_idle_add(idle_cb, (gpointer)this);
     }
-    pixbuf_map[index] = PixbufMapEntry(pixbuf, rotation);
+    pixbuf_map[index] = PixbufMapEntry(pixbuf, rotation, priority);
     return true;
   }
   // TODO acquire auto lock
@@ -848,11 +875,13 @@ class MultiPhotoPage : public PhotoSelectPage {
   }
 
 
-  void setup(std::vector<std::string> photoFilenameVector_, std::string project_name_,
+  void setup(std::vector<std::string> photoFilenameVector_,
+      std::vector<std::string> adjusted_date_time_vector_, std::string project_name_,
       Preferences *thePreferences) {
     this->thePreferences = thePreferences;
     this->project_name = project_name_;
     photoFilenameVector = photoFilenameVector_;
+    adjusted_date_time_vector = adjusted_date_time_vector_;
 
     // Set up a conversion engine.
     conversionEngine.setPhotoFileVector(&photoFilenameVector);
@@ -1287,8 +1316,8 @@ class MultiPhotoPage : public PhotoSelectPage {
 
       if (photo_state.get_pixbuf() == gtk_stock_missing_image) {
         int rotation = Db::get_rotation(connection, photoFilenameVector[i]);
-        WorkItem work_item(ticket_number, i,rotation,  this);
-        work_list.add_work(work_item, priority);
+        WorkItem work_item(ticket_number, i,rotation, priority, this);
+        work_list.add_work(work_item);
       }
     }
   }
@@ -1315,7 +1344,8 @@ class MultiPhotoPage : public PhotoSelectPage {
 
   inline void MultiPhotoPage::open_single_photo_page(int index) {
       SinglePhotoPage *single_photo_page = new SinglePhotoPage(connection, photoFileCache);
-      single_photo_page->setup(photoFilenameVector, project_name, thePreferences);
+      single_photo_page->setup(photoFilenameVector, adjusted_date_time_vector,
+          project_name, thePreferences);
       single_photo_page->set_position(index+1); // (set_position is 1-based)
       add_page_to_base_window(single_photo_page);
   }

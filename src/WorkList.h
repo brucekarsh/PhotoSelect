@@ -16,8 +16,9 @@ class WorkList {
 
     WorkList() : is_shutdown(false) {}
 
-    void add_work(const WorkItem &work_item, long priority) {
+    void add_work(const WorkItem &work_item) {
       boost::lock_guard<boost::mutex> member_lock(class_mutex);
+      long priority = work_item.priority;
       // TODO: assert work_item.ticket_number != 0;
 
       // If this work item is already present, remove it.

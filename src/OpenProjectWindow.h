@@ -174,10 +174,11 @@ OpenProjectWindow::apply() {
   if (0 == project_name.size()) {
     return;
   }
-  std::vector<std::string> photoFilenameVector = Db::get_project_photo_files(connection,
-      project_name);
+  std::vector<std::string> photoFilenameVector;
+  std::vector<std::string> adjusted_date_time_vector;
+  Db::get_project_photo_files(connection, project_name, photoFilenameVector, adjusted_date_time_vector);
   MultiPhotoPage *multiPhotoPage = new MultiPhotoPage(connection, photoFileCache);
-  multiPhotoPage->setup(photoFilenameVector, project_name, preferences);
+  multiPhotoPage->setup(photoFilenameVector, adjusted_date_time_vector, project_name, preferences);
   baseWindow->add_page(multiPhotoPage->get_tab_label(),
       multiPhotoPage->get_notebook_page(), project_name);
 

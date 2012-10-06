@@ -135,8 +135,10 @@ NewProjectWindow::accept() {
   }
   connection->commit();
 
+  std::vector<std::string> adjusted_date_time_vector;
+  Db::get_project_photo_files(connection, project_name, photoFilenameVector, adjusted_date_time_vector);
   SinglePhotoPage *photoSelectPage = new SinglePhotoPage(connection, photoFileCache);
-  photoSelectPage->setup(photoFilenameVector, project_name, preferences);
+  photoSelectPage->setup(photoFilenameVector, adjusted_date_time_vector, project_name, preferences);
   baseWindow->add_page(photoSelectPage->get_tab_label(),
       photoSelectPage->get_notebook_page(), project_name);
   quit();

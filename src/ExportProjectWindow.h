@@ -109,8 +109,10 @@ class ExportProjectWindow {
 
   void write_file(std::string out_filename) {
     // Make a list of all the files in the project
-    std::vector<std::string> photoFilenameVector =
-        Db::get_project_photo_files(connection, project_name);
+    std::vector<std::string> photoFilenameVector;
+    std::vector<std::string> adjusted_date_time_vector;
+    Db::get_project_photo_files(connection, project_name, photoFilenameVector,
+        adjusted_date_time_vector);
 
     // Make a list of all the tags, keyed by filename
     Db::all_photo_tags_map_t all_photo_tags_map =

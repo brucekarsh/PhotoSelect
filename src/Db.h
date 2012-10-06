@@ -279,11 +279,12 @@ class Db {
   }
 
   //! Get all photo files for a project
-  static inline std::vector<std::string> get_project_photo_files(sql::Connection *connection,
-      std::string project_name) {
-    std::vector<std::string> project_photo_files;
+  static inline bool get_project_photo_files(sql::Connection *connection,
+      const std::string &project_name, std::vector<std::string> &project_photo_files,
+      std::vector<std::string> &project_adjusted_date_times) {
+
     std::string sql =
-        "SELECT DISTINCT filePath FROM Project "
+        "SELECT DISTINCT filePath, Time.adjustedDateTime FROM Project "
         "INNER JOIN ProjectPhotoFile ON (ProjectPhotoFile.projectId = Project.id) "
         "INNER JOIN PhotoFile ON (ProjectPhotoFile.photoFileId = PhotoFile.id) "
         "INNER JOIN Time ON (PhotoFile.checksumId = Time.checksumId) "
@@ -294,9 +295,11 @@ class Db {
     std::unique_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
     while ( rs->next()) {
       std::string file_path = rs->getString(1);
+      std::string adjusted_date_time = rs->getString(2);
       project_photo_files.push_back(file_path);
+      project_adjusted_date_times.push_back(adjusted_date_time);
     }
-    return project_photo_files;
+    return true;
   }
 
   //! adds a tag to a checksum given a tag_name and a file_name
@@ -342,6 +345,31 @@ class Db {
     prepared_statement->setString(4, original_date_time);
     prepared_statement->setString(5, adjusted_date_time);
     prepared_statement->executeUpdate();
+  }
+
+  static inline bool
+  get_adjusted_date_time(sql::Connection *connection, const std::string &filename,
+      std::string& adjusted_date_time) {
+    std::string sql = "SELECT adjustedDateTime from PhotoFile "
+        "INNER JOIN Time ON (PhotoFile.checksumId = Time.checksumId) WHERE PhotoFile.filePath = ?";
+    std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
+    prepared_statement->setString(1, filename);
+    std::unique_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
+    bool has_first = rs->first();
+    if (!has_first) {
+      std::cout << "Cannot get a result set in get_adjusted_date_time" << std::endl;
+      return false;
+    }
+    bool is_first = rs->isFirst();
+    bool is_last = rs->isLast();
+    if (!is_first || ! is_last) {
+      std::cout << "More than one key found in results in get_adjusted_date_time" << std::endl;
+      std::cout << "isFirst(): " << rs->isFirst() << std::endl;
+      std::cout << "isLast(): " << rs->isLast() << std::endl;
+      return false;
+    }
+    adjusted_date_time = rs->getString(1);
+    return true;
   }
 
   //! inserts an entry into the ExifBlob table. (It does not commit).
