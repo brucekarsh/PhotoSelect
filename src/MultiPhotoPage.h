@@ -50,7 +50,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     // This enum is used by GtkListStore
     enum {
       COL_PIXBUF,
-      COL_TEXT,
+      COL_MARKUP,
       NUM_COLS
     };
 
@@ -370,9 +370,15 @@ class MultiPhotoPage : public PhotoSelectPage {
       photo_state_map[i].set_pixbuf(gtk_stock_missing_image, 0);
       gtk_list_store_append(list_store, &iter);
       gtk_list_store_set(list_store, &iter, COL_PIXBUF, gtk_stock_missing_image, -1);
-      std::string caption((boost::lexical_cast<std::string>(i + 1)
-          + " " + adjusted_date_time));
-      gtk_list_store_set(list_store, &iter, COL_TEXT, caption.c_str(), -1);
+      std::string caption((
+          "[" +
+          boost::lexical_cast<std::string>(i + 1) +
+          "]    " +
+          "<b>" +
+          adjusted_date_time +
+          "</b>"
+      ));
+      gtk_list_store_set(list_store, &iter, COL_MARKUP, caption.c_str(), -1);
     }
 
     // Iterate over the photo files make WorkItems and send them to the WorkList so the workers
@@ -407,7 +413,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     gtk_container_add (GTK_CONTAINER (scrolled_window), icon_view);
     gtk_widget_show_all(scrolled_window);
     gtk_icon_view_set_pixbuf_column (GTK_ICON_VIEW (icon_view), COL_PIXBUF);
-    gtk_icon_view_set_text_column (GTK_ICON_VIEW (icon_view), COL_TEXT);
+    gtk_icon_view_set_markup_column (GTK_ICON_VIEW (icon_view), COL_MARKUP);
     gtk_widget_show(scrolled_window);
 
     rebuild_tag_view();
