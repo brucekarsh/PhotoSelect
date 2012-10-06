@@ -15,6 +15,7 @@ class RemoveFromProjectWindow;
 class RenameProjectWindow;
 class DeleteProjectWindow;
 class ExportProjectWindow;
+class AdjustTimeWindow;
 class EditTagsWindow;
 class PhotoFileCache;
 
@@ -41,6 +42,7 @@ class BaseWindow {
   GtkWidget *file_project_remove_from_menu_item;
   GtkWidget *file_project_delete_menu_item;
   GtkWidget *file_project_export_menu_item;
+  GtkWidget *file_adjust_time_menu_item;
   GtkWidget *file_quit_menu_item;
   GtkWidget *edit_preferences_menu_item;
   GtkWidget *edit_unselect_all_menu_item;
@@ -180,6 +182,11 @@ class BaseWindow {
     gtk_container_add(GTK_CONTAINER(file_menu), file_import_menu_item);
     gtk_widget_show(file_import_menu_item);
 
+    // Put a menuitem (file_adjust_time_menuitem) into file_menu
+    file_adjust_time_menu_item = gtk_menu_item_new_with_label("Adjust Time...");
+    gtk_container_add(GTK_CONTAINER(file_menu), file_adjust_time_menu_item);
+    gtk_widget_show(file_adjust_time_menu_item);
+
     // Put a menu (file_project_menu) into file_project_menu_item
     file_project_menu = gtk_menu_new();
     gtk_menu_item_set_submenu(GTK_MENU_ITEM(file_project_menu_item), file_project_menu);
@@ -310,6 +317,7 @@ class BaseWindow {
   void file_project_rename_activate();
   void file_project_delete_activate();
   void file_project_export_activate();
+  void file_adjust_time_activate();
   void view_tags_toggled(GtkCheckMenuItem *checkmenuitem);
   void view_exif_toggled(GtkCheckMenuItem *checkmenuitem);
   void clone_activate();
@@ -407,6 +415,14 @@ class BaseWindow {
       preferencesWindow_instance = preferencesWindow->window;
     } else {
       preferencesWindow->highlight();
+    }
+  }
+
+  static void
+  file_adjust_time_activate_cb(GtkMenuItem *menuItem, gpointer user_data) {
+    BaseWindow* baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(menuItem));
+    if (baseWindow) {
+      baseWindow->file_adjust_time_activate();
     }
   }
 
@@ -540,6 +556,8 @@ class BaseWindow {
         G_CALLBACK(file_project_delete_activate_cb), NULL);
     connect_signal(file_project_export_menu_item, "activate",
         G_CALLBACK(file_project_export_activate_cb), NULL);
+    connect_signal(file_adjust_time_menu_item, "activate",
+        G_CALLBACK(file_adjust_time_activate_cb), NULL);
     connect_signal(file_quit_menu_item, "activate", G_CALLBACK(quit_cb), NULL);
     connect_signal(edit_unselect_all_menu_item, "activate",
         G_CALLBACK(edit_unselect_all_activate_cb), NULL);
@@ -585,6 +603,7 @@ class BaseWindow {
 #include "RemoveFromProjectWindow.h"
 #include "DeleteProjectWindow.h"
 #include "ExportProjectWindow.h"
+#include "AdjustTimeWindow.h"
 #include "EditTagsWindow.h"
 #include "RenameProjectWindow.h"
 #include "PhotoSelectPage.h"
@@ -766,5 +785,15 @@ BaseWindow::edit_unselect_all_activate() {
   if (photo_select_page) {
     photo_select_page->edit_unselect_all_activate();
   }
+}
+
+inline void
+BaseWindow::file_adjust_time_activate() {
+  if (!connection) return;
+
+  AdjustTimeWindow* adjustTimeWindow =
+      new AdjustTimeWindow(connection, thePreferences, this);
+  adjustTimeWindow->run();
+  // TODO make sure that adjustTimeWindow gets destroyed eventually.
 }
 #endif // BASEWINDOW_H__
