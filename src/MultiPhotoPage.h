@@ -95,8 +95,8 @@ class MultiPhotoPage : public PhotoSelectPage {
         }
     };
 
-    static const int ICON_WIDTH = 400;
-    static const int ICON_HEIGHT = 300;
+    static const int ICON_WIDTH = 380;
+    static const int ICON_HEIGHT = 285;
     static const int ICON_STRIDE = ICON_WIDTH * 3;
 
     Preferences *thePreferences;
@@ -385,11 +385,12 @@ class MultiPhotoPage : public PhotoSelectPage {
     g_signal_connect(vadjustment, "value-changed", G_CALLBACK(scroll_view_value_changed_cb),
         (gpointer) this);
 
-    gtk_icon_view_set_spacing(GTK_ICON_VIEW(icon_view), 11);
+    gtk_icon_view_set_spacing(GTK_ICON_VIEW(icon_view), 0);	// space between thumbnail and caption
     gtk_icon_view_set_item_width(GTK_ICON_VIEW(icon_view), ICON_WIDTH);
-    gtk_icon_view_set_row_spacing(GTK_ICON_VIEW(icon_view), 11);
-    gtk_icon_view_set_margin(GTK_ICON_VIEW(icon_view), 11);
-    gtk_icon_view_set_item_padding(GTK_ICON_VIEW(icon_view), 11);
+    gtk_icon_view_set_row_spacing(GTK_ICON_VIEW(icon_view), 3); // space between caption and next thumbnail
+    gtk_icon_view_set_column_spacing(GTK_ICON_VIEW(icon_view), 4); // space between columns
+    gtk_icon_view_set_margin(GTK_ICON_VIEW(icon_view), 0); // space around the whole icon view
+    gtk_icon_view_set_item_padding(GTK_ICON_VIEW(icon_view), 4);
     gtk_icon_view_set_columns(GTK_ICON_VIEW(icon_view), -1);
     gtk_icon_view_set_selection_mode (GTK_ICON_VIEW (icon_view), GTK_SELECTION_MULTIPLE);
     gtk_container_add (GTK_CONTAINER (scrolled_window), icon_view);

@@ -69,9 +69,10 @@ class StockThumbnails {
       }
       free(pixels);
     }
-    static const int ICON_WIDTH = 400;
-    static const int ICON_HEIGHT = 300;
-    static const int ICON_STRIDE = 400 * 3;
+    static const int ICON_WIDTH = 380;
+    static const int ICON_HEIGHT = 285;
+    static const int ICON_STRIDE = ICON_WIDTH * 3;
+    // TODO get ICON_WIDTH, ICON_HEIGHT from the same place as MultiPhotoPage and Worker
     GdkPixbuf *loading_thumbnail;
     GdkPixbuf *bad_jpeg_thumbnail;
 };
