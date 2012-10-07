@@ -86,7 +86,6 @@ class BaseWindow {
     gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), page_num);
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(notebook), page, true);
     gtk_notebook_set_tab_detachable(GTK_NOTEBOOK(notebook), page, true);
-    gtk_notebook_set_scrollable(GTK_NOTEBOOK(notebook), true);
   }
 
   void
@@ -111,6 +110,7 @@ class BaseWindow {
     build_window(window_position, width, height);
     build_menus();
     connect_signals();
+    gtk_widget_show(top_level_window);
   }
 
   void build_window(const GtkWindowPosition &window_position, gint width, gint height) {
@@ -120,7 +120,7 @@ class BaseWindow {
     gtk_window_set_title(GTK_WINDOW(top_level_window), "PhotoSelect");
     gtk_window_set_resizable(GTK_WINDOW(top_level_window), TRUE);
     gtk_window_set_default_size(GTK_WINDOW(top_level_window), width, height);
-    gtk_widget_show(top_level_window);
+    gtk_notebook_set_scrollable(GTK_NOTEBOOK(notebook), true);
     WidgetRegistry<BaseWindow>::set_widget(top_level_window, this);
 
     // Put a GtkBox (top_level_vbox) in top_level_window
@@ -131,12 +131,11 @@ class BaseWindow {
     // Put a menubar (top_level_menu_bar) in top_level_vbox
     top_level_menu_bar = gtk_menu_bar_new();
     gtk_box_pack_start(GTK_BOX(top_level_vbox), top_level_menu_bar, FALSE, FALSE, 0);
+    gtk_widget_show(top_level_menu_bar);
 
     // Put a notebook (notebook) into top_level_vbox
     gtk_box_pack_start(GTK_BOX(top_level_vbox), notebook, TRUE, TRUE, 0);
     gtk_widget_show(notebook);
-
-    gtk_widget_show(top_level_menu_bar);
   }
 
   void build_menus() {
