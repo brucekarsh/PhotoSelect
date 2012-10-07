@@ -86,6 +86,7 @@ class BaseWindow {
     gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), page_num);
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(notebook), page, true);
     gtk_notebook_set_tab_detachable(GTK_NOTEBOOK(notebook), page, true);
+    gtk_notebook_set_scrollable(GTK_NOTEBOOK(notebook), true);
   }
 
   void
