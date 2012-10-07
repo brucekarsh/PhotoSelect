@@ -128,6 +128,16 @@ class BaseWindow {
     gtk_box_pack_start(GTK_BOX(top_level_vbox), top_level_menu_bar, FALSE, FALSE, 0);
     gtk_widget_show(top_level_menu_bar);
 
+    build_menus();
+
+    // Put a notebook (notebook) into top_level_vbox
+    gtk_box_pack_start(GTK_BOX(top_level_vbox), notebook, TRUE, TRUE, 0);
+    gtk_widget_show(notebook);
+
+    connect_signals();
+  }
+
+  void build_menus() {
     // Put a menuitem (file_menu_item) in top_level_menu_bar
     file_menu_item = gtk_menu_item_new_with_label("_File");
     gtk_menu_item_set_use_underline(GTK_MENU_ITEM(file_menu_item), TRUE);
@@ -299,12 +309,6 @@ class BaseWindow {
       gtk_container_add(GTK_CONTAINER(view_exif_menu), item);
       gtk_widget_show(item);
     }
-
-    // Put a notebook (notebook) into top_level_vbox
-    gtk_box_pack_start(GTK_BOX(top_level_vbox), notebook, TRUE, TRUE, 0);
-    gtk_widget_show(notebook);
-
-    connect_signals();
   }
 
   // Forward references
