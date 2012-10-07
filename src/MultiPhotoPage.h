@@ -178,6 +178,11 @@ class MultiPhotoPage : public PhotoSelectPage {
     return project_name;
   }
 
+  void load_extra_menu_items() {
+    std::cout << "MultiPhotoPage::load_extra_menu_items()" << std::endl;
+  }
+
+
   virtual void rotate(GtkWidget *widget, int index, GtkTreePath *path, GtkCellRenderer *cell) {
     PhotoState &photo_state = photo_state_map[index];
     std::string file_path = photoFilenameVector[photo_state.get_index()];

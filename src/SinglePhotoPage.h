@@ -90,6 +90,10 @@ class SinglePhotoPage : public PhotoSelectPage {
     }
   }
 
+  void load_extra_menu_items() {
+    std::cout << "SinglePhotoPage::load_extra_menu_items()" << std::endl;
+  }
+
   const std::string &get_project_name() {
     return project_name;
   }

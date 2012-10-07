@@ -2,7 +2,7 @@
 #define PHOTOSELECTPAGE_H__
 
 //!
-//! Virtual Class that represents an interface for a page in the PhotoSelect notebook.
+//! Abstract Class that represents an interface for a page in the PhotoSelect notebook.
 class PhotoSelectPage {
   public:
     virtual PhotoSelectPage *clone() = 0;
@@ -15,5 +15,6 @@ class PhotoSelectPage {
     virtual void set_tags_position(const std::string position) = 0;
     virtual void quit() = 0;
     virtual void edit_unselect_all_activate() = 0;
+    virtual void load_extra_menu_items() = 0;
 };
 #endif  // PHOTOSELECTPAGE_H__

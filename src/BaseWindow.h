@@ -315,6 +315,7 @@ class BaseWindow {
   // Forward references
   void quit_all_notebook_pages();
   std::string get_project_name();
+  void switch_page(GtkNotebook *notebook, GtkWidget *page, guint page_num, gpointer user_data);
   void file_project_new_activate();
   void file_project_add_to_activate();
   void file_project_remove_from_activate();
@@ -495,6 +496,14 @@ class BaseWindow {
     }
   }
 
+  static void
+  switch_page_cb(GtkNotebook *notebook, GtkWidget *page, guint page_num, gpointer user_data) {
+    BaseWindow *base_window = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(notebook));
+    if (NULL != base_window) {
+      base_window->switch_page(notebook, page, page_num, user_data);
+    }
+  }
+
   GtkNotebook *
   create_window(GtkNotebook *notebook, GtkWidget *page, gint x, gint y, gpointer user_data) {
     if (!connection) return NULL;
@@ -572,6 +581,7 @@ class BaseWindow {
         G_CALLBACK(edit_tags_activate_cb), NULL);
     connect_signal(notebook, "create-window", G_CALLBACK(create_window_cb), NULL);
     connect_signal(notebook, "page-removed", G_CALLBACK(page_removed_cb), NULL);
+    connect_signal(notebook, "switch_page", G_CALLBACK(switch_page_cb), NULL);
     connect_signal(view_clone_menu_item, "activate", G_CALLBACK(clone_activate_cb), NULL);
     BOOST_FOREACH(GtkWidget *item, view_tags_menu_items) {
       connect_signal(item, "toggled", G_CALLBACK(view_tags_toggled_cb), NULL);
@@ -627,6 +637,19 @@ BaseWindow::get_project_name() {
     }
   }
   return project_name;
+}
+
+inline void
+BaseWindow::switch_page(GtkNotebook *notebook, GtkWidget *page, guint page_num,
+    gpointer user_data) {
+  PhotoSelectPage *new_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
+  if (new_page) {
+    std::string project_name = new_page->get_project_name();
+    std::cout << "new page " << page_num << " " << project_name << std::endl;
+    new_page->load_extra_menu_items();
+  } else {
+    std::cout << "page not found " << page_num << std::endl;
+  }
 }
 
 inline void
