@@ -102,13 +102,17 @@ class BaseWindow {
     run(notebook_, GTK_WIN_POS_NONE, 800, 500);
   }
 
-  void run(GtkWidget *notebook_, GtkWindowPosition window_position, gint width, gint height) {
+  void run(GtkWidget *notebook_, const GtkWindowPosition &window_position, gint width, gint height) {
     // Remember the notebook and make it a part of a group
     notebook = notebook_;
     gtk_notebook_set_group_name(GTK_NOTEBOOK(notebook), "BaseWindowNotebook");
-
     gtk_notebook_popup_enable(GTK_NOTEBOOK(notebook));
+    build_window(window_position, width, height);
+    build_menus();
+    connect_signals();
+  }
 
+  void build_window(const GtkWindowPosition &window_position, gint width, gint height) {
     // Make a GtkWindow (top_level_window)
     top_level_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_position(GTK_WINDOW(top_level_window), window_position);
@@ -126,15 +130,12 @@ class BaseWindow {
     // Put a menubar (top_level_menu_bar) in top_level_vbox
     top_level_menu_bar = gtk_menu_bar_new();
     gtk_box_pack_start(GTK_BOX(top_level_vbox), top_level_menu_bar, FALSE, FALSE, 0);
-    gtk_widget_show(top_level_menu_bar);
-
-    build_menus();
 
     // Put a notebook (notebook) into top_level_vbox
     gtk_box_pack_start(GTK_BOX(top_level_vbox), notebook, TRUE, TRUE, 0);
     gtk_widget_show(notebook);
 
-    connect_signals();
+    gtk_widget_show(top_level_menu_bar);
   }
 
   void build_menus() {
