@@ -626,11 +626,12 @@ class SinglePhotoPage : public PhotoSelectPage {
 
 
   void setup(std::vector<std::string> photoFilenameVector_,
-      std::vector<std::string> adjusted_date_time_vector, std::string project_name_,
+      std::vector<std::string> adjusted_date_time_vector_, std::string project_name_,
       Preferences *thePreferences) {
     this->thePreferences = thePreferences;
     this->project_name = project_name_;
     photoFilenameVector = photoFilenameVector_;
+    adjusted_date_time_vector = adjusted_date_time_vector_;
 
     // Set up a conversion engine.
     conversionEngine.setPhotoFileVector(&photoFilenameVector);
