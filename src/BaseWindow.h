@@ -20,7 +20,7 @@ class EditTagsWindow;
 class PhotoFileCache;
 
 class BaseWindow {
-  public:
+  private:
   GtkWidget *top_level_window;
   GtkWidget *top_level_vbox;
   GtkWidget *top_level_menu_bar;
@@ -66,6 +66,7 @@ class BaseWindow {
   std::list<guint> signal_handler_ids;
   std::list<gpointer> signal_instances;
 
+  public:
   BaseWindow(sql::Connection *connection, Preferences *thePreferences,
       PhotoFileCache *photoFileCache_) {
     BaseWindow::connection = connection;
