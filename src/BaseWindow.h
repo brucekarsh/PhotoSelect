@@ -20,6 +20,13 @@ class EditTagsWindow;
 class PhotoFileCache;
 
 class BaseWindow {
+  public:
+  //! Holds menu items to be placed in the BaseWindow menus when PhotoSelectWindows are switched in
+  class ExtraMenuItem {
+    public:
+      std::string item_location; // the name of the place where the menus item is to be placed
+      GtkWidget *menu_item;      // should hold only a GtkMenuItem*
+  };
   private:
   GtkWidget *top_level_window;
   GtkWidget *top_level_vbox;
@@ -60,6 +67,12 @@ class BaseWindow {
   gpointer preferencesWindow_instance;
   PhotoFileCache *photoFileCache;
 
+  // map of names of menu locations (see class ExtraMenuItem) to their GtkMenu
+  std::map<std::string, GtkWidget *> extra_menu_item_location_map;
+
+  // a vector of the ExtraMenuItems that we've added for the current PhotoSelectPage
+  std::vector<ExtraMenuItem> current_extra_menu_items;
+
   sql::Connection *connection;
   Preferences* thePreferences;
 
@@ -77,6 +90,30 @@ class BaseWindow {
 
   ~BaseWindow() {
     WidgetRegistry<BaseWindow>::forget_widget(top_level_window);
+  }
+
+  //! Called from PhotoSelectWindows when they are switched it to cause them to add menu items
+  //! to the BaseWindow menus. The old ExtraMenuItems should already have been removed
+  //! before this is called.
+  //! \param extra_menu_items a list of the menu names and their items to be inserted
+  void add_extra_menu_items(std::vector<ExtraMenuItem> extra_menu_items) {
+    // save the extra menu items so we can get rid of them when the page is switched
+    current_extra_menu_items = extra_menu_items;
+    // add the new menu items
+    BOOST_FOREACH(ExtraMenuItem extra_menu_item, extra_menu_items) {
+      BOOST_ASSERT(extra_menu_item_location_map.count(extra_menu_item.item_location));
+      GtkWidget *insert_menu = extra_menu_item_location_map[extra_menu_item.item_location];
+      gtk_container_add(GTK_CONTAINER(insert_menu), extra_menu_item.menu_item);
+    }
+  }
+
+  void remove_previous_extra_menu_items() {
+    BOOST_FOREACH(ExtraMenuItem extra_menu_item, current_extra_menu_items) {
+      BOOST_ASSERT(extra_menu_item_location_map.count(extra_menu_item.item_location));
+      GtkWidget *insert_menu = extra_menu_item_location_map[extra_menu_item.item_location];
+      gtk_container_remove(GTK_CONTAINER(insert_menu), extra_menu_item.menu_item);
+    }
+    current_extra_menu_items.clear();
   }
 
   void
@@ -178,11 +215,12 @@ class BaseWindow {
     view_menu = gtk_menu_new();
     gtk_menu_item_set_submenu(GTK_MENU_ITEM(view_menu_item), view_menu);
     gtk_widget_show(edit_menu);
+    extra_menu_item_location_map["View"] = view_menu;
 
     // Put a menu (help_menu) in help_menu_item
     help_menu = gtk_menu_new();
     gtk_menu_item_set_submenu(GTK_MENU_ITEM(help_menu_item), help_menu);
-    gtk_widget_show(edit_menu);
+    gtk_widget_show(help_menu);
 
     // Put a menuitem (file_project_menu_item) into file_menu
     file_project_menu_item = gtk_menu_item_new_with_label("Project");
@@ -646,7 +684,7 @@ BaseWindow::switch_page(GtkNotebook *notebook, GtkWidget *page, guint page_num,
   PhotoSelectPage *new_page = WidgetRegistry<PhotoSelectPage>::get_object(page);
   if (new_page) {
     std::string project_name = new_page->get_project_name();
-    std::cout << "new page " << page_num << " " << project_name << std::endl;
+    remove_previous_extra_menu_items();
     new_page->load_extra_menu_items();
   } else {
     std::cout << "page not found " << page_num << std::endl;
@@ -740,7 +778,6 @@ BaseWindow::file_project_export_activate() {
 inline void
 BaseWindow::edit_tags_activate() {
   if (!connection) return;
-  std::cout << "tags_activate entered" << std::endl;
   std::string project_name = get_project_name();
   if (0 == project_name.size()) {
     return;

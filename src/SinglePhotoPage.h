@@ -91,7 +91,6 @@ class SinglePhotoPage : public PhotoSelectPage {
   }
 
   void load_extra_menu_items() {
-    std::cout << "SinglePhotoPage::load_extra_menu_items()" << std::endl;
   }
 
   const std::string &get_project_name() {
@@ -99,7 +98,6 @@ class SinglePhotoPage : public PhotoSelectPage {
   }
 
   void edit_unselect_all_activate() {
-    std::cout << "SinglePhotoPage::edit_unselect_all_activate" << std::endl;
   }
 
   PhotoSelectPage *clone() {

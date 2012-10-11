@@ -110,6 +110,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     sql::Connection *connection;
     PhotoFileCache *photoFileCache;
     GtkListStore *list_store;
+    GtkTreeModel *tree_model_filter;
     int current_index;
     boost::mutex class_mutex;
     long ticket_number; // TicketRegistry ticket number
@@ -178,15 +179,10 @@ class MultiPhotoPage : public PhotoSelectPage {
     return project_name;
   }
 
-  void load_extra_menu_items() {
-    std::cout << "MultiPhotoPage::load_extra_menu_items()" << std::endl;
-  }
-
-
-  virtual void rotate(GtkWidget *widget, int index, GtkTreePath *path, GtkCellRenderer *cell) {
+  virtual void rotate(int index) {
+    // Set the rotation in the db
     PhotoState &photo_state = photo_state_map[index];
     std::string file_path = photoFilenameVector[photo_state.get_index()];
-    std::string adjusted_date_time = adjusted_date_time_vector[photo_state.get_index()];
     int rotation = photo_state.get_rotation();
     rotation += 1;
     if (rotation == 4) {
@@ -194,10 +190,31 @@ class MultiPhotoPage : public PhotoSelectPage {
     }
     Db::set_rotation(connection, file_path, rotation);
     photo_state.clear_pixbuf();
+
+    // Get a rotated thumbnail and put it tin the photo_state
     get_photo_thumbnail(photo_state, ICON_WIDTH, ICON_HEIGHT);
+
+    // Update the list_store
+    GtkTreePath *path =
+        gtk_tree_path_new_from_string(boost::lexical_cast<std::string>(index).c_str());
     GtkTreeIter iter;
     gtk_tree_model_get_iter(GTK_TREE_MODEL(list_store), &iter, path);
     gtk_list_store_set(list_store, &iter, COL_PIXBUF, photo_state.get_pixbuf(), -1);
+    gtk_tree_path_free(path);
+    announce_row_change(index);
+  }
+
+  void announce_row_change(int index) {
+    if (is_visible_thumbnail(index)) {
+      GtkTreePath *path =
+          gtk_tree_path_new_from_string(boost::lexical_cast<std::string>(index).c_str());
+      GtkTreePath *filtered_path = gtk_tree_model_filter_convert_child_path_to_path(
+          GTK_TREE_MODEL_FILTER(tree_model_filter), path);
+      GtkTreeIter iter;
+      gtk_tree_model_get_iter(GTK_TREE_MODEL(tree_model_filter), &iter, filtered_path);
+      gtk_tree_model_row_changed(GTK_TREE_MODEL(tree_model_filter), filtered_path, &iter);
+      gtk_tree_path_free(filtered_path);
+    }
   }
 
   void edit_unselect_all_activate() {
@@ -218,7 +235,12 @@ class MultiPhotoPage : public PhotoSelectPage {
         //set it in the icon view
         GtkTreePath *path =
             gtk_tree_path_new_from_string(boost::lexical_cast<std::string>(index).c_str());
-        gtk_icon_view_select_path(GTK_ICON_VIEW(icon_view), path);
+        GtkTreePath *filtered_path = gtk_tree_model_filter_convert_child_path_to_path(
+            GTK_TREE_MODEL_FILTER(tree_model_filter), path);
+        if (filtered_path) {
+          gtk_icon_view_select_path(GTK_ICON_VIEW(icon_view), filtered_path);
+          gtk_tree_path_free(filtered_path);
+        }
         gtk_tree_path_free(path);
       }
     } else /* !new_state */{
@@ -228,7 +250,12 @@ class MultiPhotoPage : public PhotoSelectPage {
         //unset it in the icon view
         GtkTreePath *path =
             gtk_tree_path_new_from_string(boost::lexical_cast<std::string>(index).c_str());
-        gtk_icon_view_unselect_path(GTK_ICON_VIEW(icon_view), path);
+        GtkTreePath *filtered_path = gtk_tree_model_filter_convert_child_path_to_path(
+            GTK_TREE_MODEL_FILTER(tree_model_filter), path);
+        if (filtered_path) {
+          gtk_icon_view_unselect_path(GTK_ICON_VIEW(icon_view), filtered_path);
+          gtk_tree_path_free(filtered_path);
+        }
         gtk_tree_path_free(path);
       }
     }
@@ -357,9 +384,11 @@ class MultiPhotoPage : public PhotoSelectPage {
     // Add the GtkIconView
     list_store = gtk_list_store_new(NUM_COLS, GDK_TYPE_PIXBUF, G_TYPE_STRING);
     GtkTreeModel *tree_model = GTK_TREE_MODEL(list_store);
-    icon_view = gtk_icon_view_new_with_model (tree_model);
+    tree_model_filter = gtk_tree_model_filter_new(tree_model, NULL);
+    gtk_tree_model_filter_set_visible_func(GTK_TREE_MODEL_FILTER(tree_model_filter),
+        tree_model_filter_func_cb, (gpointer)this, NULL);
+    icon_view = gtk_icon_view_new_with_model (tree_model_filter);
     gtk_stock_missing_image = stock_thumbnails->get_loading_thumbnail();
-    GtkTreeIter iter;
 
     int num_photo_files = photoFilenameVector.size();
 
@@ -369,6 +398,7 @@ class MultiPhotoPage : public PhotoSelectPage {
 
     // Iterate over the photo files, make PhotoStates, set up the initial (missing image) icons,
     // and captions
+    GtkTreeIter iter;
     for (int i = 0; i < num_photo_files; i++) {
       std::string adjusted_date_time = adjusted_date_time_vector[i];
       photo_state_map[i] = PhotoState(false, i);
@@ -384,6 +414,7 @@ class MultiPhotoPage : public PhotoSelectPage {
           "</b>"
       ));
       gtk_list_store_set(list_store, &iter, COL_MARKUP, caption.c_str(), -1);
+      announce_row_change(i);
     }
 
     // Iterate over the photo files make WorkItems and send them to the WorkList so the workers
@@ -441,7 +472,7 @@ class MultiPhotoPage : public PhotoSelectPage {
       int end_pos = atoi(gtk_tree_path_to_string(end_path));
       refresh_thumbnails(start_pos, end_pos);
     } else {
-      printf("not available\n");
+      std::cout << "not available" << std::endl;
     }
   }
 
@@ -508,18 +539,22 @@ class MultiPhotoPage : public PhotoSelectPage {
     pixbuf_map[index] = PixbufMapEntry(pixbuf, rotation, priority);
     return true;
   }
-  // TODO acquire auto lock
 
+  //! Puts a thumbnail into the photo_state and into the list_store
+  //! \param index the index of the thumbnail in the (unfiltered) list_store.
+  //! \param pixbuf the pixbuf to put into the photo_state and list_store
+  //! \param rotation rotation of the put copy [0= unrotated, 1=90, 2=180, 3=270. counterclockwise]
   void apply_thumbnail(int index, GdkPixbuf *pixbuf, int rotation) {
     PhotoState &photo_state = photo_state_map[index];
     photo_state.set_pixbuf(pixbuf, rotation);
     gdk_threads_enter();
     GtkTreePath *path =
         gtk_tree_path_new_from_string(boost::lexical_cast<std::string>(index).c_str());
-    GtkTreeIter iter;
+    GtkTreeIter iter; // an iter into the (unfiltered) list_store
     gtk_tree_model_get_iter(GTK_TREE_MODEL(list_store), &iter, path);
     gtk_tree_path_free(path);
     gtk_list_store_set(list_store, &iter, COL_PIXBUF, photo_state.get_pixbuf(), -1);
+    announce_row_change(index);
     gdk_threads_leave();
   }
 
@@ -1034,26 +1069,46 @@ class MultiPhotoPage : public PhotoSelectPage {
     return false;
   }
 
+  //! non-static callback for a keyboard key press on the GtkIconView icon_view.
+  //! \param widget icon_view
+  //! \param GdkEvent the event associated with the key press
+  //! \param user_data NULL
   gboolean icon_view_key_press(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     gboolean ret = false;
     GtkTreePath *path;
+    GtkTreePath *filtered_path;
     GtkCellRenderer *cell;
     int index;
+
+    // Find the pointer coordinates within the icon view and from that get the filtered path
+    // to the icon the pointer is over.
     gint x, y;
     find_pointer_coords(widget, &x, &y);
-    gboolean has_item = gtk_icon_view_get_item_at_pos(GTK_ICON_VIEW(widget), x, y, &path, &cell);
+    gboolean has_item = gtk_icon_view_get_item_at_pos(GTK_ICON_VIEW(widget), x, y,
+        &filtered_path, &cell);
+
+    // The mouse might not have been over an icon
     if (has_item) {
-      guint keyval = ((GdkEventKey *)event)->keyval;
-      guint state = ((GdkEventKey *)event)->state;
-      switch (keyval) {
-        case 'r':
-          index = gtk_tree_path_get_indices(path)[0];
-          rotate(widget, index, path, cell);
-          ret = true;
-        default:
-          break;
+
+      // Find the unfiltered path from the filtered path
+      path = gtk_tree_model_filter_convert_path_to_child_path(
+          GTK_TREE_MODEL_FILTER(tree_model_filter), filtered_path);
+
+      // If we got the unfiltered path, handle the key press
+      if (path) {
+        guint keyval = ((GdkEventKey *)event)->keyval;
+        guint state = ((GdkEventKey *)event)->state;
+        switch (keyval) {
+          case 'r':
+            index = gtk_tree_path_get_indices(path)[0];
+            rotate(index);
+            ret = true;
+          default:
+            break;
+        }
+        gtk_tree_path_free(path);
       }
-      gtk_tree_path_free(path);
+      gtk_tree_path_free(filtered_path);
     }
     return ret;
   }
@@ -1062,6 +1117,10 @@ class MultiPhotoPage : public PhotoSelectPage {
     // TODO WRITEME
   }
 
+  //! static callback for a keyboard key press on the GtkIconView icon_view.
+  //! \param widget icon_view
+  //! \param GdkEvent the event associated with the key press
+  //! \param user_data NULL
   gboolean static icon_view_button_press_cb(GtkWidget *widget,
       GdkEvent *event, gpointer user_data) {
     MultiPhotoPage *photoSelectPage =
@@ -1091,18 +1150,21 @@ class MultiPhotoPage : public PhotoSelectPage {
     if (-1 != index) {
       PhotoState &photo_state = photo_state_map[index];
       GtkTreePath *path = gtk_tree_path_new_from_indices(index, -1);
-      gboolean is_selected = gtk_icon_view_path_is_selected(GTK_ICON_VIEW(widget), path);
+      GtkTreePath *filtered_path = gtk_tree_model_filter_convert_child_path_to_path(
+          GTK_TREE_MODEL_FILTER(tree_model_filter), path);
+      gboolean is_selected = gtk_icon_view_path_is_selected(GTK_ICON_VIEW(widget), filtered_path);
       if (is_selected) {
-        gtk_icon_view_unselect_path(GTK_ICON_VIEW(widget), path);
+        gtk_icon_view_unselect_path(GTK_ICON_VIEW(widget), filtered_path);
         photo_state.set_is_selected(false);
       } else {
-        gtk_icon_view_select_path(GTK_ICON_VIEW(widget), path);
+        gtk_icon_view_select_path(GTK_ICON_VIEW(widget), filtered_path);
         photo_state.set_is_selected(true);
       }
       gtk_tree_path_free(path);
+      gtk_tree_path_free(filtered_path);
+      current_index = index;
       count_tags();
       rebuild_tag_view();
-      current_index = index;
       rebuild_exif_view();
       // make sure that the icon_view retains the keyboard focus (the rebuilds sometimes steal it)
       gtk_grab_add(icon_view);
@@ -1122,10 +1184,15 @@ class MultiPhotoPage : public PhotoSelectPage {
     gint x, y, index;
     find_pointer_coords(widget, &x, &y);
     GtkTreePath *path;
+    GtkTreePath *filtered_path;
     GtkCellRenderer *cell;
-    gboolean has_item = gtk_icon_view_get_item_at_pos(GTK_ICON_VIEW(widget), x, y, &path, &cell);
+    gboolean has_item = gtk_icon_view_get_item_at_pos(GTK_ICON_VIEW(widget), x, y,
+        &filtered_path, &cell);
     if (has_item) {
+      path = gtk_tree_model_filter_convert_path_to_child_path(
+          GTK_TREE_MODEL_FILTER(tree_model_filter), filtered_path);
       index = gtk_tree_path_get_indices(path)[0];
+      gtk_tree_path_free(filtered_path);
       gtk_tree_path_free(path);
     } else {
       index = -1;
@@ -1217,24 +1284,60 @@ class MultiPhotoPage : public PhotoSelectPage {
     }
   }
 
+  //! Implements the Extend selection to here popup menu entry
+  //! finds the index of the thumbnail where the popup was activated, then searches
+  //! backwards for the first visible selected thumbnail. Then selects all the visible
+  //! thumbnails in that range.
   void icon_view_popup_extend_selection_activate(GtkMenuItem *menu_item, gpointer user_data) {
-    std::string label = gtk_menu_item_get_label(menu_item);
     GtkWidget *widget = (GtkWidget*) user_data;
-    int index = find_photo_index(widget);
-    if (-1 != index) { // make sure that we found the index of an icon
-      if (0 < index) { // make sure that there's at least one icon with a lower index
-        // find index of first icon that's less than index.
-        int startindex;
-        for (startindex = index - 1; startindex > 0; startindex--) {
-          if (photo_state_map[startindex].get_is_selected()) {
-            break;
-          }
-        }
-        for (int i = startindex; i <= index; i++) {
-          select_thumbnail_by_index(i, true);
+
+    // Find out the index of the thumbnail where the popup was activated.
+    int end_index = find_photo_index(widget);
+
+    // don't proceed if we didn't find the index of an icon
+    if (-1 == end_index) return;
+
+    // Find out the greatest index of a preceeding visible icon. Use -1 if none found
+    int start_index;
+    for (start_index = end_index - 1; start_index >= 0; start_index--) {
+      if (is_visible_thumbnail(start_index)) {
+        if (photo_state_map[start_index].get_is_selected()) {
+          break;
         }
       }
     }
+
+    // If there is no preceeding selected visible icon, start at 0
+    if (-1 == start_index) {
+      start_index = 0;
+    }
+
+    for (int index = start_index; index <= end_index; index++) {
+      if (is_visible_thumbnail(index)) {
+        select_thumbnail_by_index(index, true);
+      }
+    }
+  }
+
+  bool is_visible_thumbnail(int index) {
+    // indexes that are out of bounds are considered not visible
+    int num_photo_files = photoFilenameVector.size();
+    if (index < 0 || index >= num_photo_files) {
+      return false;
+    }
+    // Get a GtkTreePath based for the index in the unfiltered tree model
+    GtkTreePath *path =
+        gtk_tree_path_new_from_string(boost::lexical_cast<std::string>(index).c_str());
+    // From that, get a GtkTreePath to it in the filtered tree mode.
+    GtkTreePath *filtered_path = gtk_tree_model_filter_convert_child_path_to_path(
+        GTK_TREE_MODEL_FILTER(tree_model_filter), path);
+    gtk_tree_path_free(path);
+    // If there's not filtered_path, that means it's not visible
+    if (!filtered_path) {
+      return false;
+    }
+    gtk_tree_path_free(filtered_path);
+    return true;
   }
 
   void icon_view_popup_open_image_viewer_activate(GtkMenuItem *menu_item, gpointer user_data) {
@@ -1309,6 +1412,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     gtk_grab_remove(widget);
   } 
 
+  void load_extra_menu_items();
   void quit();
   void add_page_to_base_window(PhotoSelectPage *photo_page);
   void open_single_photo_page(int index);
@@ -1332,10 +1436,122 @@ class MultiPhotoPage : public PhotoSelectPage {
       }
     }
   }
+
+  static gboolean tree_model_filter_func_cb(GtkTreeModel *model,
+      GtkTreeIter *unfiltered_iter, gpointer data) {
+    MultiPhotoPage *multiPhotoPage = (MultiPhotoPage *)data;
+    return multiPhotoPage->tree_model_filter_func(model, unfiltered_iter, data);
+  }
+
+  gboolean tree_model_filter_func(GtkTreeModel *model, GtkTreeIter *unfiltered_iter,
+      gpointer data) {
+    gboolean ret = TRUE;
+    return true;
+    GtkTreePath *path = gtk_tree_model_get_path(model, unfiltered_iter);
+    char *text;
+    gtk_tree_model_get(model, unfiltered_iter, COL_MARKUP, &text, -1);
+    if (NULL != text) {
+      if (text[1] == '2') {
+        ret = FALSE;
+      }
+      g_free(text);
+    }
+    return ret;
+  }
+
+  static void show_menu_item_activate_cb(GtkMenuItem *menuitem, gpointer user_data) {
+    std::cout << "show_menu_item_activate_cb " << gtk_menu_item_get_label(menuitem) << std::endl;
+  }
+  static void show_tag_menu_item_activate_cb(GtkMenuItem *menuitem, gpointer user_data) {
+    std::cout << "show_tag_menu_item_activate_cb " << gtk_menu_item_get_label(menuitem) << std::endl;
+  }
 };
 
 #include "BaseWindow.h"
 #include "SinglePhotoPage.h"
+
+  //! Called by BaseWindow when this page is switched to. It's job is to load the menu items
+  //! that this page needs into the base window. It creates a vector of ExtraMenuItems\
+  //! and calls BaseWindow::add_extra_menu_items with them.
+  inline void MultiPhotoPage::load_extra_menu_items() {
+    std::vector<BaseWindow::ExtraMenuItem> extra_menu_items;
+    // make extra menu items
+    BaseWindow::ExtraMenuItem extra_menu_item;
+    extra_menu_item.item_location = "View";
+
+    // Make the Limit by tags menu item and menu
+    GtkWidget *view_limit_menu_item = gtk_menu_item_new_with_label("Limit by tags");
+    extra_menu_item.menu_item = view_limit_menu_item;
+    gtk_widget_show(view_limit_menu_item);
+
+    GtkWidget *view_limit_menu = gtk_menu_new();
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(view_limit_menu_item), view_limit_menu);
+    gtk_widget_show(view_limit_menu);
+
+    // Make the Show all menu item
+    GtkWidget *show_all_menu_item = gtk_radio_menu_item_new_with_label(NULL, "Show all");
+    g_signal_connect(show_all_menu_item, "activate",
+        G_CALLBACK(show_menu_item_activate_cb), gpointer(this));
+    gtk_widget_show(show_all_menu_item);
+    gtk_container_add(GTK_CONTAINER(view_limit_menu), show_all_menu_item);
+
+    GtkWidget *show_all_menu_item2 = gtk_radio_menu_item_new_with_label_from_widget(GTK_RADIO_MENU_ITEM(show_all_menu_item), "Show all2");
+    g_signal_connect(show_all_menu_item2, "activate",
+        G_CALLBACK(show_menu_item_activate_cb), gpointer(this));
+    gtk_widget_show(show_all_menu_item2);
+    gtk_container_add(GTK_CONTAINER(view_limit_menu), show_all_menu_item2);
+
+    // Make the Show these tags menu item and menu
+    GtkWidget *show_these_tags_menu_item =
+        gtk_radio_menu_item_new_with_label_from_widget(GTK_RADIO_MENU_ITEM(show_all_menu_item),
+        "Show these tags");
+    g_signal_connect(show_these_tags_menu_item, "activate",
+        G_CALLBACK(show_menu_item_activate_cb), gpointer(this));
+    gtk_widget_show(show_these_tags_menu_item);
+    gtk_container_add(GTK_CONTAINER(view_limit_menu), show_these_tags_menu_item);
+    GtkWidget *show_these_tags_menu = gtk_menu_new();
+    gtk_widget_show(show_these_tags_menu);
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(show_these_tags_menu_item), show_these_tags_menu);
+  
+    // Make the Don't show these tags menu item and menu
+    GtkWidget *dont_show_these_tags_menu_item =
+        gtk_radio_menu_item_new_with_label_from_widget(GTK_RADIO_MENU_ITEM(show_all_menu_item),
+        "Don't show these tags");
+    g_signal_connect(dont_show_these_tags_menu_item, "activate",
+        G_CALLBACK(show_menu_item_activate_cb), gpointer(this));
+    gtk_widget_show(dont_show_these_tags_menu_item);
+    gtk_container_add(GTK_CONTAINER(view_limit_menu), dont_show_these_tags_menu_item);
+    GtkWidget *dont_show_these_tags_menu = gtk_menu_new();
+    gtk_widget_show(show_these_tags_menu);
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(dont_show_these_tags_menu_item),
+        dont_show_these_tags_menu);
+
+    // Get all the tags for this project
+    typedef std::pair<std::string, Db::project_tag_s> map_entry_t;
+    // (project_tags[tag_name] -> project_tag_s. (project_tag_s is empty))
+    BOOST_FOREACH(map_entry_t map_entry, project_tags) {
+      std::string tag_name = map_entry.first;
+
+      GtkWidget *show_tag_menu_item = gtk_check_menu_item_new_with_label(tag_name.c_str());
+      g_signal_connect(show_tag_menu_item, "activate",
+          G_CALLBACK(show_tag_menu_item_activate_cb), gpointer(this));
+      gtk_widget_show(show_tag_menu_item);
+      gtk_container_add(GTK_CONTAINER(show_these_tags_menu), show_tag_menu_item);
+
+      GtkWidget *dont_show_tag_menu_item = gtk_check_menu_item_new_with_label(tag_name.c_str());
+      g_signal_connect(dont_show_tag_menu_item, "activate",
+          G_CALLBACK(show_tag_menu_item_activate_cb), gpointer(this));
+      gtk_widget_show(dont_show_tag_menu_item);
+      gtk_container_add(GTK_CONTAINER(dont_show_these_tags_menu), dont_show_tag_menu_item);
+    }
+
+    extra_menu_items.push_back(extra_menu_item);
+      
+    BaseWindow *baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(page_hbox));
+    if (NULL != baseWindow) {
+      baseWindow->add_extra_menu_items(extra_menu_items);
+    };
+  }
 
   inline void MultiPhotoPage::quit() {
     BaseWindow *baseWindow = WidgetRegistry<BaseWindow>::get_object(GTK_WIDGET(page_hbox));
