@@ -21,4 +21,7 @@ rm -rf \
     Makefile.in \
     po \
     src/configure.ac \
-    src/Makefile.in
+    src/Makefile.in \
+    docs/Doxyfile.in.bak \
+    docs/Doxyfile
+
