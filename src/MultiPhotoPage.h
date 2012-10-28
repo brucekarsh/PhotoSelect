@@ -133,6 +133,9 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkWidget *exif_view_box;
     GtkWidget *icon_view;
     GtkWidget *scrolled_window;
+    GtkWidget *show_all_menu_item;
+    GtkWidget *show_these_tags_menu_item;
+    GtkWidget *dont_show_these_tags_menu_item;
     std::string tags_position;
     std::string exifs_position;
     std::map<std::string, Db::photo_tag_s> photo_tags;
@@ -144,13 +147,22 @@ class MultiPhotoPage : public PhotoSelectPage {
     // all_photo_tags_for_project[file_name][tag_name] -> photo_tag_s. (photo_tag_s is empty)
     std::map<std::string, std::map<std::string, Db::photo_tag_s> > all_photo_tags_for_project;
     GdkPixbuf *gtk_stock_missing_image;
+    bool view_filter_show_all;
+    bool view_filter_show;
+    bool view_filter_dont_show;
+    std::list<GtkWidget *> view_filter_show_menu_items;
+    std::list<GtkWidget *> view_filter_dont_show_menu_items;
+    std::set<std::string> view_filter_show_tags;
+    std::set<std::string> view_filter_dont_show_tags;
+
 
   MultiPhotoPage(sql::Connection *connection_, PhotoFileCache *photoFileCache_) :
       conversionEngine(photoFileCache_), 
       thePreferences((Preferences*)0),
       connection(connection_), photoFileCache(photoFileCache_),
       tag_view_box(0), current_index(0),
-      exif_view_box(0), tags_position("right"), exifs_position("right") {
+      exif_view_box(0), tags_position("right"), exifs_position("right"),
+      view_filter_show_all(true), view_filter_show(false), view_filter_dont_show(false) {
     ticket_number = ticket_registry.new_ticket();
   }
 
@@ -467,6 +479,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkTreePath *start_path;
     GtkTreePath *end_path;
     gboolean b = gtk_icon_view_get_visible_range(GTK_ICON_VIEW(icon_view), &start_path, &end_path);
+    // start_path and end_path are paths in tree_model_filter. (not in tree_model)
     if (b) {
       int start_pos = atoi(gtk_tree_path_to_string(start_path));
       int end_pos = atoi(gtk_tree_path_to_string(end_path));
@@ -1421,20 +1434,41 @@ class MultiPhotoPage : public PhotoSelectPage {
     return photoFilenameVector[index];
   }
 
+  /// Add thumbnails to the work list.
+  /// \param first the index into tree_model_filter of the first icon to add
+  /// \param last the index into tree_model_filter of the last icon to add
   void refresh_thumbnails(int first, int last) {
     boost::lock_guard<boost::mutex> member_lock(class_mutex); 
+    std::cout << "refresh_thumbnails " << first << " " << last << std::endl;
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
     long priority = ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
     for (int i = last; i >= first; i--) {
-      PhotoState &photo_state = photo_state_map[i];
+      // convert from an index into tree_model_filter to an index into tree_model
+      int tree_model_index = tree_model_filter_index_to_tree_model_index(i);
+std::cout << "visible " << i << " " << tree_model_index << std::endl;
+      PhotoState &photo_state = photo_state_map[tree_model_index];
 
       if (photo_state.get_pixbuf() == gtk_stock_missing_image) {
-        int rotation = Db::get_rotation(connection, photoFilenameVector[i]);
-        WorkItem work_item(ticket_number, i,rotation, priority, this);
+        int rotation = Db::get_rotation(connection, photoFilenameVector[tree_model_index]);
+        WorkItem work_item(ticket_number, tree_model_index, rotation, priority, this);
         work_list.add_work(work_item);
       }
     }
+  }
+
+  /// Convert an index in the tree_model_filter to an index in the tree_model
+  /// \param tree_model_filter_index The index in the tree_model_filter
+  /// \return The index in the tree_model
+  int tree_model_filter_index_to_tree_model_index(int tree_model_filter_index) {
+    GtkTreePath *filter_path = gtk_tree_path_new_from_indices(tree_model_filter_index, -1);
+    GtkTreePath *child_path =
+        gtk_tree_model_filter_convert_path_to_child_path(GTK_TREE_MODEL_FILTER(tree_model_filter),
+        filter_path);
+    int tree_model_index = atoi(gtk_tree_path_to_string(child_path));
+    gtk_tree_path_free(filter_path);
+    gtk_tree_path_free(child_path);
+    return tree_model_index;
   }
 
   static gboolean tree_model_filter_func_cb(GtkTreeModel *model,
@@ -1446,24 +1480,105 @@ class MultiPhotoPage : public PhotoSelectPage {
   gboolean tree_model_filter_func(GtkTreeModel *model, GtkTreeIter *unfiltered_iter,
       gpointer data) {
     gboolean ret = TRUE;
-    return true;
     GtkTreePath *path = gtk_tree_model_get_path(model, unfiltered_iter);
-    char *text;
-    gtk_tree_model_get(model, unfiltered_iter, COL_MARKUP, &text, -1);
-    if (NULL != text) {
-      if (text[1] == '2') {
-        ret = FALSE;
+    int index = gtk_tree_path_get_indices(path)[0];
+    std::string file_path = photoFilenameVector[index];
+    std::cout << "Filtering " << index << " " << file_path << std::endl;
+
+    if (view_filter_show_all) {
+      return true;
+    }
+
+    if (view_filter_show) {
+      // view/limit by tags/show these tags was set in the menu
+      if (all_photo_tags_for_project.count(file_path)) {
+        // this file has tags, so scan through the required tags and make sure that we have them
+        std::map<std::string, Db::photo_tag_s> tags_for_this_file_path =
+            all_photo_tags_for_project[file_path];
+        BOOST_FOREACH(std::string required_tag, view_filter_show_tags) {
+          if (0 == tags_for_this_file_path.count(required_tag)) {
+            // this file is missing a required tag, so don't show it
+            ret = false;
+            break;
+          }
+        }
+      } else {
+        // This file has no tags, so don't show it
+        ret = false;
       }
-      g_free(text);
+    } else {
+      BOOST_ASSERT(view_filter_dont_show);
+      // view/limit by tags/dont show these tags was set in the menu
+      if (all_photo_tags_for_project.count(file_path)) {
+        // this file has tags, so scan through the prohibited tags. make sure that we dont have them
+        std::map<std::string, Db::photo_tag_s> tags_for_this_file_path =
+            all_photo_tags_for_project[file_path];
+        BOOST_FOREACH(std::string prohibited_tag, view_filter_dont_show_tags) {
+          if (0 != tags_for_this_file_path.count(prohibited_tag)) {
+            // this file has a prohibited tag, so don't show it
+            ret = false;
+            break;
+          }
+        }
+      } else {
+        // This file has no tags, so show it
+      }
     }
     return ret;
   }
 
   static void show_menu_item_activate_cb(GtkMenuItem *menuitem, gpointer user_data) {
     std::cout << "show_menu_item_activate_cb " << gtk_menu_item_get_label(menuitem) << std::endl;
+    MultiPhotoPage *photoSelectPage = (MultiPhotoPage *) user_data;
+    if (0 != photoSelectPage) {
+      photoSelectPage->show_menu_item_activate(menuitem, user_data);
+    }
   }
+
+  void show_menu_item_activate(GtkMenuItem *menuitem, gpointer user_data) {
+    change_view_filtering();
+  }
+
   static void show_tag_menu_item_activate_cb(GtkMenuItem *menuitem, gpointer user_data) {
     std::cout << "show_tag_menu_item_activate_cb " << gtk_menu_item_get_label(menuitem) << std::endl;
+    MultiPhotoPage *photoSelectPage = (MultiPhotoPage *) user_data;
+    if (0 != photoSelectPage) {
+      photoSelectPage->show_tag_menu_item_activate(menuitem, user_data);
+    }
+  }
+
+  void show_tag_menu_item_activate(GtkMenuItem *menuitem, gpointer user_data) {
+    change_view_filtering();
+  }
+
+  void change_view_filtering() {
+    std::cout << "change_view_filtering " << std::endl;
+
+    // Look at the menu items to see what we are supposed to show.
+    view_filter_show_all = gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(show_all_menu_item));
+    view_filter_show = gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(
+        show_these_tags_menu_item));
+    view_filter_dont_show =  gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(
+        dont_show_these_tags_menu_item));
+
+    // Make a list of tags that should be shown when view_filter_show is set.
+    view_filter_show_tags.clear();
+    BOOST_FOREACH (GtkWidget *item, view_filter_show_menu_items) {
+      if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(item))) {
+        view_filter_show_tags.insert(gtk_menu_item_get_label(GTK_MENU_ITEM(item)));
+      }
+    }
+
+    // Make a list of tags that should be shown when view_filter_dont_show is set.
+    view_filter_dont_show_tags.clear();
+    BOOST_FOREACH (GtkWidget *item, view_filter_dont_show_menu_items) {
+      if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(item))) {
+        view_filter_dont_show_tags.insert(gtk_menu_item_get_label(GTK_MENU_ITEM(item)));
+      }
+    }
+
+    // Now we can refilter the icons.
+    gtk_tree_model_filter_refilter(GTK_TREE_MODEL_FILTER(tree_model_filter));
   }
 };
 
@@ -1489,22 +1604,19 @@ class MultiPhotoPage : public PhotoSelectPage {
     gtk_widget_show(view_limit_menu);
 
     // Make the Show all menu item
-    GtkWidget *show_all_menu_item = gtk_radio_menu_item_new_with_label(NULL, "Show all");
+    show_all_menu_item = gtk_radio_menu_item_new_with_label(NULL, "Show all");
+    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(show_all_menu_item), view_filter_show_all);
     g_signal_connect(show_all_menu_item, "activate",
         G_CALLBACK(show_menu_item_activate_cb), gpointer(this));
     gtk_widget_show(show_all_menu_item);
     gtk_container_add(GTK_CONTAINER(view_limit_menu), show_all_menu_item);
 
-    GtkWidget *show_all_menu_item2 = gtk_radio_menu_item_new_with_label_from_widget(GTK_RADIO_MENU_ITEM(show_all_menu_item), "Show all2");
-    g_signal_connect(show_all_menu_item2, "activate",
-        G_CALLBACK(show_menu_item_activate_cb), gpointer(this));
-    gtk_widget_show(show_all_menu_item2);
-    gtk_container_add(GTK_CONTAINER(view_limit_menu), show_all_menu_item2);
-
     // Make the Show these tags menu item and menu
-    GtkWidget *show_these_tags_menu_item =
+    show_these_tags_menu_item =
         gtk_radio_menu_item_new_with_label_from_widget(GTK_RADIO_MENU_ITEM(show_all_menu_item),
         "Show these tags");
+    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(show_these_tags_menu_item),
+        view_filter_show);
     g_signal_connect(show_these_tags_menu_item, "activate",
         G_CALLBACK(show_menu_item_activate_cb), gpointer(this));
     gtk_widget_show(show_these_tags_menu_item);
@@ -1514,9 +1626,11 @@ class MultiPhotoPage : public PhotoSelectPage {
     gtk_menu_item_set_submenu(GTK_MENU_ITEM(show_these_tags_menu_item), show_these_tags_menu);
   
     // Make the Don't show these tags menu item and menu
-    GtkWidget *dont_show_these_tags_menu_item =
+    dont_show_these_tags_menu_item =
         gtk_radio_menu_item_new_with_label_from_widget(GTK_RADIO_MENU_ITEM(show_all_menu_item),
         "Don't show these tags");
+    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(dont_show_these_tags_menu_item),
+        view_filter_dont_show);
     g_signal_connect(dont_show_these_tags_menu_item, "activate",
         G_CALLBACK(show_menu_item_activate_cb), gpointer(this));
     gtk_widget_show(dont_show_these_tags_menu_item);
@@ -1529,6 +1643,8 @@ class MultiPhotoPage : public PhotoSelectPage {
     // Get all the tags for this project
     typedef std::pair<std::string, Db::project_tag_s> map_entry_t;
     // (project_tags[tag_name] -> project_tag_s. (project_tag_s is empty))
+    view_filter_show_menu_items.clear();
+    view_filter_dont_show_menu_items.clear();
     BOOST_FOREACH(map_entry_t map_entry, project_tags) {
       std::string tag_name = map_entry.first;
 
@@ -1537,12 +1653,14 @@ class MultiPhotoPage : public PhotoSelectPage {
           G_CALLBACK(show_tag_menu_item_activate_cb), gpointer(this));
       gtk_widget_show(show_tag_menu_item);
       gtk_container_add(GTK_CONTAINER(show_these_tags_menu), show_tag_menu_item);
+      view_filter_show_menu_items.push_back(show_tag_menu_item);
 
       GtkWidget *dont_show_tag_menu_item = gtk_check_menu_item_new_with_label(tag_name.c_str());
       g_signal_connect(dont_show_tag_menu_item, "activate",
           G_CALLBACK(show_tag_menu_item_activate_cb), gpointer(this));
       gtk_widget_show(dont_show_tag_menu_item);
       gtk_container_add(GTK_CONTAINER(dont_show_these_tags_menu), dont_show_tag_menu_item);
+      view_filter_dont_show_menu_items.push_back(dont_show_tag_menu_item);
     }
 
     extra_menu_items.push_back(extra_menu_item);
@@ -1551,6 +1669,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     if (NULL != baseWindow) {
       baseWindow->add_extra_menu_items(extra_menu_items);
     };
+    change_view_filtering();
   }
 
   inline void MultiPhotoPage::quit() {
