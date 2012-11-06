@@ -41,7 +41,6 @@ class SinglePhotoPage : public PhotoSelectPage {
     std::vector<std::string> photoFilenameVector;
     std::vector<std::string> adjusted_date_time_vector;
     std::string project_name;
-    sql::Connection *connection;
     PhotoFileCache *photoFileCache;
 
     GtkWidget *page_hbox;
@@ -74,10 +73,10 @@ class SinglePhotoPage : public PhotoSelectPage {
     std::map<std::string, Db::photo_tag_s> photo_tags;
     std::map<std::string, Db::project_tag_s> project_tags;
 
-  SinglePhotoPage(sql::Connection *connection_, PhotoFileCache *photoFileCache_) :
+  SinglePhotoPage(PhotoFileCache *photoFileCache_) :
       conversionEngine(photoFileCache_), 
       rotation(0), drawing_area(0), thePreferences((Preferences*)0),
-      connection(connection_), photoFileCache(photoFileCache_), M(1.0), Dx(0),
+      photoFileCache(photoFileCache_), M(1.0), Dx(0),
       Dy(0), drag_is_active(false), calculated_initial_scaling(false), tag_view_box(0),
       exif_view_box(0), tags_position("right"), exifs_position("right") {
   }
@@ -101,7 +100,7 @@ class SinglePhotoPage : public PhotoSelectPage {
   }
 
   PhotoSelectPage *clone() {
-    SinglePhotoPage *cloned_photo_select_page = new SinglePhotoPage(connection, photoFileCache);
+    SinglePhotoPage *cloned_photo_select_page = new SinglePhotoPage(photoFileCache);
     cloned_photo_select_page->setup(photoFilenameVector, adjusted_date_time_vector,
         project_name, thePreferences);
     cloned_photo_select_page->set_tags_position(tags_position);
@@ -348,10 +347,10 @@ class SinglePhotoPage : public PhotoSelectPage {
 
     // Get all the tags for this photo
     std::string file_name = conversionEngine.getPhotoFilePath();
-    photo_tags = Db::get_photo_tags(connection, project_name, file_name);
+    Db::get_photo_tags_transaction(project_name, file_name, photo_tags);
 
     // Get all the tags for this project
-    project_tags = Db::get_project_tags(connection, project_name);
+    Db::get_project_tags_transaction(project_name, project_tags);
 
     // Don't do anything if the tag view is turned off
     if (tags_position == "none") {
@@ -504,7 +503,8 @@ class SinglePhotoPage : public PhotoSelectPage {
     std::map<std::string, std::string> exifs;
 
     std::string file_name = conversionEngine.getPhotoFilePath();
-    std::string exif_string = Db::get_from_exifblob_by_filePath(connection, file_name);
+    std::string exif_string;
+    Db::get_from_exifblob_by_filePath_transaction(file_name, exif_string);
 
     std::unique_ptr<xercesc::XercesDOMParser> parser (new xercesc::XercesDOMParser());
     parser->setValidationScheme(xercesc::XercesDOMParser::Val_Never);
@@ -734,7 +734,7 @@ class SinglePhotoPage : public PhotoSelectPage {
       val = siz;
     }
     conversionEngine.go_to(val-1);   
-    rotation = Db::get_rotation(connection, conversionEngine.getPhotoFilePath());
+    Db::get_rotation_transaction(conversionEngine.getPhotoFilePath(), rotation);
     calculated_initial_scaling = false;
     set_position_entry();
     gtk_widget_grab_focus(next_button);
@@ -855,7 +855,7 @@ class SinglePhotoPage : public PhotoSelectPage {
 
   void next() {
     conversionEngine.next();   
-    rotation = Db::get_rotation(connection, conversionEngine.getPhotoFilePath());
+    Db::get_rotation_transaction(conversionEngine.getPhotoFilePath(), rotation);
     calculated_initial_scaling = false;
     set_position_entry();
     rebuild_tag_view();
@@ -868,7 +868,7 @@ class SinglePhotoPage : public PhotoSelectPage {
 
   void back() {
     conversionEngine.back();   
-    rotation = Db::get_rotation(connection, conversionEngine.getPhotoFilePath());
+    Db::get_rotation_transaction(conversionEngine.getPhotoFilePath(), rotation);
     calculated_initial_scaling = false;
     set_position_entry();
     rebuild_tag_view();
@@ -883,7 +883,7 @@ class SinglePhotoPage : public PhotoSelectPage {
     if (rotation == 4) {
       rotation = 0;
     }
-    Db::set_rotation(connection, conversionEngine.getPhotoFilePath(), rotation);
+    Db::set_rotation_transaction(conversionEngine.getPhotoFilePath(), rotation);
     invalidate_image();
     // make sure that the drawing_area retains the keyboard focus (the rebuilds sometimes steal it)
     gtk_grab_add(drawing_area);
@@ -1012,8 +1012,8 @@ class SinglePhotoPage : public PhotoSelectPage {
     std::string tag_name = gtk_button_get_label(GTK_BUTTON(togglebutton));
     bool active = gtk_toggle_button_get_active(togglebutton);
     std::string file_name = conversionEngine.getPhotoFilePath();
-    project_tags = Db::get_project_tags(connection, project_name);
-    photo_tags = Db::get_photo_tags(connection, project_name, file_name);
+    Db::get_project_tags_transaction(project_name, project_tags);
+    Db::get_photo_tags_transaction(project_name, file_name, photo_tags);
 
     // Ignore this click if it's for a tag that's not in our project
     if (0 == project_tags.count(tag_name)) {
@@ -1021,9 +1021,15 @@ class SinglePhotoPage : public PhotoSelectPage {
     }
 
     if (active) {
-      Db::add_tag_by_filename(connection, tag_name, file_name);
+      bool b  = Db::add_tag_by_filename_transaction(tag_name, file_name);
+      if (!b) {
+        // TODO Handle Db::add_tag_by_filename_transaction failure
+      }
     } else {
-      Db::remove_tag_by_filename(connection, tag_name, file_name);
+      bool b = Db::remove_tag_by_filename_transaction(tag_name, file_name);
+      if (!b) {
+        // TODO Handle Db::remove_tag_by_filename_transaction failure
+      }
     }
   }
 };
@@ -1048,7 +1054,7 @@ class SinglePhotoPage : public PhotoSelectPage {
   };
 
   inline void SinglePhotoPage::open_multi_photo_page(int index) {
-    MultiPhotoPage *multi_photo_page = new MultiPhotoPage(connection, photoFileCache);
+    MultiPhotoPage *multi_photo_page = new MultiPhotoPage(photoFileCache);
     multi_photo_page->setup(photoFilenameVector, adjusted_date_time_vector, project_name, thePreferences);
     multi_photo_page->set_position(index+1); // (set_position is 1-based)
     add_page_to_base_window(multi_photo_page);

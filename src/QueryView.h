@@ -12,7 +12,6 @@
 
 /* MySQL Connector/C++ specific headers */
 #include <driver.h>
-#include <connection.h>
 #include <statement.h>
 #include <prepared_statement.h>
 #include <resultset.h>
@@ -48,14 +47,13 @@ class QueryView {
   GtkWidget *status_label;
   GtkWidget *accept_button;
   GtkWidget *quitButton;
-  sql::Connection *connection;
   std::vector<std::string> photoFilenameVector;
   std::list<long> photoFileIdList;
   bool is_limited_to_a_project;
   std::string limit_project_name; // Name of the project that the query is limited to
 
-  QueryView(sql::Connection *connection_) :
-      connection(connection_), is_limited_to_a_project(false), limit_project_name("") {
+  QueryView() :
+      is_limited_to_a_project(false), limit_project_name("") {
   }
 
   ~QueryView() {
@@ -120,6 +118,7 @@ class QueryView {
 
   std::string
   queryJSONToQuery(std::string queryJson) {
+#ifdef LATER
     std::vector<std::string> value_vector;
     json_spirit::mValue value;
     json_spirit::read(queryJson, value);
@@ -215,6 +214,7 @@ class QueryView {
     runUI(100);
 
     return first_part + last_part;
+#endif
   }
 
   QueryViewRow *

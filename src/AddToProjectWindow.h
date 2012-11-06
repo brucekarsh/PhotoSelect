@@ -17,12 +17,11 @@ class AddToProjectWindow {
   GtkWidget *windowBox;
   GtkWidget *accept_button;
   GtkWidget *quit_button;
-  sql::Connection *connection;
   QueryView query_view;
   std::string project_name;
 
-  AddToProjectWindow(sql::Connection *connection_, std::string project_name_)
-      : connection(connection_), project_name(project_name_), query_view(connection_) {
+  AddToProjectWindow(std::string project_name_)
+      : project_name(project_name_) {
   }
 
   ~AddToProjectWindow() {
@@ -73,15 +72,9 @@ class AddToProjectWindow {
 
   void
   accept() {
-    // Get the project name
+    // Validate the project name
     if (0 == project_name.length()) {
       query_view.set_error_label("Missing project name.");
-      return;
-    }
-    // get its project_id
-    long project_id = Db::get_project_id(connection, project_name);
-    if (project_id == -1) {
-      query_view.set_error_label("Missing project id.");
       return;
     }
 
@@ -89,18 +82,48 @@ class AddToProjectWindow {
     std::list<long> photoFileIdList;
     photoFilenameVector = query_view.getPhotoFilenameVector();
     photoFileIdList = query_view.getPhotoFileIdList();
+    // Issue the transaction
+    long project_id;
+    bool b = accept_transaction(project_name, photoFilenameVector, photoFileIdList, project_id);
+
+    if (project_id == -1) {
+      query_view.set_error_label("Missing project id.");
+    } else if (!b) {
+      query_view.set_error_label("Failed adding to project.");
+    } else {
+      quit();
+    }
+  }
+
+  void accept_op(const std::string &project_name,
+      const std::vector<std::string> &photoFilenameVector,
+      const std::list<long> &photoFileIdList, long &project_id) {
+    Db::enter_operation();
+    Db::get_project_id_op(project_name, project_id);
+    if (project_id == -1) {
+      return;
+    }
+
     // Add the filenames into the ProjectPhotoFile table
-    std::list<long>::iterator id_iter = photoFileIdList.begin();
-    for (std::vector<std::string>::iterator filename_iter = photoFilenameVector.begin();
+    std::list<long>::const_iterator id_iter = photoFileIdList.begin();
+    for (std::vector<std::string>::const_iterator filename_iter = photoFilenameVector.begin();
         filename_iter != photoFilenameVector.end();
         ++filename_iter) {
       long photo_file_id = *id_iter;
       std::string photo_file_name = *filename_iter;
       ++id_iter;
-      Db::add_photo_to_project(connection, project_id, photo_file_id);
+      Db::add_photo_to_project_op(project_id, photo_file_id);
     }
-    connection->commit();
-    quit();
   }
+
+  bool accept_transaction(const std::string &project_name,
+      const std::vector<std::string> &photoFilenameVector,
+      const std::list<long> &photoFileIdList, long &project_id) {
+    boost::function<void (void)> f = boost::bind(&AddToProjectWindow::accept_op, this,
+        boost::cref(project_name), boost::cref(photoFilenameVector),
+        boost::cref(photoFileIdList), boost::ref(project_id));
+    return Db::transaction(f);
+  }
+  
 }; // end class AddToProjectWindow
 #endif // ADDTOPROJECTWINDOW_H__

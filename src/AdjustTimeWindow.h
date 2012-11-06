@@ -16,11 +16,8 @@ namespace sql {
 
 class AdjustTimeWindow {
   public:
-    AdjustTimeWindow(sql::Connection *connection_,
-        Preferences *preferences_,
-        BaseWindow* baseWindow_) :
-        connection(connection_), preferences(preferences_), query_view(connection_),
-        baseWindow(baseWindow_) {
+    AdjustTimeWindow( Preferences *preferences_, BaseWindow* baseWindow_) :
+        preferences(preferences_), baseWindow(baseWindow_) {
     }
 
     ~AdjustTimeWindow() {
@@ -72,46 +69,54 @@ class AdjustTimeWindow {
 
     void
     accept() {
-#ifdef LATER
-      // Get the project name
-      if (0 == project_name.length()) {
-        query_view.set_error_label("Missing project name.");
-        return;
-      }
-      // get its project_id
-      long project_id = Db::get_project_id(connection, project_name);
-      if (project_id == -1) {
-        query_view.set_error_label("Missing project id.");
-        return;
-      }
-
+      // Get the photoFilenameVector and the photFileIdList
       std::vector<std::string> photoFilenameVector;
       std::list<long> photoFileIdList;
       photoFilenameVector = query_view.getPhotoFilenameVector();
       photoFileIdList = query_view.getPhotoFileIdList();
-      // Add the filenames into the ProjectPhotoFile table
-      std::list<long>::iterator id_iter = photoFileIdList.begin();
-      for (std::vector<std::string>::iterator filename_iter = photoFilenameVector.begin();
-          filename_iter != photoFilenameVector.end();
-          ++filename_iter) {
-        long photo_file_id = *id_iter;
-        std::string photo_file_name = *filename_iter;
-        ++id_iter;
-        Db::add_photo_to_project(connection, project_id, photo_file_id);
+
+      // Issue the transaction
+      long project_id;
+      bool b = accept_transaction(photoFilenameVector, photoFileIdList, project_id);
+      if (!b) {
+        query_view.set_error_label("Failed adjusting time.");
+      } else {
+        // Success
+        quit();
       }
-      connection->commit();
-      quit();
-#endif // LATER
+    }
+
+  void accept_op(const std::vector<std::string> &photoFilenameVector,
+      const std::list<long> &photoFileIdList, long &project_id) {
+    Db::enter_operation();
+
+    // Do something.
+    std::list<long>::const_iterator id_iter = photoFileIdList.begin();
+    for (std::vector<std::string>::const_iterator filename_iter = photoFilenameVector.begin();
+        filename_iter != photoFilenameVector.end();
+        ++filename_iter) {
+      long photo_file_id = *id_iter;
+      std::string photo_file_name = *filename_iter;
+      ++id_iter;
+      // Db::add_photo_to_project_op(project_id, photo_file_id);
+      // TODO WRITEME
+    }
+  } 
+
+  bool accept_transaction(const std::vector<std::string> &photoFilenameVector,
+      const std::list<long> &photoFileIdList, long &project_id) {
+    boost::function<void (void)> f = boost::bind(&AdjustTimeWindow::accept_op, this,
+        boost::cref(photoFilenameVector), boost::cref(photoFileIdList), boost::ref(project_id));
+    return Db::transaction(f);
   }
+
   private:
     GtkWidget *window;
     GtkWidget *windowBox;
-  GtkWidget *accept_button;
-  GtkWidget *quit_button;
-  QueryView query_view;
-    sql::Connection *connection;
+    GtkWidget *accept_button;
+    GtkWidget *quit_button;
+    QueryView query_view;
     Preferences *preferences;
     BaseWindow *baseWindow;
 };
-
 #endif // ADJUSTTIMEWINDOW_H__

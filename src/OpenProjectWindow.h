@@ -19,15 +19,14 @@ class OpenProjectWindow {
   GtkWidget *window;
   GtkWidget *windowBox;
   GtkWidget *first_radio_button;
-  sql::Connection *connection;
   Preferences *preferences;
   BaseWindow *baseWindow;
   PhotoFileCache *photoFileCache;
   std::list<long> photoFileIdList;
 
-  OpenProjectWindow(sql::Connection *connection_, Preferences *preferences_,
+  OpenProjectWindow(Preferences *preferences_,
       PhotoFileCache *photoFileCache_, BaseWindow* baseWindow_) :
-      connection(connection_), preferences(preferences_), photoFileCache(photoFileCache_),
+      preferences(preferences_), photoFileCache(photoFileCache_),
       baseWindow(baseWindow_) {
   }
 
@@ -101,7 +100,9 @@ class OpenProjectWindow {
     gtk_box_pack_end(GTK_BOX(button_hbox), accept_button, FALSE, FALSE, 0);
     gtk_box_pack_end(GTK_BOX(button_hbox), quit_button, FALSE, FALSE, 0);
 
-    std::list<std::string> project_names = Db::get_project_names(connection);
+    std::list<std::string> project_names;
+    bool b = Db::get_project_names_transaction(project_names);
+    // TODO check and handle get_project_names failure.
     
     GtkWidget* radio_button;
     first_radio_button = NULL;
@@ -176,8 +177,13 @@ OpenProjectWindow::apply() {
   }
   std::vector<std::string> photoFilenameVector;
   std::vector<std::string> adjusted_date_time_vector;
-  Db::get_project_photo_files(connection, project_name, photoFilenameVector, adjusted_date_time_vector);
-  MultiPhotoPage *multiPhotoPage = new MultiPhotoPage(connection, photoFileCache);
+  bool b = Db::get_project_photo_files_transaction(project_name, photoFilenameVector,
+      adjusted_date_time_vector);
+  if (!b) {
+    // TODO handle get_project_photo_files_transaction failure
+  } 
+
+  MultiPhotoPage *multiPhotoPage = new MultiPhotoPage(photoFileCache);
   multiPhotoPage->setup(photoFilenameVector, adjusted_date_time_vector, project_name, preferences);
   baseWindow->add_page(multiPhotoPage->get_tab_label(),
       multiPhotoPage->get_notebook_page(), project_name);

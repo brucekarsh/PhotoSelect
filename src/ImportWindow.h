@@ -23,11 +23,10 @@ class ImportWindow {
   GtkWidget *progressBar;
   bool cancel_requested;
   bool processing_imports;
-  sql::Connection *connection;
   int process_count;
 
-  ImportWindow(Preferences* thePreferences_, sql::Connection *connection_) :
-      thePreferences( thePreferences_), cancel_requested(false), processing_imports(false), connection(connection_) {
+  ImportWindow(Preferences* thePreferences_) :
+      thePreferences( thePreferences_), cancel_requested(false), processing_imports(false) {
   }
 
   ~ImportWindow() {
@@ -198,7 +197,7 @@ class ImportWindow {
 
   void inline
   ImportWindow::start_importing() {
-    PhotoDbImporter photoDbImporter(connection);
+    PhotoDbImporter photoDbImporter;
     processing_imports = true;
     std::string dbhost = thePreferences -> get_dbhost();
     std::string user = thePreferences -> get_user();

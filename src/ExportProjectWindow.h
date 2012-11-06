@@ -20,17 +20,15 @@ class ExportProjectWindow {
   GtkWidget *export_all_button;
   GtkWidget *export_labeled_button;
 
-  sql::Connection *connection;
   Preferences *preferences;
   BaseWindow *baseWindow;
   std::string project_name;
   std::list<GtkWidget *> label_buttons;
 
-  ExportProjectWindow(sql::Connection *connection_,
-      std::string project_name_,
+  ExportProjectWindow( std::string project_name_,
       Preferences *preferences_,
       BaseWindow* baseWindow_) :
-      connection(connection_), project_name(project_name_), preferences(preferences_),
+      project_name(project_name_), preferences(preferences_),
       baseWindow(baseWindow_) {
   }
 
@@ -75,7 +73,7 @@ class ExportProjectWindow {
     gtk_box_pack_start(GTK_BOX(extra_widgets), export_labeled_button, FALSE, FALSE, 0);
 
     std::map<std::string, Db::project_tag_s> project_tags;
-    project_tags = Db::get_project_tags(connection, project_name);
+    Db::get_project_tags_transaction(project_name, project_tags);
     typedef std::pair<std::string, Db::project_tag_s> map_entry_t;
     BOOST_FOREACH(map_entry_t map_entry, project_tags) {
       std::string tag_name = map_entry.first;
@@ -111,15 +109,18 @@ class ExportProjectWindow {
     // Make a list of all the files in the project
     std::vector<std::string> photoFilenameVector;
     std::vector<std::string> adjusted_date_time_vector;
-    Db::get_project_photo_files(connection, project_name, photoFilenameVector,
+    bool b = Db::get_project_photo_files_transaction(project_name, photoFilenameVector,
         adjusted_date_time_vector);
+    if (!b) {
+      // TODO handle get_project_photo_files_transaction failure
+    } 
 
     // Make a list of all the tags, keyed by filename
-    Db::all_photo_tags_map_t all_photo_tags_map =
-        Db::get_all_photo_tags_for_project(connection, project_name);
-    std::set<std::string> selected_tags;
+    Db::all_photo_tags_map_t all_photo_tags_map;
+    Db::get_all_photo_tags_for_project_transaction(project_name, all_photo_tags_map);
 
     // Make a list of the selected tags
+    std::set<std::string> selected_tags;
     BOOST_FOREACH (GtkWidget *widget, label_buttons) {
       if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget))) {
         std::string tag_name = gtk_button_get_label(GTK_BUTTON(widget));

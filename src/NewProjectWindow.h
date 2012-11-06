@@ -3,6 +3,7 @@
 #include <gtk/gtk.h>
 #include <iostream>
 #include <fstream>
+#include <boost/bind.hpp>
 
 #include "WidgetRegistry.h"
 #include "QueryView.h"
@@ -15,6 +16,12 @@ namespace sql {
 class NewProjectWindow {
   public:
   void accept();
+  bool accept_transaction(const std::string &project_name,
+    const std::vector<std::string> &photoFilenameVector,
+    const std::list<long> &photoFileIdList, long &project_id);
+  void accept_op(const std::string &project_name,
+    const std::vector<std::string> &photoFilenameVector,
+    const std::list<long> &photoFileIdList, long &project_id);
 
   GtkWidget *window;
   GtkWidget *windowBox;
@@ -23,16 +30,15 @@ class NewProjectWindow {
   GtkWidget *project_name_box;
   GtkWidget *project_name_label;
   GtkWidget *project_name_entry;
-  sql::Connection *connection;
   QueryView query_view;
   Preferences *preferences;
   BaseWindow *baseWindow;
   PhotoFileCache *photoFileCache;
 
-  NewProjectWindow(sql::Connection *connection_, Preferences *preferences_,
+  NewProjectWindow(Preferences *preferences_,
       PhotoFileCache *photoFileCache_, BaseWindow* baseWindow_) :
-      connection(connection_), preferences(preferences_),  photoFileCache(photoFileCache_),
-      baseWindow(baseWindow_), query_view(connection_) {
+      preferences(preferences_),  photoFileCache(photoFileCache_),
+      baseWindow(baseWindow_) {
   }
 
   ~NewProjectWindow() {
@@ -99,50 +105,74 @@ class NewProjectWindow {
 #include "BaseWindow.h"
 #include "PhotoSelectPage.h"
 
-
 inline  void
 NewProjectWindow::accept() {
-  // Get the project name
+  // Get the project name and validate it
   std::string project_name = gtk_entry_get_text(GTK_ENTRY(project_name_entry));
   if (0 == project_name.length()) {
     query_view.set_error_label("Missing project name.");
     return;
   }
-  // Insert it into the database and get its id
-  long project_id = Db::insert_into_project(connection, project_name);
-  if (project_id == -1) {
-    query_view.set_error_label("Duplicate project name.");
-    return;
-  }
-
-  if (project_id == -1) {
-    return;
-  }
-
+  // Get the photoFilenameVector and the photFileIdList
   std::vector<std::string> photoFilenameVector;
   std::list<long> photoFileIdList;
   photoFilenameVector = query_view.getPhotoFilenameVector();
   photoFileIdList = query_view.getPhotoFileIdList();
+  // Issue the transaction
+  long project_id;
+  bool b = accept_transaction(project_name, photoFilenameVector, photoFileIdList, project_id);
+  // Handle failure
+  if (project_id == -1) {
+    query_view.set_error_label("Duplicate project name.");
+  } else if (!b) {
+    query_view.set_error_label("Failed adding project.");
+  } else {
+    // Success
+    std::vector<std::string> adjusted_date_time_vector;
+    bool b = Db::get_project_photo_files_transaction(project_name, photoFilenameVector,
+        adjusted_date_time_vector);
+    if (!b) {
+      // TODO handle get_project_photo_files_transaction failure
+    } 
 
-  // Add the filenames into the ProjectPhotoFile table
-  std::list<long>::iterator id_iter = photoFileIdList.begin();
-  for (std::vector<std::string>::iterator filename_iter = photoFilenameVector.begin();
+    SinglePhotoPage *photoSelectPage = new SinglePhotoPage(photoFileCache);
+    photoSelectPage->setup(photoFilenameVector, adjusted_date_time_vector, project_name,
+        preferences);
+    baseWindow->add_page(photoSelectPage->get_tab_label(),
+        photoSelectPage->get_notebook_page(), project_name);
+    quit();
+  }
+}
+
+inline void
+NewProjectWindow::accept_op(const std::string &project_name,
+    const std::vector<std::string> &photoFilenameVector,
+    const std::list<long> &photoFileIdList, long &project_id) {
+  Db::enter_operation();
+
+
+  Db::insert_into_project_op(project_name, project_id);
+  if (project_id == -1) {
+    return;
+  }
+  std::list<long>::const_iterator id_iter = photoFileIdList.begin();
+  for (std::vector<std::string>::const_iterator filename_iter = photoFilenameVector.begin();
       filename_iter != photoFilenameVector.end();
       ++filename_iter) {
     long photo_file_id = *id_iter;
     ++id_iter;
-    Db::add_photo_to_project(connection, project_id, photo_file_id);
+    Db::add_photo_to_project_op(project_id, photo_file_id);
   }
-  connection->commit();
-
-  std::vector<std::string> adjusted_date_time_vector;
-  Db::get_project_photo_files(connection, project_name, photoFilenameVector, adjusted_date_time_vector);
-  SinglePhotoPage *photoSelectPage = new SinglePhotoPage(connection, photoFileCache);
-  photoSelectPage->setup(photoFilenameVector, adjusted_date_time_vector, project_name, preferences);
-  baseWindow->add_page(photoSelectPage->get_tab_label(),
-      photoSelectPage->get_notebook_page(), project_name);
-  quit();
-
-
 }
+
+inline bool
+NewProjectWindow::accept_transaction(const std::string &project_name, 
+    const std::vector<std::string> &photoFilenameVector, 
+    const std::list<long> &photoFileIdList, long &project_id) {
+  boost::function<void (void)> f = boost::bind(&NewProjectWindow::accept_op, this,
+      boost::cref(project_name), boost::cref(photoFilenameVector),
+      boost::cref(photoFileIdList), boost::ref(project_id));
+  return Db::transaction(f);
+}
+
 #endif // NEWPROJECTWINDOW_H__

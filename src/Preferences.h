@@ -23,19 +23,11 @@ class Preferences {
     std::list<std::string> checked_exif_selections;
     std::list<std::string> text_exif_selections;
     bool invalid;
-    sql::Connection *connection;
 
     static const char * default_dbhost() { return "localhost"; }
     static const char * default_user() { return ""; }
     static const char * default_password() { return ""; }
     static const char * default_database() { return "PhotoSelect"; }
-
-    sql::Connection *get_connection() {
-      if (NULL == connection) {
-        connection == open_database(get_dbhost(), get_user(), get_password(), get_database());
-      }
-      return connection;
-    }
 
     //! Returns a list of strings given a name and a json object containing a
     //! (top level) named array of strings.
@@ -119,8 +111,7 @@ class Preferences {
 
   public:
 
-
-    Preferences() : invalid(true), connection(NULL) {
+    Preferences() : invalid(true) {
     }
 
     std::string get_dbhost() {

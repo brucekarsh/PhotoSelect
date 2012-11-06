@@ -73,16 +73,13 @@ class BaseWindow {
   // a vector of the ExtraMenuItems that we've added for the current PhotoSelectPage
   std::vector<ExtraMenuItem> current_extra_menu_items;
 
-  sql::Connection *connection;
   Preferences* thePreferences;
 
   std::list<guint> signal_handler_ids;
   std::list<gpointer> signal_instances;
 
   public:
-  BaseWindow(sql::Connection *connection, Preferences *thePreferences,
-      PhotoFileCache *photoFileCache_) {
-    BaseWindow::connection = connection;
+  BaseWindow(Preferences *thePreferences, PhotoFileCache *photoFileCache_) {
     BaseWindow::thePreferences = thePreferences;
     preferencesWindow = NULL;
     photoFileCache = photoFileCache_;
@@ -473,8 +470,7 @@ class BaseWindow {
 
   void
   file_import_activate() {
-    if (!connection) return;
-    ImportWindow *importWindow = new ImportWindow(thePreferences, connection);
+    ImportWindow *importWindow = new ImportWindow(thePreferences);
     importWindow->run();
   }
 
@@ -545,12 +541,11 @@ class BaseWindow {
 
   GtkNotebook *
   create_window(GtkNotebook *notebook, GtkWidget *page, gint x, gint y, gpointer user_data) {
-    if (!connection) return NULL;
     GtkWidget* parent_window = gtk_widget_get_toplevel(GTK_WIDGET(notebook));
     gint parent_window_width, parent_window_height;
     gtk_window_get_size(GTK_WINDOW(parent_window), &parent_window_width, &parent_window_height);
     GtkWidget *new_notebook = gtk_notebook_new();
-    BaseWindow *base_window = new BaseWindow(connection, thePreferences, photoFileCache);
+    BaseWindow *base_window = new BaseWindow(thePreferences, photoFileCache);
     base_window->run(new_notebook, GTK_WIN_POS_MOUSE, parent_window_width, parent_window_height);
     return GTK_NOTEBOOK(new_notebook);
   }
@@ -702,88 +697,80 @@ BaseWindow::quit_all_notebook_pages() {
 
 inline void
 BaseWindow::file_project_open_activate() {
-  if (!connection) return;
   OpenProjectWindow* openProjectWindow =
-      new OpenProjectWindow(connection, thePreferences, photoFileCache, this);
+      new OpenProjectWindow(thePreferences, photoFileCache, this);
   openProjectWindow->run();
   // TODO make sure that openProjectWindow gets destroyed eventually.
 }
 
 inline void
 BaseWindow::file_project_new_activate() {
-  if (!connection) return;
   NewProjectWindow* newProjectWindow =
-      new NewProjectWindow(connection, thePreferences, photoFileCache, this);
+      new NewProjectWindow(thePreferences, photoFileCache, this);
   newProjectWindow->run();
   // TODO make sure that newProjectWindow gets destroyed eventually.
 }
 
 inline void
 BaseWindow::file_project_add_to_activate() {
-  if (!connection) return;
   std::string project_name = get_project_name();
   if (0 == project_name.size()) {
     return;
   }
   AddToProjectWindow* addToProjectWindow =
-      new AddToProjectWindow(connection, project_name);
+      new AddToProjectWindow(project_name);
   addToProjectWindow->run();
   // TODO make sure that addToProjectWindow gets destroyed eventually.
 }
 
 inline void
 BaseWindow::file_project_remove_from_activate() {
-  if (!connection) return;
   std::string project_name = get_project_name();
   if (0 == project_name.size()) {
     return;
   }
   RemoveFromProjectWindow* removeFromProjectWindow =
-      new RemoveFromProjectWindow(connection, project_name);
+      new RemoveFromProjectWindow(project_name);
   removeFromProjectWindow->run();
   // TODO make sure that removeFromProjectWindow gets destroyed eventually.
 }
 
 inline void
 BaseWindow::file_project_rename_activate() {
-  if (!connection) return;
   RenameProjectWindow* renameProjectWindow =
-      new RenameProjectWindow(connection, thePreferences, this);
+      new RenameProjectWindow(thePreferences, this);
   renameProjectWindow->run();
   // TODO make sure that RenameProjectWindow gets destroyed eventually.
 }
 
 inline void
 BaseWindow::file_project_delete_activate() {
-  if (!connection) return;
   DeleteProjectWindow* deleteProjectWindow =
-      new DeleteProjectWindow(connection, thePreferences, this);
+      new DeleteProjectWindow(thePreferences, this);
   deleteProjectWindow->run();
   // TODO make sure that deleteProjectWindow gets destroyed eventually.
 }
 
 inline void
 BaseWindow::file_project_export_activate() {
-  if (!connection) return;
   std::string project_name = get_project_name();
   if (0 == project_name.size()) {
     return;
   }
   ExportProjectWindow* exportProjectWindow =
-      new ExportProjectWindow(connection, project_name, thePreferences, this);
+      new ExportProjectWindow(project_name, thePreferences, this);
   exportProjectWindow->run();
   // TODO make sure that exportProjectWindow gets destroyed eventually.
 }
 
 inline void
 BaseWindow::edit_tags_activate() {
-  if (!connection) return;
   std::string project_name = get_project_name();
   if (0 == project_name.size()) {
     return;
   }
   EditTagsWindow *edit_tags_window =
-      new EditTagsWindow(connection, thePreferences, this, project_name);
+      new EditTagsWindow(thePreferences, this, project_name);
   edit_tags_window->run();
 // TODO make sure that edit_tags_window gets destroyed eventually.
 }
@@ -855,10 +842,8 @@ BaseWindow::edit_unselect_all_activate() {
 
 inline void
 BaseWindow::file_adjust_time_activate() {
-  if (!connection) return;
-
   AdjustTimeWindow* adjustTimeWindow =
-      new AdjustTimeWindow(connection, thePreferences, this);
+      new AdjustTimeWindow(thePreferences, this);
   adjustTimeWindow->run();
   // TODO make sure that adjustTimeWindow gets destroyed eventually.
 }

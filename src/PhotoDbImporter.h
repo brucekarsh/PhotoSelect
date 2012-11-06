@@ -74,14 +74,13 @@ class PhotoDbImporter {
   std::string database;
   std::string import_time;
   std::string import_timezone;
-  sql::Connection *connection;
 
   static std::string DEFAULT_DBHOST()   { return "localhost";};
   static std::string DEFAULT_USER()     { return "";};
   static std::string DEFAULT_PASSWORD() { return "";};
   static std::string DEFAULT_DATABASE() { return "PhotoSelect";};
 
-  PhotoDbImporter(sql::Connection *connection_) : connection(connection_)  {
+  PhotoDbImporter() {
     // Get import_time, the current UTC time. We attribute this time to a photo if we can't 
     // get the time from the photo's exif.
     struct timeb now_timeb;
@@ -121,19 +120,24 @@ class PhotoDbImporter {
     process_files(importWindow, nfiles);
   }
 
-  int
-  insert_into_database() {
+  bool insert_into_database_transaction() {
+    boost::function<void (void)> f = boost::bind(&PhotoDbImporter::insert_into_database_op, this);
+    return Db::transaction(f);
+  }
+
+  void
+  insert_into_database_op() {
+    Db::enter_operation();
     BOOST_FOREACH(PhotoDbEntry photoDbEntry, photoDbEntries) {
-      int64_t checksum_key = Db::insert_into_Checksum(connection, photoDbEntry.checksum);
-      int64_t photoFile_key = Db::insert_into_PhotoFile(connection, photoDbEntry.filePath,
-          checksum_key);
+      int64_t checksum_key;
+      Db::insert_into_Checksum_op(photoDbEntry.checksum, checksum_key);
+      int64_t photoFile_key;
+      Db::insert_into_PhotoFile_op(photoDbEntry.filePath, checksum_key, photoFile_key);
 
       insert_into_exif_tables(photoDbEntry.exifEntries, checksum_key);
       photoDbEntry.exifEntries.clear();
     }
     photoDbEntries.clear();
-    connection -> commit();
-    return 0;
   }
 
 
@@ -143,7 +147,7 @@ class PhotoDbImporter {
       int64_t checksum_key) {
     // insert into ExifBlob
     std::string xmlString = make_exif_xml_string(exifEntries);
-    Db::insert_into_exifblob(connection, checksum_key, xmlString);
+    Db::insert_into_exifblob_op(checksum_key, xmlString);
     // find a time from the exif data
     std::list<std::string> fields;
     fields.push_back(std::string("Exif.Image.DateTime"));
@@ -171,7 +175,7 @@ class PhotoDbImporter {
       camera_time = import_time;
     }
 
-    Db::insert_into_time(connection, checksum_key, camera_time, camera_time);
+    Db::insert_into_time_op(checksum_key, camera_time, camera_time);
   }
 
 std::string
@@ -377,7 +381,7 @@ exif_datetime_to_mysql_datetime(const std::string exif_datetime)
             return 0;
           }
           if (process_count >= process_rate) {
-            insert_into_database();
+            insert_into_database_transaction();
             process_count = 0;
             float fraction = (gdouble)total_process_count/(gdouble)file_count;
             importWindow -> setProgressBar(fraction);
@@ -388,7 +392,7 @@ exif_datetime_to_mysql_datetime(const std::string exif_datetime)
     }
 
     if (process_count) {
-      insert_into_database();
+      insert_into_database_transaction();
       process_count = 0;
     }
     return 0;

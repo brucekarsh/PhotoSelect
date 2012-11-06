@@ -17,7 +17,7 @@ namespace sql {
   class Connection;
 }
 
-void open_initial_project(sql::Connection *connection, BaseWindow *base_window,
+void open_initial_project(BaseWindow *base_window,
     Preferences *preferences, PhotoFileCache *photoFileCache);
 std::string get_last_project_name();
 sql::Connection *
@@ -52,18 +52,14 @@ main(int argc, char **argv)
     exit(1);
   }
 
-  std::string dbhost = preferences.get_dbhost();
-  std::string user = preferences.get_user();
-  std::string password = preferences.get_password();
-  std::string database = preferences.get_database();
-  sql::Connection *connection = open_database(dbhost, user, password, database);
+  Db::dbhost = preferences.get_dbhost();
+  Db::user = preferences.get_user();
+  Db::password = preferences.get_password();
+  Db::database = preferences.get_database();
 
-  BaseWindow *baseWindow = new BaseWindow(connection, &preferences, &photoFileCache);
+  BaseWindow *baseWindow = new BaseWindow(&preferences, &photoFileCache);
   baseWindow->run();
-
-  if (connection) {
-    open_initial_project(connection, baseWindow, &preferences, &photoFileCache);
-  }
+  open_initial_project(baseWindow, &preferences, &photoFileCache);
 
   list<boost::thread *> worker_list;
   const int NWORKERS = 2;
@@ -82,7 +78,7 @@ main(int argc, char **argv)
 }
 
 void
-open_initial_project(sql::Connection *connection, BaseWindow *base_window,
+open_initial_project(BaseWindow *base_window,
     Preferences *preferences, PhotoFileCache *photoFileCache) {
   std::string project_name = get_last_project_name();
   std::cout << "project name " << project_name << std::endl;
@@ -91,9 +87,12 @@ open_initial_project(sql::Connection *connection, BaseWindow *base_window,
   }
   std::vector<std::string> photoFilenameVector;
   std::vector<std::string> adjusted_date_time_vector;
-  Db::get_project_photo_files(connection, project_name, photoFilenameVector,
+  bool b = Db::get_project_photo_files_transaction(project_name, photoFilenameVector,
       adjusted_date_time_vector);
-  MultiPhotoPage *multiPhotoPage = new MultiPhotoPage(connection, photoFileCache);
+  if (!b) {
+    // TODO handle get_project_photo_files_transaction failure
+  }
+  MultiPhotoPage *multiPhotoPage = new MultiPhotoPage(photoFileCache);
   multiPhotoPage->setup(photoFilenameVector, adjusted_date_time_vector, project_name, preferences);
   base_window->add_page(multiPhotoPage->get_tab_label(),
       multiPhotoPage->get_notebook_page(), project_name);
@@ -121,24 +120,10 @@ std::string get_last_project_name() {
   return result;
 }
 
-sql::Connection *
-open_database(std::string dbhost, std::string user, std::string password, std::string database) {
-
-  /* initiate url, user, password and database variables */
-  sql::Driver *driver = Db::get_driver_instance();
-  if (0 == driver) {
-    std::cerr <<  "get_driver_instance() failed.\n" << std::endl;
-    exit(1);
-  }
-
-  std::string url=dbhost;
-  sql::Connection *connection = Db::get_connection(driver, url, user, password);
-  if (NULL == connection) {
-    std::cerr << "driver -> connect() failed\n" << std::endl;
-  } else {
-    Db::set_schema(connection, database);
-  }
-  return connection;
-}
-
 int Worker::static_worker_num = 0;
+std::string Db::dbhost;
+std::string Db::user;
+std::string Db::password;
+std::string Db::database;
+bool Db::transaction_is_running = false;
+sql::Connection *Db::connection = 0;

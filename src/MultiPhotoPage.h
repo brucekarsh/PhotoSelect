@@ -107,7 +107,6 @@ class MultiPhotoPage : public PhotoSelectPage {
     std::map<int, PhotoState> photo_state_map;
     std::map<int, PixbufMapEntry> pixbuf_map;
     std::string project_name;
-    sql::Connection *connection;
     PhotoFileCache *photoFileCache;
     GtkListStore *list_store;
     GtkTreeModel *tree_model_filter;
@@ -156,10 +155,10 @@ class MultiPhotoPage : public PhotoSelectPage {
     std::set<std::string> view_filter_dont_show_tags;
 
 
-  MultiPhotoPage(sql::Connection *connection_, PhotoFileCache *photoFileCache_) :
+  MultiPhotoPage(PhotoFileCache *photoFileCache_) :
       conversionEngine(photoFileCache_), 
       thePreferences((Preferences*)0),
-      connection(connection_), photoFileCache(photoFileCache_),
+      photoFileCache(photoFileCache_),
       tag_view_box(0), current_index(0),
       exif_view_box(0), tags_position("right"), exifs_position("right"),
       view_filter_show_all(true), view_filter_show(false), view_filter_dont_show(false) {
@@ -200,7 +199,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     if (rotation == 4) {
       rotation = 0;
     }
-    Db::set_rotation(connection, file_path, rotation);
+    Db::set_rotation_transaction(file_path, rotation);
     photo_state.clear_pixbuf();
 
     // Get a rotated thumbnail and put it tin the photo_state
@@ -274,7 +273,7 @@ class MultiPhotoPage : public PhotoSelectPage {
   }
 
   PhotoSelectPage *clone() {
-    MultiPhotoPage *cloned_photo_select_page = new MultiPhotoPage(connection, photoFileCache);
+    MultiPhotoPage *cloned_photo_select_page = new MultiPhotoPage(photoFileCache);
     cloned_photo_select_page->setup(photoFilenameVector, adjusted_date_time_vector,
         project_name, thePreferences);
     cloned_photo_select_page->set_tags_position(tags_position);
@@ -434,7 +433,8 @@ class MultiPhotoPage : public PhotoSelectPage {
     // mostly last-in first-out. So this causes them render from the top of the page towards
     // the bottom.
     for (int i = num_photo_files - 1; i >= 0; i--) {
-      int rotation = Db::get_rotation(connection, photoFilenameVector[i]);
+      int rotation;
+      Db::get_rotation_transaction(photoFilenameVector[i], rotation);
       WorkItem work_item(ticket_number, i,rotation, priority, this);
       work_list.add_work(work_item);
     }
@@ -591,7 +591,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     }
 
     // Get all the tags for this project
-    project_tags = Db::get_project_tags(connection, project_name);
+    Db::get_project_tags_transaction(project_name, project_tags);
 
     // Don't do anything if the tag view is turned off
     if (tags_position == "none") {
@@ -679,7 +679,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     set_tag_counts.clear();
     clear_tag_counts.clear();
     // Get the tags for all the files in this project
-    all_photo_tags_for_project = Db::get_all_photo_tags_for_project(connection, project_name);
+    Db::get_all_photo_tags_for_project_transaction(project_name, all_photo_tags_for_project);
 
     // Count the tags
     BOOST_FOREACH(Db::all_photo_tags_map_entry_t map_entry, all_photo_tags_for_project) {
@@ -811,7 +811,8 @@ class MultiPhotoPage : public PhotoSelectPage {
     std::map<std::string, std::string> exifs;
 
     std::string file_name = photoFilenameVector[current_index];
-    std::string exif_string = Db::get_from_exifblob_by_filePath(connection, file_name);
+    std::string exif_string;
+    Db::get_from_exifblob_by_filePath_transaction(file_name, exif_string);
 
     std::unique_ptr<xercesc::XercesDOMParser> parser (new xercesc::XercesDOMParser());
     parser->setValidationScheme(xercesc::XercesDOMParser::Val_Never);
@@ -961,7 +962,8 @@ class MultiPhotoPage : public PhotoSelectPage {
     struct timespec t1;
     clock_gettime(CLOCK_MONOTONIC_RAW, &t1);
     std::string file_name = conversionEngine.getPhotoFilePath();
-    int rotation = Db::get_rotation(connection, conversionEngine.getPhotoFilePath());
+    int rotation;
+    Db::get_rotation_transaction(conversionEngine.getPhotoFilePath(), rotation);
     ConvertedPhotoFile *convertedPhotoFile = conversionEngine.getConvertedPhotoFile(
         surface_width, surface_height, rotation); 
     struct timespec t2;
@@ -1029,7 +1031,10 @@ class MultiPhotoPage : public PhotoSelectPage {
       PhotoState &photo_state = photo_state_map[index];
       if (photo_state.get_is_selected()) {
         if (0 != all_photo_tags_for_project[file_name].count(tag_name)) {
-          Db::remove_tag_by_filename(connection, tag_name, file_name);
+          bool b = Db::remove_tag_by_filename_transaction(tag_name, file_name);
+          if (!b) {
+            // TODO Handle Db::remove_tag_by_filename_transaction failure
+          }
         }
       }
       index++;
@@ -1053,7 +1058,10 @@ class MultiPhotoPage : public PhotoSelectPage {
       PhotoState &photo_state = photo_state_map[index];
       if (photo_state.get_is_selected()) {
         if (0 == all_photo_tags_for_project[file_name].count(tag_name)) {
-          Db::add_tag_by_filename(connection, tag_name, file_name);
+          bool b = Db::add_tag_by_filename_transaction(tag_name, file_name);
+          if (!b) {
+            // TODO Handle Db::add_tag_by_filename_transaction failure
+          }
         }
       }
       index++;
@@ -1381,9 +1389,15 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkWidget *widget = (GtkWidget*) user_data;
     std::string file_name(*(std::string *)g_object_get_data(G_OBJECT(menu_item), "file_name"));
     if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(menu_item))) {
-      Db::add_tag_by_filename(connection, tag_name, file_name);
+      bool b = Db::add_tag_by_filename_transaction(tag_name, file_name);
+      if (!b) {
+        // TODO Handle Db::add_tag_by_filename_transaction failure
+      }
     } else {
-      Db::remove_tag_by_filename(connection, tag_name, file_name);
+      bool b = Db::remove_tag_by_filename_transaction(tag_name, file_name);
+      if (!b) {
+        // TODO Handle Db::remove_tag_by_filename_transaction failure
+      }
     }
     count_tags();
     rebuild_tag_view();
@@ -1450,7 +1464,8 @@ std::cout << "visible " << i << " " << tree_model_index << std::endl;
       PhotoState &photo_state = photo_state_map[tree_model_index];
 
       if (photo_state.get_pixbuf() == gtk_stock_missing_image) {
-        int rotation = Db::get_rotation(connection, photoFilenameVector[tree_model_index]);
+        int rotation;
+        Db::get_rotation_transaction(photoFilenameVector[tree_model_index], rotation);
         WorkItem work_item(ticket_number, tree_model_index, rotation, priority, this);
         work_list.add_work(work_item);
       }
@@ -1689,7 +1704,7 @@ std::cout << "visible " << i << " " << tree_model_index << std::endl;
   };
 
   inline void MultiPhotoPage::open_single_photo_page(int index) {
-      SinglePhotoPage *single_photo_page = new SinglePhotoPage(connection, photoFileCache);
+      SinglePhotoPage *single_photo_page = new SinglePhotoPage(photoFileCache);
       single_photo_page->setup(photoFilenameVector, adjusted_date_time_vector,
           project_name, thePreferences);
       single_photo_page->set_position(index+1); // (set_position is 1-based)

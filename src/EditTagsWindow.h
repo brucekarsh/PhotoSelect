@@ -9,9 +9,6 @@
 
 class Preferences;
 class BaseWindow;
-namespace sql {
-  class Connection;
-}
 
 class EditTagsWindow {
   public:
@@ -24,14 +21,13 @@ class EditTagsWindow {
   GtkWidget *right_scrolled_vbox;
   GtkWidget *right_scrolled_window;
   GtkWidget *really_delete_known_tags_button;
-  sql::Connection *connection;
   Preferences *preferences;
   BaseWindow *baseWindow;
   std::string project_name;
 
-  EditTagsWindow(sql::Connection *connection_, Preferences *preferences_,
+  EditTagsWindow(Preferences *preferences_,
       BaseWindow* baseWindow_, std::string project_name_) :
-      connection(connection_), preferences(preferences_),
+      preferences(preferences_),
       baseWindow(baseWindow_), project_name(project_name_),
       left_scrolled_vbox(NULL), right_scrolled_vbox(NULL) {
   }
@@ -189,7 +185,8 @@ class EditTagsWindow {
         left_scrolled_vbox);
 
     // Put all known tags in the left_scrolled_vbox
-    std::set<std::string> all_tags = Db::get_all_tags(connection);
+    std::set<std::string> all_tags;
+    Db::get_all_tags_transaction(all_tags);
     BOOST_FOREACH(std::string name, all_tags) {
       // Make a button, pack it, show it and connect it.
       GtkWidget *button = gtk_check_button_new_with_label(name.c_str());
@@ -211,8 +208,8 @@ class EditTagsWindow {
         right_scrolled_vbox);
 
     // Put the project tags in the right_scrolled_vbox
-    std::map<std::string, Db::project_tag_s> project_tags
-        = Db::get_project_tags(connection, project_name);
+    std::map<std::string, Db::project_tag_s> project_tags;
+    Db::get_project_tags_transaction(project_name, project_tags);
     typedef std::pair<std::string, Db::project_tag_s> map_entry_t;
     BOOST_FOREACH(map_entry_t map_entry, project_tags) {
       std::string name = map_entry.first;
@@ -257,7 +254,7 @@ class EditTagsWindow {
     // TODO need to highlighted new tag
     if (valid_tag_name(tag_name)) {
       // Put the tag into the database
-      Db::insert_tag(connection, tag_name);
+      Db::insert_tag_transaction(tag_name);
       // Rebuild the all tags display in the UI
       rebuild_left_scrolled_vbox();
       // Rebuild the tag views on the notebook pages
@@ -309,7 +306,7 @@ class EditTagsWindow {
     std::list<std::string> activated_known_tags = get_activated_known_tags();
       BOOST_FOREACH(std::string tag_name, activated_known_tags) {
         // Put the project tag into the database
-        Db::insert_project_tag(connection, tag_name, project_name);
+        Db::insert_project_tag_transaction(tag_name, project_name);
       }
       // Rebuild the project tags display in the UI
       rebuild_right_scrolled_vbox();
@@ -325,10 +322,7 @@ class EditTagsWindow {
 
   void really_delete_known_tags_button_clicked() {
     std::list<std::string> activated_known_tags = get_activated_known_tags();
-    BOOST_FOREACH(std::string tag_name, activated_known_tags) {
-      std::cout << "Delete known tag " << tag_name << std::endl;
-      Db::delete_known_tag(connection, tag_name);
-    }
+    delete_known_tags_transaction(activated_known_tags);
     // Rebuild the project tags display in the UI
     rebuild_right_scrolled_vbox();
     // Rebuild the all tags display in the UI (because we want them to be deactivated)
@@ -338,10 +332,24 @@ class EditTagsWindow {
     gtk_widget_hide(really_delete_known_tags_button);
   }
 
+  void delete_known_tags_op(const std::list<std::string> &activated_known_tags) {
+    Db::enter_operation();
+    BOOST_FOREACH(std::string tag_name, activated_known_tags) {
+      std::cout << "Delete known tag " << tag_name << std::endl;
+      Db::delete_known_tag_op(tag_name);
+    }
+  }
+
+  bool delete_known_tags_transaction(const std::list<std::string> &activated_known_tags) {
+    boost::function<void (void)> f = boost::bind(&EditTagsWindow::delete_known_tags_op,
+        this, boost::cref(activated_known_tags));
+    return Db::transaction(f);
+  }
+
   void delete_project_tags_button_clicked() {
     std::list<std::string> activated_project_tags = get_activated_project_tags();
       BOOST_FOREACH(std::string tag_name, activated_project_tags) {
-        Db::delete_project_tag(connection, tag_name, project_name);
+        Db::delete_project_tag_transaction(tag_name, project_name);
         std::cout << "Delete project tag " << tag_name << " project " << project_name << std::endl;
       }
       // Rebuild the project tags display in the UI

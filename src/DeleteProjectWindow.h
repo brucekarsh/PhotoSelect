@@ -18,13 +18,12 @@ class DeleteProjectWindow {
   GtkWidget *window;
   GtkWidget *windowBox;
   GtkWidget *first_radio_button;
-  sql::Connection *connection;
   Preferences *preferences;
   BaseWindow *baseWindow;
 
-  DeleteProjectWindow(sql::Connection *connection_, Preferences *preferences_,
+  DeleteProjectWindow(Preferences *preferences_,
       BaseWindow* baseWindow_) :
-      connection(connection_), preferences(preferences_),
+      preferences(preferences_),
       baseWindow(baseWindow_) {
   }
 
@@ -90,7 +89,9 @@ class DeleteProjectWindow {
     gtk_box_pack_end(GTK_BOX(button_hbox), accept_button, FALSE, FALSE, 0);
     gtk_box_pack_end(GTK_BOX(button_hbox), quit_button, FALSE, FALSE, 0);
 
-    std::list<std::string>project_names = Db::get_project_names(connection);
+    std::list<std::string>project_names;
+    bool b = Db::get_project_names_transaction(project_names);
+    // TODO check and handle get_project_names_transaction failure
     GtkWidget* radio_button;
     first_radio_button = NULL;
     BOOST_FOREACH(std::string project_name, project_names) {
@@ -148,7 +149,10 @@ DeleteProjectWindow::accept() {
   if (0 == project_name.size()) {
     return;
   }
-  Db::delete_project(connection, project_name);
+  bool b = Db::delete_project_transaction(project_name);
+  if (!b) {
+    // TODO Handle Db::delete_project_transaction failure
+  }
   quit();
 }
 #endif // DELETEPROJECTWINDOW_H__
