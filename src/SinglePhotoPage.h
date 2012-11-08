@@ -7,6 +7,7 @@
 #include <map>
 #include <stdio.h>
 #include "ConversionEngine.h"
+#include "Preferences.h"
 #include <boost/foreach.hpp>
 #include <gtk/gtk.h>
 #include <boost/lexical_cast.hpp>
@@ -22,6 +23,7 @@
 
 #include "Db.h"
 #include "Utils.h"
+#include "XStr.h"
 
 class PhotoFileCache;
 class Preferences;
@@ -539,7 +541,7 @@ class SinglePhotoPage : public PhotoSelectPage {
   //! Returns a value for an attribute value from a json node map given an attribute name
   char *
   get_value_by_name(xercesc::DOMNamedNodeMap *attributes, std::string exif_name) {
-    DOMNode *attribute_node = attributes->getNamedItem(X(exif_name.c_str()));
+    xercesc::DOMNode *attribute_node = attributes->getNamedItem(X(exif_name.c_str()));
     char *exif_value = NULL;
     if (attribute_node) {
       const XMLCh *value_xmlch = attribute_node->getNodeValue();

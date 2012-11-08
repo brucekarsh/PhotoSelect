@@ -6,6 +6,7 @@
 #include <xercesc/dom/DOM.hpp>
 #include <iostream>
 
+#define X(str) XStr(str).unicodeForm()
 XERCES_CPP_NAMESPACE_USE
 
 // ---------------------------------------------------------------------------
