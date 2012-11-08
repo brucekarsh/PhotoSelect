@@ -1,26 +1,15 @@
 #ifndef QUERYVIEW_H__
 #define QUERYVIEW_H__
+#include "Db.h"
 #include <gtk/gtk.h>
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
-#include <json_spirit.h>
 
 #include "WidgetRegistry.h"
 
-/* MySQL Connector/C++ specific headers */
-#include <driver.h>
-#include <statement.h>
-#include <prepared_statement.h>
-#include <resultset.h>
-#include <metadata.h>
-#include <resultset_metadata.h>
-#include <exception.h>
-#include <warning.h>
-
-//Don't forget a WidgetRegistry set_object
+//TODO Don't forget a WidgetRegistry set_object
 
 class Preferences;
 
@@ -62,6 +51,12 @@ class QueryView {
     }
   }
 
+  std::string
+  queryJSONToSqlQueryString(const std::string &queryJson, std::vector<std::string> &value_vector);
+
+  std::string makeQueryJSON();
+
+
   GtkWidget *get_widget() { return queryViewBox; }
   GtkWidget *get_accept_button() { return accept_button; }
   GtkWidget *get_quit_button() { return quitButton; }
@@ -72,39 +67,6 @@ class QueryView {
     is_limited_to_a_project = true;
   }
 
-  std::string
-  makeQueryJSON() {
-    json_spirit::Array query_rows;
-    GList *rows = gtk_container_get_children(GTK_CONTAINER(verticalBox));
-  
-    for (GList *row = rows; row != NULL; row = row ->next) {
-      if (queryViewRows.count(GTK_WIDGET(row->data))) {
-        QueryViewRow* queryViewRow = queryViewRows[GTK_WIDGET(row->data)];
-
-        const gchar *value =  gtk_entry_get_text(GTK_ENTRY(queryViewRow->textEntryBox));
-  
-        gchar *relation = gtk_combo_box_text_get_active_text(
-            GTK_COMBO_BOX_TEXT(queryViewRow->relationComboBox));
-
-        gchar *fieldName = gtk_combo_box_text_get_active_text(
-            GTK_COMBO_BOX_TEXT(queryViewRow->fieldNameComboBox));
-
-        json_spirit::Object query_row;
-        if (fieldName) {
-          query_row.push_back( json_spirit::Pair( "fieldName", fieldName));
-	  g_free(fieldName);
-        }
-        if (relation) {
-          query_row.push_back( json_spirit::Pair( "relation", relation));
-	  g_free(relation);
-        }
-        query_row.push_back( json_spirit::Pair( "value", value));
-        query_rows.push_back(query_row);
-      }
-    }
-    std::string result = json_spirit::write( query_rows, json_spirit::pretty_print );
-    return result;
-  }
 
   std::string translate_field_name(const std::string &fieldName) {
     if (fieldName == "Path") {
@@ -116,58 +78,25 @@ class QueryView {
     return fieldName;
   }
 
-  std::string
-  queryJSONToQuery(std::string queryJson) {
-#ifdef LATER
-    std::vector<std::string> value_vector;
-    json_spirit::mValue value;
-    json_spirit::read(queryJson, value);
-    json_spirit::mArray array = value.get_array();
-    std::string last_part = "";
-    for (json_spirit::mArray::iterator it = array.begin();
-         it != array.end(); ++it) {
-      json_spirit::mObject object = it->get_obj();
-      if ( 0 != object.count("value") && 0 != object.count("relation")
-          && 0 != object.count("fieldName")) {
-        std::string fieldName_value = object["fieldName"].get_str();
-        std::string relation_symbol = object["relation"].get_str();
-        std::string value_value = object["value"].get_str();
-        value_vector.push_back(value_value);
+  bool query_transaction(const std::string &sql_query_string,
+      const std::vector<std::string> &value_vector) {
+    boost::function<void (void)> f = boost::bind(&QueryView::query_op, this,
+        boost::cref(sql_query_string), boost::cref(value_vector));
+    return Db::transaction(f);
+  }
 
-        // TODO This is susceptible to an sql injection. Fix before releasing.
-        if (it != array.begin()) last_part.append(" AND ");
-        if (it == array.begin()) last_part.append(" WHERE ");
-        last_part.append(" (");
-        last_part.append(translate_field_name(fieldName_value));
-        last_part.append(" ");
-        last_part.append(relation_symbol);
-        last_part.append(" ");
-        last_part.append("?");
-        last_part.append(") ");
-      }
-    }
-    if (is_limited_to_a_project) {
-      last_part.append("AND (pr.name = ?) ");
-    }
-
-    last_part.append("ORDER BY t.adjustedDateTime, filePath ");
-
-    std::string first_part =
-      "SELECT DISTINCT filePath, p.id FROM PhotoFile p "
-      "INNER JOIN Checksum c ON p.checksumId = c.id "
-      "INNER JOIN Time t ON t.checksumId = c.id ";
-
-    if (is_limited_to_a_project) {
-      first_part.append(
-          "INNER JOIN ProjectPhotoFile pf ON pf.photoFileId = p.id "
-          "INNER JOIN Project pr on pr.id = pf.projectId ");
-    }
-
-    std::string sql_statement = first_part + last_part;
+  void query_op(const std::string &sql_query_string, const std::vector<std::string> &value_vector) {
+    Db::enter_operation();
+    sql::Connection *connection = Db::get_connection();
 
     gtk_widget_show(scrollBox);
-    std::cout << "Query is " << sql_statement << std::endl;
-    sql::PreparedStatement *queryPreparedStatement = connection->prepareStatement( sql_statement);
+    GtkTextBuffer *scrollTextBuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(scrollTextView));
+    std::string txt = "\nIssuing query...\n\n";
+    gtk_widget_set_sensitive(GTK_WIDGET(accept_button), FALSE);
+    gtk_text_buffer_set_text(scrollTextBuffer, txt.c_str(), txt.size());
+    gtk_label_set_text(GTK_LABEL(status_label), "status: Query started.");
+    runUI(100);
+    sql::PreparedStatement *queryPreparedStatement = connection->prepareStatement(sql_query_string);
     int i;
     for (i=0; i<value_vector.size(); i++) {
       queryPreparedStatement->setString(i+1,value_vector[i]);
@@ -175,35 +104,29 @@ class QueryView {
     if (is_limited_to_a_project) {
       queryPreparedStatement->setString(i+1, limit_project_name);
     }
-    GtkTextBuffer *scrollTextBuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(scrollTextView));
-    std::string txt = "\nIssuing query...\n\n";
-    gtk_widget_set_sensitive(GTK_WIDGET(accept_button), FALSE);
-    gtk_text_buffer_set_text(scrollTextBuffer, txt.c_str(), txt.size());
-    gtk_label_set_text(GTK_LABEL(status_label), "status: Query started.");
-    runUI(100);
     sql::ResultSet *rs = queryPreparedStatement->executeQuery();
     gtk_text_buffer_set_text(scrollTextBuffer, "", 0);
     runUI(100);
-    int count = 0;
-    int total_count = 0;
     std::string label;
     photoFilenameVector.clear();
+    int count = 0;
+    int total_count = 0;
     while (rs->next()) {
       std::string filePath = rs->getString(1);
       long id = rs->getInt64(2);
-      gtk_text_buffer_insert_at_cursor(scrollTextBuffer, filePath.c_str(), filePath.size());
-      gtk_text_buffer_insert_at_cursor(scrollTextBuffer, "\n", 1);
       photoFilenameVector.push_back(filePath);
       photoFileIdList.push_back(id);
+      gtk_text_buffer_insert_at_cursor(scrollTextBuffer, filePath.c_str(), filePath.size());
+      gtk_text_buffer_insert_at_cursor(scrollTextBuffer, "\n", 1);
       count++;
       total_count++;
       if(count >= 300) {
-        count = 0;
         label  = "status: Query in progress. ";
         label +=  boost::lexical_cast<std::string>(total_count);
         label += " image files so far";
         gtk_label_set_text(GTK_LABEL(status_label), label.c_str());
         runUI(100);
+        count = 0;
       }
     }
     label  = "status: Query finished. ";
@@ -212,11 +135,8 @@ class QueryView {
     gtk_label_set_text(GTK_LABEL(status_label), label.c_str());
     gtk_widget_set_sensitive(GTK_WIDGET(accept_button), TRUE);
     runUI(100);
-
-    return first_part + last_part;
-#endif
   }
-
+  
   QueryViewRow *
   make_row()
   {
@@ -424,9 +344,10 @@ class QueryView {
   }
   void
   submit() {
+    std::vector<std::string> value_vector;
     std::string queryJSON = makeQueryJSON();
-    queryJSONToQuery(queryJSON);
+    std::string sql_query_string = queryJSONToSqlQueryString(queryJSON, value_vector);
+    bool b = query_transaction(sql_query_string, value_vector);
   }
 }; // end class QueryView
-
 #endif // QUERYVIEW_H__
