@@ -104,6 +104,7 @@ class NewProjectWindow {
 
 #include "BaseWindow.h"
 #include "PhotoSelectPage.h"
+#include "SinglePhotoPage.h"
 
 inline  void
 NewProjectWindow::accept() {

@@ -1,6 +1,9 @@
 #ifndef PHOTOSELECTPAGE_H__
 #define PHOTOSELECTPAGE_H__
 
+#include <gtk/gtk.h>
+#include <string>
+
 //!
 //! Abstract Class that represents an interface for a page in the PhotoSelect notebook.
 class PhotoSelectPage {
