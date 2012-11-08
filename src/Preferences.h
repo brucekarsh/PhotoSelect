@@ -7,13 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <wordexp.h>
-
-namespace sql {
-  class Driver;
-  class Connection;
-}
-sql::Connection *open_database(std::string dbhost, std::string user, std::string password,
-    std::string get_database);
+#include <boost/foreach.hpp>
 
 class Preferences {
     std::string dbhost;    // the Db Host

@@ -1,6 +1,12 @@
 #include "MultiPhotoPage.h"
 #include "BaseWindow.h"
+#include "Preferences.h"
 #include "SinglePhotoPage.h"
+#include <boost/foreach.hpp>
+#include "XStr.h"
+#include "Utils.h"
+#include "WidgetRegistry.h"
+
 
 using namespace std;
 
@@ -696,7 +702,7 @@ map<string, string> MultiPhotoPage::get_exifs() {
 //! Returns a value for an attribute value from a json node map given an attribute name
 char *
 MultiPhotoPage::get_value_by_name(xercesc::DOMNamedNodeMap *attributes, string exif_name) {
-  DOMNode *attribute_node = attributes->getNamedItem(X(exif_name.c_str()));
+  xercesc::DOMNode *attribute_node = attributes->getNamedItem(X(exif_name.c_str()));
   char *exif_value = NULL;
   if (attribute_node) {
     const XMLCh *value_xmlch = attribute_node->getNodeValue();
