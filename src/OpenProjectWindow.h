@@ -23,12 +23,15 @@ class OpenProjectWindow {
   ~OpenProjectWindow();
   void apply();
   void quit();
-  static void accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data);
-  static void quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data);
-  static void apply_button_clicked_cb(GtkWidget *widget, gpointer callback_data);
   void run();
   std::string get_project_name();
   void accept_button_clicked();
   void apply_button_clicked();
+
+  // Static member functions
+
+  static void accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data);
+  static void quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data);
+  static void apply_button_clicked_cb(GtkWidget *widget, gpointer callback_data);
 };
 #endif // OPENPROJECTWINDOW_H__
