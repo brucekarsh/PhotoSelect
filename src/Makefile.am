@@ -4,6 +4,7 @@ PhotoSelect_SOURCES = main.cc \
     BaseWindow.cc \
     ConversionEngine.cc \
     DeleteProjectWindow.cc \
+    EditTagsWindow.cc \
     ImportWindow.cc \
     MultiPhotoPage.cc \
     NewProjectWindow.cc \
