@@ -368,7 +368,7 @@ class Db {
     }
   }
 
-  static inline std::list<std::string> get_project_names_op(std::list<std::string> &project_names) {
+  static inline void get_project_names_op(std::list<std::string> &project_names) {
     Db::enter_operation();
     std::string sql = "SELECT DISTINCT name FROM Project ";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
@@ -381,7 +381,8 @@ class Db {
   }
 
   static inline bool get_project_names_transaction(std::list<std::string> &project_names) {
-    boost::function<void (void)> f = boost::bind(&get_project_names_op, boost::ref(project_names));
+    boost::function<void (void)> f = boost::bind(&get_project_names_op,
+        boost::ref(project_names));
     return transaction(f);
   }
 
