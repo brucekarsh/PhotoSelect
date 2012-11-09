@@ -1,6 +1,12 @@
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/util/XMLString.hpp>
 #include <gtk/gtk.h>
+#include <boost/foreach.hpp>
+#include <wordexp.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
 
 #include "BaseWindow.h"
 #include "SinglePhotoPage.h"
