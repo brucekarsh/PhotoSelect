@@ -1,6 +1,15 @@
 bin_PROGRAMS = PhotoSelect
-PhotoSelect_SOURCES = main.cc AddToProjectWindow.cc BaseWindow.cc MultiPhotoPage.cc \
-    OpenProjectWindow.cc Preferences.cc QueryView.cc SinglePhotoPage.cc WidgetRegistry.cc
+PhotoSelect_SOURCES = main.cc \
+    AddToProjectWindow.cc \
+    BaseWindow.cc \
+    ImportWindow.cc \
+    MultiPhotoPage.cc \
+    OpenProjectWindow.cc \
+    Preferences.cc \
+    QueryView.cc \
+    SinglePhotoPage.cc \
+    WidgetRegistry.cc
+
 # Note. The version of json_spirit installed on ubuntu lead to linker errors when building
 # PhotoSelect. So I had to build a copy from scratch and replace the one in /usr/lib. I used v4.04.
 #  bruce
