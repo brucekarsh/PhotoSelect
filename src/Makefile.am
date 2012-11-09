@@ -6,6 +6,7 @@ PhotoSelect_SOURCES = main.cc \
     DeleteProjectWindow.cc \
     ImportWindow.cc \
     MultiPhotoPage.cc \
+    NewProjectWindow.cc \
     OpenProjectWindow.cc \
     Preferences.cc \
     QueryView.cc \
