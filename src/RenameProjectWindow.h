@@ -209,7 +209,7 @@ class RenameProjectWindow {
 
 inline  void
 RenameProjectWindow::accept() {
-  boolean error_occurred = false;
+  bool error_occurred = false;
   std::string error_string;
   std::string old_project_name = get_old_project_name();
   if (0 == old_project_name.size()) {

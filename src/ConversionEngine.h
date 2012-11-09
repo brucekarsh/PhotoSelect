@@ -4,8 +4,9 @@
 #include <vector>
 #include <string>
 #include <stdio.h>
-#include "ConvertedPhotoFile.h"
-#include "PhotoFileCache.h"
+
+class ConvertedPhotoFile;
+class PhotoFileCache;
 
 //! Maintains a speculative cache of ConvertedPhotoFiles. It has a list of PhotoFiles and a current 
 //! position in the list.  It tries to cache a few ConvertedPhotoFiles before and after the
@@ -17,8 +18,7 @@ class ConversionEngine {
   std::vector<std::string> photoFilenameVector;
   int photoFilenameVectorPosition;
 
-  ConversionEngine(PhotoFileCache *photoFileCache_) : photoFilenameVectorPosition(-1),
-      photoFileCache(photoFileCache_) {};
+  ConversionEngine(PhotoFileCache *photoFileCache_);
 
 
   //! Gets a ConvertedPhotoFile given a path to a file representing a photo.
@@ -27,18 +27,7 @@ class ConversionEngine {
   //! If it can't do that either, it returns an UnknownConvertedPhotoFile.
   /// \return A convertedPhotoFile (which could still be converting)
   ///         or an UnknownCovertedPhotoFile if it cannot convert the file.
-  ConvertedPhotoFile * getConvertedPhotoFile() {
-    if (photoFilenameVectorPosition <0
-        || photoFilenameVectorPosition >= photoFilenameVector.size()) {
-      return NULL;
-    }
-    std::string photoFilename = photoFilenameVector[photoFilenameVectorPosition];
-    ConvertedPhotoFile * convertedPhotoFile = photoFileCache->get(photoFilename);
-    if (0 == convertedPhotoFile) {
-      convertedPhotoFile = photoFileCache->add(photoFilename);
-    }
-    return convertedPhotoFile;
-  }
+  ConvertedPhotoFile * getConvertedPhotoFile();
 
   //! Gets a ConvertedPhotoFile for a thumbnail for the file at the current position.
   //! It does not try to cache anything. It tries to scale the image, but not so much
@@ -50,14 +39,24 @@ class ConversionEngine {
   /// \return A convertedPhotoFile (which could still be converting)
   ///         or an UnknownCovertedPhotoFile if it cannot convert the file.
   ConvertedPhotoFile *getConvertedPhotoFile(int display_width, int display_height,
-      int rotation) const {
-    if (photoFilenameVectorPosition <0
-        || photoFilenameVectorPosition >= photoFilenameVector.size()) {
-      return NULL;
-    }
-    std::string photoFilename = photoFilenameVector[photoFilenameVectorPosition];
-    return getConvertedPhotoFile(photoFilename, display_width, display_height, rotation);
-  }
+      int rotation) const;
+
+  //! Gets the full pathname  of the current photo file.
+  std::string getPhotoFilePath();
+
+  void setPhotoFileVector(std::vector<std::string> *photoFilenameVector_);
+
+  /** Enforces a constraint on photoFileVectorPosition.
+      It adjusts the photoFilenameVectorPosition so that it is in the range
+      0 <= photoFilenameVectorPosition < photoFilenameVector.size()
+      or -1 when 0 == photoFilenameVector.size() */
+  void clip_position();
+  void next();
+  void back();
+  void go_to(int position);
+  int get_position();
+
+  // Static member functions
 
   //! Like ConvertedPhotoFile(int, int, int), but it accepts a filename instead of 
   //! using the current position.
@@ -73,69 +72,6 @@ class ConversionEngine {
   ///         or an UnknownCovertedPhotoFile if it cannot convert the file.
 
   static ConvertedPhotoFile *getConvertedPhotoFile(const std::string &photoFilename,
-      int display_width, int display_height, int rotation) {
-    ConvertedPhotoFile * convertedPhotoFile = new ConvertedPhotoFile(photoFilename,
-        display_width, display_height, rotation);
-    return convertedPhotoFile;
-  }
-
-  //! Gets the full pathname  of the current photo file.
-  std::string getPhotoFilePath() {
-    if (photoFilenameVectorPosition <0
-        || photoFilenameVectorPosition >= photoFilenameVector.size()) {
-      return "";
-    }
-    std::string photoFilename = photoFilenameVector[photoFilenameVectorPosition];
-    return photoFilename;
-  }
-
-  void setPhotoFileVector(std::vector<std::string> *photoFilenameVector_) {
-    int i;
-    std::vector<std::string>::iterator photoFilenameVectorIterator = photoFilenameVector_->begin();
-    for (i=0; i<photoFilenameVector_->size(); i++) {
-      photoFilenameVector.push_back(photoFilenameVectorIterator->c_str());
-      photoFilenameVectorIterator++;
-    }
-    photoFilenameVectorPosition = 0;
-    clip_position();
-  }
-
-  /** Enforces a constraint on photoFileVectorPosition.
-      It adjusts the photoFilenameVectorPosition so that it is in the range
-      0 <= photoFilenameVectorPosition < photoFilenameVector.size()
-      or -1 when 0 == photoFilenameVector.size() */
-  void
-  clip_position() {
-    if (photoFilenameVectorPosition < 0) {
-      photoFilenameVectorPosition = 0;
-    }
-    if (photoFilenameVectorPosition >= photoFilenameVector.size()) {
-      photoFilenameVectorPosition = photoFilenameVector.size() -1;
-    }
-    if (0 == photoFilenameVector.size()) {
-      photoFilenameVectorPosition = -1;
-    }
-  }
-
-
-  void next() {
-    ++photoFilenameVectorPosition;
-    clip_position();
-  }
-
-  void back() {
-    --photoFilenameVectorPosition;
-    clip_position();
-  }
-
-  void go_to(int position) {
-    photoFilenameVectorPosition = position;
-    clip_position();
-  }
-
-  int get_position() {
-    return photoFilenameVectorPosition;
-  }
-
+      int display_width, int display_height, int rotation);
 };
 #endif  // CONVERSIONENGINE_H__

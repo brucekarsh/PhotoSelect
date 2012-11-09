@@ -3,6 +3,7 @@
 
 #include <map>
 #include <string>
+#include "ConvertedPhotoFile.h"
 
 // TODO This needs to be MP-Safe
 

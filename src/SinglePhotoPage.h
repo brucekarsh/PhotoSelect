@@ -56,7 +56,7 @@ class SinglePhotoPage : public PhotoSelectPage {
     bool drag_is_active;
     int drag_start_x;
     int drag_start_y;
-    boolean calculated_initial_scaling;
+    bool calculated_initial_scaling;
     std::string tags_position;
     std::string exifs_position;
     std::map<std::string, Db::photo_tag_s> photo_tags;

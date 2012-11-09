@@ -2,6 +2,7 @@ bin_PROGRAMS = PhotoSelect
 PhotoSelect_SOURCES = main.cc \
     AddToProjectWindow.cc \
     BaseWindow.cc \
+    ConversionEngine.cc \
     ImportWindow.cc \
     MultiPhotoPage.cc \
     OpenProjectWindow.cc \

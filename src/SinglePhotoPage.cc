@@ -1,6 +1,7 @@
 #include "SinglePhotoPage.h"
 
 #include "BaseWindow.h"
+#include "ConvertedPhotoFile.h"
 #include "MultiPhotoPage.h"
 #include "Preferences.h"
 #include "Utils.h"

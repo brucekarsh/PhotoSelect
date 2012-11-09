@@ -1,11 +1,13 @@
 #include "MultiPhotoPage.h"
+
+#include <boost/foreach.hpp>
 #include "BaseWindow.h"
+#include "ConvertedPhotoFile.h"
 #include "Preferences.h"
 #include "SinglePhotoPage.h"
-#include <boost/foreach.hpp>
-#include "XStr.h"
 #include "Utils.h"
 #include "WidgetRegistry.h"
+#include "XStr.h"
 
 
 using namespace std;
