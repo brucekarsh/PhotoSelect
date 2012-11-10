@@ -121,14 +121,14 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkWidget *dont_show_these_tags_menu_item;
     std::string tags_position;
     std::string exifs_position;
-    std::map<std::string, Db::photo_tag_s> photo_tags;
+    std::set<std::string> photo_tags;
     std::map<std::string, Db::project_tag_s> project_tags;
     std::map<std::string, int> all_tag_counts;
     std::map<std::string, int> set_tag_counts;
     std::map<std::string, int> clear_tag_counts;
     std::map<GtkWidget *, std::string> tag_button_map;
-    // all_photo_tags_for_project[file_name][tag_name] -> photo_tag_s. (photo_tag_s is empty)
-    std::map<std::string, std::map<std::string, Db::photo_tag_s> > all_photo_tags_for_project;
+    // all_photo_tags_for_project[file_name][tag_name]
+    std::map<std::string, std::set<std::string> > all_photo_tags_for_project;
     GdkPixbuf *gtk_stock_missing_image;
     bool view_filter_show_all;
     bool view_filter_show;

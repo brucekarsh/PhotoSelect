@@ -32,10 +32,6 @@ class Db {
     static std::string password;
     static std::string database;
 
-    struct photo_tag_s {
-      // TODO: Someday we might want to put something here
-    };
-
     struct project_tag_s {
       // TODO: Someday we might want to put something here
     };
@@ -133,7 +129,7 @@ class Db {
   }
 
   static inline void get_photo_tags_op(const std::string &project_name,
-      const std::string &file_name, std::map<std::string, photo_tag_s> &tags) {
+      const std::string &file_name, std::set<std::string> &tags) {
     Db::enter_operation();
     tags.clear();
     std::string sql = "SELECT Tag.name FROM Tag "
@@ -147,21 +143,20 @@ class Db {
     prepared_statement->setString(2, file_name);
     std::unique_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
     while (rs->next()) {
-      photo_tag_s tag;
       std::string name = rs->getString(1);
-      tags[name] = tag;
+      tags.insert(name);
     }
   };
 
   static inline bool get_photo_tags_transaction(const std::string &project_name,
-      const std::string &file_name, std::map<std::string, photo_tag_s> &result) {
+      const std::string &file_name, std::set<std::string> &result) {
     boost::function<void (void)> f = boost::bind(&get_photo_tags_op, boost::cref(project_name),
         boost::cref(file_name), boost::ref(result));
     return transaction(f);
   }
 
-  typedef std::map<std::string, std::map<std::string, photo_tag_s> > all_photo_tags_map_t;
-  typedef std::pair<std::string, std::map<std::string, photo_tag_s> > all_photo_tags_map_entry_t;
+  typedef std::map<std::string, std::set<std::string> > all_photo_tags_map_t;
+  typedef std::pair<std::string, std::set<std::string> > all_photo_tags_map_entry_t;
   static inline void get_all_photo_tags_for_project_op(const std::string &project_name,
       all_photo_tags_map_t &result) {
     Db::enter_operation();
@@ -180,7 +175,7 @@ class Db {
     while (rs->next()) {
       std::string filePath = rs->getString(1);
       std::string tag = rs->getString(2);
-      result[filePath][tag];
+      result[filePath].insert(tag);
     }
     return;
   }

@@ -59,7 +59,7 @@ class SinglePhotoPage : public PhotoSelectPage {
     bool calculated_initial_scaling;
     std::string tags_position;
     std::string exifs_position;
-    std::map<std::string, Db::photo_tag_s> photo_tags;
+    std::set<std::string> photo_tags;
     std::map<std::string, Db::project_tag_s> project_tags;
 
   SinglePhotoPage(PhotoFileCache *photoFileCache_);
@@ -86,7 +86,7 @@ class SinglePhotoPage : public PhotoSelectPage {
   // Adds a tag view to the SinglePhotoPage. The tag view (tag_view_box) is put into
   // either page_hbox or page_vbox, depending on the tags position (from the view/tags
   // menubar menu.
-  // Additionally, it sets up a map (photo_tags) of the tags for the current photo and a
+  // Additionally, it sets up a set (photo_tags) of the tags for the current photo and a
   // list (project_tags) of tags for the current project.
   void rebuild_tag_view();
   void rebuild_exif_view();

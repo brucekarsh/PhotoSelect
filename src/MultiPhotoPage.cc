@@ -481,8 +481,8 @@ void MultiPhotoPage::rebuild_tag_view() {
   tag_button_map.clear();
   string file_name = photoFilenameVector[current_index];
   typedef pair<string, Db::project_tag_s> map_entry_t;
-  // all_photo_tags_for_project[file_name][tag_name] -> photo_tag_s. (photo_tag_s is empty)
-  map<string, Db::photo_tag_s> tag_map = all_photo_tags_for_project[file_name];
+  // all_photo_tags_for_project[file_name][tag_name]
+  set<string> tag_map = all_photo_tags_for_project[file_name];
   BOOST_FOREACH(map_entry_t map_entry, project_tags) {
     string name = map_entry.first;
     if (tag_map.count(name)) {
@@ -541,10 +541,8 @@ void MultiPhotoPage::count_tags() {
 
   // Count the tags
   BOOST_FOREACH(Db::all_photo_tags_map_entry_t map_entry, all_photo_tags_for_project) {
-    typedef pair<string, Db::photo_tag_s> tag_map_entry_t;
-    BOOST_FOREACH(tag_map_entry_t e, map_entry.second) {
-      string tag_name = e.first;
-      all_tag_counts[tag_name] += 1;
+    BOOST_FOREACH(string e, map_entry.second) {
+      all_tag_counts[e] += 1;
     }
   }
 
@@ -553,11 +551,11 @@ void MultiPhotoPage::count_tags() {
   BOOST_FOREACH(string filename, photoFilenameVector) {
     // get the photo file's PhotoState
     PhotoState &photo_state = photo_state_map[index];
-    // we want counts of the number of tags that will be newly set and cleard
+    // we want counts of the number of tags that will be newly set and cleared
     // so we only want to look at selected photos
     if (photo_state.get_is_selected()) {
       // get all of the tags for the photo
-      map<string, Db::photo_tag_s> photo_tags = all_photo_tags_for_project[filename];
+      set<string> photo_tags = all_photo_tags_for_project[filename];
       typedef pair<string, Db::project_tag_s> map_entry_t;
       BOOST_FOREACH(map_entry_t map_entry, project_tags) {
         string tag_name = map_entry.first;
@@ -566,7 +564,7 @@ void MultiPhotoPage::count_tags() {
         } else {
           set_tag_counts[tag_name]++;
         }
-	}
+      }
     }
     index++;
   }
@@ -1118,8 +1116,8 @@ void MultiPhotoPage::view_icon_view_popup_menu(GtkWidget *widget, GdkEventButton
   GtkWidget *menu2 = gtk_menu_new();
   gtk_menu_item_set_submenu(GTK_MENU_ITEM(menuitem2), menu2);
 
-  // all_photo_tags_for_project[file_name][tag_name] -> photo_tag_s. (photo_tag_s is empty)
-  map<string, Db::photo_tag_s> tag_map = all_photo_tags_for_project[file_name];
+  // all_photo_tags_for_project[file_name][tag_name]
+  set<string> tag_map = all_photo_tags_for_project[file_name];
   typedef pair<string, Db::project_tag_s> map_entry_t;
   BOOST_FOREACH(map_entry_t map_entry, project_tags) {
     string tag_name = map_entry.first;
@@ -1362,8 +1360,7 @@ gboolean MultiPhotoPage::tree_model_filter_func(GtkTreeModel *model, GtkTreeIter
     // view/limit by tags/show these tags was set in the menu
     if (all_photo_tags_for_project.count(file_path)) {
       // this file has tags, so scan through the required tags and make sure that we have them
-      map<string, Db::photo_tag_s> tags_for_this_file_path =
-          all_photo_tags_for_project[file_path];
+      set<string> tags_for_this_file_path = all_photo_tags_for_project[file_path];
       BOOST_FOREACH(string required_tag, view_filter_show_tags) {
         if (0 == tags_for_this_file_path.count(required_tag)) {
           // this file is missing a required tag, so don't show it
@@ -1380,8 +1377,7 @@ gboolean MultiPhotoPage::tree_model_filter_func(GtkTreeModel *model, GtkTreeIter
     // view/limit by tags/dont show these tags was set in the menu
     if (all_photo_tags_for_project.count(file_path)) {
       // this file has tags, so scan through the prohibited tags. make sure that we dont have them
-      map<string, Db::photo_tag_s> tags_for_this_file_path =
-          all_photo_tags_for_project[file_path];
+      set<string> tags_for_this_file_path = all_photo_tags_for_project[file_path];
       BOOST_FOREACH(string prohibited_tag, view_filter_dont_show_tags) {
         if (0 != tags_for_this_file_path.count(prohibited_tag)) {
           // this file has a prohibited tag, so don't show it

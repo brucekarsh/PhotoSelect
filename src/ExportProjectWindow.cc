@@ -132,7 +132,7 @@ void ExportProjectWindow::write_file(string out_filename) {
           want_this_one = false;
           break;
         }
-        map<string, Db::photo_tag_s> tags = all_photo_tags_map[filename];
+        set<string> tags = all_photo_tags_map[filename];
         // Make sure the tag is set
         if (0 == tags.count(tagname)) {
           want_this_one = false;

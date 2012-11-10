@@ -251,7 +251,7 @@ gboolean SinglePhotoPage::drawing_area_leave(GtkWidget *widget, GdkEvent *event,
 // Adds a tag view to the SinglePhotoPage. The tag view (tag_view_box) is put into
 // either page_hbox or page_vbox, depending on the tags position (from the view/tags
 // menubar menu.
-// Additionally, it sets up a map (photo_tags) of the tags for the current photo and a
+// Additionally, it sets up a set (photo_tags) of the tags for the current photo and a
 // list (project_tags) of tags for the current project.
 void SinglePhotoPage::rebuild_tag_view() {
   GtkWidget *tag_view_scrolled_window = NULL;
