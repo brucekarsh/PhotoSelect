@@ -14,6 +14,7 @@ PhotoSelect_SOURCES = main.cc \
     PreferencesWindow.cc \
     QueryView.cc \
     RemoveFromProjectWindow.cc \
+    RenameProjectWindow.cc \
     SinglePhotoPage.cc \
     WidgetRegistry.cc
 
