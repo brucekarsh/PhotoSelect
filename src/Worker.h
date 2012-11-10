@@ -1,12 +1,14 @@
 #ifndef WORKER_H__
 #define WORKER_H__
 
+#include <gtk/gtk.h>
 #include <iostream>
 #include <set>
 #include <boost/thread.hpp>
 #include "WorkList.h"
 #include "ConversionEngine.h"
 #include "StockThumbnails.h"
+#include "ConvertedPhotoFile.h"
 
 extern StockThumbnails *stock_thumbnails;
 extern WorkList work_list;

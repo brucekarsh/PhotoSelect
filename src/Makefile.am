@@ -13,6 +13,7 @@ PhotoSelect_SOURCES = main.cc \
     NewProjectWindow.cc \
     OpenProjectWindow.cc \
     PhotoDbImporter.cc \
+    PhotoFileCache.cc \
     Preferences.cc \
     PreferencesWindow.cc \
     QueryView.cc \
