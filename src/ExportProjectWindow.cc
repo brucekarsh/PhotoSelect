@@ -53,11 +53,9 @@ void ExportProjectWindow::run() {
   gtk_box_pack_start(GTK_BOX(extra_widgets), export_all_button, FALSE, FALSE, 0);
   gtk_box_pack_start(GTK_BOX(extra_widgets), export_labeled_button, FALSE, FALSE, 0);
 
-  map<string, Db::project_tag_s> project_tags;
+  set<string> project_tags;
   Db::get_project_tags_transaction(project_name, project_tags);
-  typedef pair<string, Db::project_tag_s> map_entry_t;
-  BOOST_FOREACH(map_entry_t map_entry, project_tags) {
-    string tag_name = map_entry.first;
+  BOOST_FOREACH(string tag_name, project_tags) {
     GtkWidget *label_button = gtk_check_button_new_with_label(tag_name.c_str());
     gtk_widget_set_margin_left(label_button, 15);
     gtk_widget_set_sensitive(label_button, false);

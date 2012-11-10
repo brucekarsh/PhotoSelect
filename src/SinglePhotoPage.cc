@@ -252,7 +252,7 @@ gboolean SinglePhotoPage::drawing_area_leave(GtkWidget *widget, GdkEvent *event,
 // either page_hbox or page_vbox, depending on the tags position (from the view/tags
 // menubar menu.
 // Additionally, it sets up a set (photo_tags) of the tags for the current photo and a
-// list (project_tags) of tags for the current project.
+// set (project_tags) of tags for the current project.
 void SinglePhotoPage::rebuild_tag_view() {
   GtkWidget *tag_view_scrolled_window = NULL;
   GtkWidget *tag_view_tags_box = NULL;
@@ -296,17 +296,14 @@ void SinglePhotoPage::rebuild_tag_view() {
   gtk_widget_show(tag_view_tags_box);
 
   // Put check buttons in tag_view_tags_box, one for each tag in the project
-  typedef pair<string, Db::project_tag_s> map_entry_t;
-  BOOST_FOREACH(map_entry_t map_entry, project_tags) {
-    string name = map_entry.first;
-    Db::project_tag_s project_tag = map_entry.second;
+  BOOST_FOREACH(string tag_name, project_tags) {
     // Make a button, pack it, show it and connect it.
-    GtkWidget *button = gtk_check_button_new_with_label(name.c_str());
+    GtkWidget *button = gtk_check_button_new_with_label(tag_name.c_str());
     gtk_box_pack_start(GTK_BOX(tag_view_tags_box), button, FALSE, FALSE, 0);
     gtk_widget_show(button);
 
     // If the tag is set for this photo, activate its check button.
-    if (1 == photo_tags.count(name)) {
+    if (1 == photo_tags.count(tag_name)) {
       gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), true);
     }
 

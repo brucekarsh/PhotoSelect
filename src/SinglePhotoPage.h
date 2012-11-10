@@ -60,7 +60,7 @@ class SinglePhotoPage : public PhotoSelectPage {
     std::string tags_position;
     std::string exifs_position;
     std::set<std::string> photo_tags;
-    std::map<std::string, Db::project_tag_s> project_tags;
+    std::set<std::string> project_tags;
 
   SinglePhotoPage(PhotoFileCache *photoFileCache_);
   ~SinglePhotoPage();
@@ -87,7 +87,7 @@ class SinglePhotoPage : public PhotoSelectPage {
   // either page_hbox or page_vbox, depending on the tags position (from the view/tags
   // menubar menu.
   // Additionally, it sets up a set (photo_tags) of the tags for the current photo and a
-  // list (project_tags) of tags for the current project.
+  // set (project_tags) of tags for the current project.
   void rebuild_tag_view();
   void rebuild_exif_view();
   std::string shorten_exif_name(const std::string &exif_name);

@@ -122,7 +122,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     std::string tags_position;
     std::string exifs_position;
     std::set<std::string> photo_tags;
-    std::map<std::string, Db::project_tag_s> project_tags;
+    std::set<std::string> project_tags;
     std::map<std::string, int> all_tag_counts;
     std::map<std::string, int> set_tag_counts;
     std::map<std::string, int> clear_tag_counts;

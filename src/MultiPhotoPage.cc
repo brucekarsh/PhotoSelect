@@ -437,7 +437,7 @@ void MultiPhotoPage::apply_thumbnail(int index, GdkPixbuf *pixbuf, int rotation)
 // either page_hbox or page_vbox, depending on the tags position (from the view/tags
 // menubar menu.
 // Additionally, it sets up a map (photo_tags) of the tags for the current photo and a
-// list (project_tags) of tags for the current project.
+// set (project_tags) of tags for the current project.
 void MultiPhotoPage::rebuild_tag_view() {
   GtkWidget *tag_view_scrolled_window = NULL;
   GtkWidget *tag_view_tags_box = NULL;
@@ -480,33 +480,31 @@ void MultiPhotoPage::rebuild_tag_view() {
   int row_num = 0;
   tag_button_map.clear();
   string file_name = photoFilenameVector[current_index];
-  typedef pair<string, Db::project_tag_s> map_entry_t;
   // all_photo_tags_for_project[file_name][tag_name]
   set<string> tag_map = all_photo_tags_for_project[file_name];
-  BOOST_FOREACH(map_entry_t map_entry, project_tags) {
-    string name = map_entry.first;
-    if (tag_map.count(name)) {
+  BOOST_FOREACH(string tag_name, project_tags) {
+    if (tag_map.count(tag_name)) {
       GtkWidget *image = gtk_image_new_from_stock(GTK_STOCK_YES, GTK_ICON_SIZE_BUTTON);
       gtk_widget_show(image);
       gtk_grid_attach(GTK_GRID(tag_view_tags_grid), image, 0, row_num, 1, 1);
     }
-    string display_text(name + " (" +
-        boost::lexical_cast<string>(all_tag_counts[name]) + ")");
+    string display_text(tag_name + " (" +
+        boost::lexical_cast<string>(all_tag_counts[tag_name]) + ")");
     GtkWidget *label = gtk_label_new(display_text.c_str());
     gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.5);
     gtk_widget_show(label);
     gtk_grid_attach(GTK_GRID(tag_view_tags_grid), label, 1, row_num, 1, 1);
     string set_label = "set (" +
-        boost::lexical_cast<string>(set_tag_counts[name]) + ")";
+        boost::lexical_cast<string>(set_tag_counts[tag_name]) + ")";
     GtkWidget *set_button = gtk_button_new_with_label(set_label.c_str());
-    tag_button_map[set_button] = name;
+    tag_button_map[set_button] = tag_name;
     g_signal_connect(set_button, "clicked", G_CALLBACK(set_button_clicked_cb), NULL);
     gtk_widget_show(set_button);
     gtk_grid_attach(GTK_GRID(tag_view_tags_grid), set_button, 3, row_num, 1, 1);
     string clear_label = "clear (" +
-        boost::lexical_cast<string>(clear_tag_counts[name]) + ")";
+        boost::lexical_cast<string>(clear_tag_counts[tag_name]) + ")";
     GtkWidget *clear_button = gtk_button_new_with_label(clear_label.c_str());
-    tag_button_map[clear_button] = name;
+    tag_button_map[clear_button] = tag_name;
     g_signal_connect(clear_button, "clicked", G_CALLBACK(clear_button_clicked_cb), NULL);
     gtk_widget_show(clear_button);
     gtk_grid_attach(GTK_GRID(tag_view_tags_grid), clear_button, 4, row_num, 1, 1);
@@ -556,9 +554,7 @@ void MultiPhotoPage::count_tags() {
     if (photo_state.get_is_selected()) {
       // get all of the tags for the photo
       set<string> photo_tags = all_photo_tags_for_project[filename];
-      typedef pair<string, Db::project_tag_s> map_entry_t;
-      BOOST_FOREACH(map_entry_t map_entry, project_tags) {
-        string tag_name = map_entry.first;
+      BOOST_FOREACH(string tag_name, project_tags) {
         if (0 != photo_tags.count(tag_name)) {
           clear_tag_counts[tag_name]++;
         } else {
@@ -1118,9 +1114,7 @@ void MultiPhotoPage::view_icon_view_popup_menu(GtkWidget *widget, GdkEventButton
 
   // all_photo_tags_for_project[file_name][tag_name]
   set<string> tag_map = all_photo_tags_for_project[file_name];
-  typedef pair<string, Db::project_tag_s> map_entry_t;
-  BOOST_FOREACH(map_entry_t map_entry, project_tags) {
-    string tag_name = map_entry.first;
+  BOOST_FOREACH(string tag_name, project_tags) {
     GtkWidget *menuitem = gtk_check_menu_item_new_with_label(tag_name.c_str());
     g_object_set_data_full(G_OBJECT(menuitem), "file_name", new string(file_name),
         delete_string);
@@ -1505,13 +1499,10 @@ void MultiPhotoPage::load_extra_menu_items() {
       dont_show_these_tags_menu);
 
   // Get all the tags for this project
-  typedef pair<string, Db::project_tag_s> map_entry_t;
-  // (project_tags[tag_name] -> project_tag_s. (project_tag_s is empty))
+  // (project_tags[tag_name]
   view_filter_show_menu_items.clear();
   view_filter_dont_show_menu_items.clear();
-  BOOST_FOREACH(map_entry_t map_entry, project_tags) {
-    string tag_name = map_entry.first;
-
+  BOOST_FOREACH(string tag_name, project_tags) {
     GtkWidget *show_tag_menu_item = gtk_check_menu_item_new_with_label(tag_name.c_str());
     g_signal_connect(show_tag_menu_item, "activate",
         G_CALLBACK(show_tag_menu_item_activate_cb), gpointer(this));

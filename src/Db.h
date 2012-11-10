@@ -32,10 +32,6 @@ class Db {
     static std::string password;
     static std::string database;
 
-    struct project_tag_s {
-      // TODO: Someday we might want to put something here
-    };
-
   static inline void close_connection() {
     BOOST_ASSERT(NULL != Db::connection);
     delete Db::connection;
@@ -189,7 +185,7 @@ class Db {
   }
   
   static inline void get_project_tags_op(const std::string &project_name,
-      std::map<std::string, project_tag_s>&tags) {
+      std::set<std::string> &tags) {
     Db::enter_operation();
     tags.clear();
     std::string sql = "SELECT Tag.name FROM Tag "
@@ -200,14 +196,13 @@ class Db {
     prepared_statement->setString(1, project_name);
     std::unique_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
     while (rs->next()) {
-      project_tag_s tag;
       std::string name = rs->getString(1);
-      tags[name]=tag;
+      tags.insert(name);
     } 
   }
 
   static inline bool get_project_tags_transaction(const std::string &project_name,
-      std::map<std::string, project_tag_s>&tags) {
+      std::set<std::string> &tags) {
     boost::function<void (void)> f = boost::bind(&get_project_tags_op,
         boost::cref(project_name), boost::ref(tags));
     bool b = transaction(f);

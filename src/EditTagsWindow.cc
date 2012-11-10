@@ -188,15 +188,11 @@ void EditTagsWindow::rebuild_right_scrolled_vbox() {
       right_scrolled_vbox);
 
   // Put the project tags in the right_scrolled_vbox
-  std::map<std::string, Db::project_tag_s> project_tags;
+  std::set<std::string> project_tags;
   Db::get_project_tags_transaction(project_name, project_tags);
-  typedef std::pair<std::string, Db::project_tag_s> map_entry_t;
-  BOOST_FOREACH(map_entry_t map_entry, project_tags) {
-    std::string name = map_entry.first;
-    Db::project_tag_s project_tag = map_entry.second;
-
+  BOOST_FOREACH(string tag_name, project_tags) {
     // Make a button, pack it, show it and connect it.
-    GtkWidget *button = gtk_check_button_new_with_label(name.c_str());
+    GtkWidget *button = gtk_check_button_new_with_label(tag_name.c_str());
     gtk_box_pack_start(GTK_BOX(right_scrolled_vbox), button, FALSE, FALSE, 0);
     gtk_widget_show(button);
   }
