@@ -1,7 +1,5 @@
 #include "Preferences.h"
 
-#include <string>
-#include <json/json.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
