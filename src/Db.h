@@ -32,13 +32,18 @@ class Db {
     static std::string password;
     static std::string database;
 
-  inline void close_connection() {
-    BOOST_ASSERT(NULL != Db::connection);
-    delete Db::connection;
-    Db::connection = NULL;
-  }
+    Db() : transaction_is_running(false), connection(NULL) {}
+    ~Db() {
+      if (NULL != connection) {
+        close_connection();
+      }
+    }
 
-  Db() : transaction_is_running(false), connection(NULL) {}
+  inline void close_connection() {
+    BOOST_ASSERT(NULL != connection);
+    delete connection;
+    connection = NULL;
+  }
 
   //! this method is called before every _op procedure. It exits if the procedure was called
   //! from outside of a transaction.
@@ -66,7 +71,7 @@ class Db {
 
       bool succeed = false;
       for (int retry_count = 0; retry_count < NRETRIES; retry_count++) {
-        sql::Connection *connection = Db::get_connection();
+        sql::Connection *connection = get_connection();
 
         succeed = true;
         try {
@@ -104,31 +109,31 @@ class Db {
     }
 
   inline sql::Connection *get_connection() {
-    if (Db::connection) {
-      return Db::connection;
+    if (connection) {
+      return connection;
     }
     // TODO don't get the driver instance over and over. Just get it once.
     /* initiate url, user, password and database variables */
-    sql::Driver *driver = Db::get_driver_instance();
+    sql::Driver *driver = get_driver_instance();
     if (0 == driver) {
       std::cerr <<  "get_driver_instance() failed.\n" << std::endl;
       // TODO do something better than exit here
       exit(1);
     }
 
-    sql::Connection *connection = Db::get_connection(driver, dbhost, user, password);
+    sql::Connection *connection = get_connection(driver, dbhost, user, password);
     if (NULL == connection) {
       std::cerr << "driver -> connect() failed\n" << std::endl;
     } else {
       connection->setSchema(database);
-      Db::connection = connection;
+      connection = connection;
     }
     return connection;
   }
 
   inline void get_photo_tags_op(const std::string &project_name,
       const std::string &file_name, std::set<std::string> &tags) {
-    Db::enter_operation();
+    enter_operation();
     tags.clear();
     std::string sql = "SELECT Tag.name FROM Tag "
         "INNER JOIN ProjectTag ON (Tag.id = ProjectTag.tagId) "
@@ -157,7 +162,7 @@ class Db {
   typedef std::pair<std::string, std::set<std::string> > all_photo_tags_map_entry_t;
   inline void get_all_photo_tags_for_project_op(const std::string &project_name,
       all_photo_tags_map_t &result) {
-    Db::enter_operation();
+    enter_operation();
     result.clear();
     std::string sql = "SELECT PhotoFile.filePath, Tag.name "
         "FROM Project "
@@ -188,7 +193,7 @@ class Db {
   
   inline void get_project_tags_op(const std::string &project_name,
       std::set<std::string> &tags) {
-    Db::enter_operation();
+    enter_operation();
     tags.clear();
     std::string sql = "SELECT Tag.name FROM Tag "
         "INNER JOIN ProjectTag ON (Tag.id = ProjectTag.tagId) "
@@ -212,7 +217,7 @@ class Db {
   }
 
   inline void get_all_tags_op(std::set<std::string> &tags) {
-    Db::enter_operation();
+    enter_operation();
     tags.clear();
     std::string sql = "SELECT DISTINCT Tag.name FROM Tag";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
@@ -230,7 +235,7 @@ class Db {
   }
 
   inline void insert_tag_op(const std::string &tag_name) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "INSERT INTO Tag(name) VALUE(?)";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, tag_name);
@@ -245,7 +250,7 @@ class Db {
 
   inline void delete_project_tag_op(const std::string &tag_name,
       const std::string &project_name) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "DELETE FROM ProjectTag USING Tag, Project, ProjectTag "
         "WHERE Tag.name=? "
         "AND Project.name=? "
@@ -267,7 +272,7 @@ class Db {
 
   inline void insert_project_tag_op(const std::string &tag_name,
       const std::string &project_name) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "INSERT INTO ProjectTag(tagId, projectId) "
         "SELECT Tag.id, Project.id FROM Tag, Project WHERE Tag.name=? AND Project.name=?";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
@@ -285,7 +290,7 @@ class Db {
   }
 
   inline void get_rotation_op(const std::string &photoFileName, int &angle) {
-    Db::enter_operation();
+    enter_operation();
     angle = 0;
     std::string sql = 
         "SELECT Rotation.angle "
@@ -308,7 +313,7 @@ class Db {
   }
 
   inline void set_rotation_op(const std::string &photoFileName, int rotation) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "INSERT INTO Rotation (checksumId, angle) "
         "SELECT Checksum.id, ? "
         "FROM Checksum INNER JOIN PhotoFile ON (Checksum.id=PhotoFile.checksumId) "
@@ -329,7 +334,7 @@ class Db {
 
   //! database operation to insert a record into the Project table
   inline void insert_into_project_op(const std::string &project_name, long &project_id) {
-    Db::enter_operation();
+    enter_operation();
     std::string project_insert_sql = "INSERT INTO Project (name) VALUES(?)";
     std::unique_ptr<sql::PreparedStatement> project_insert_prepared_statement(
         connection->prepareStatement(project_insert_sql));
@@ -348,7 +353,7 @@ class Db {
   }
 
   inline long get_project_id_op(const std::string &project_name, long &project_id) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "SELECT id from Project where name = ?";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
 
@@ -361,7 +366,7 @@ class Db {
   }
 
   inline void get_project_names_op(std::list<std::string> &project_names) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "SELECT DISTINCT name FROM Project ";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     std::unique_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
@@ -379,7 +384,7 @@ class Db {
   }
 
   inline void delete_project_op(const std::string &project_name) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "DELETE FROM Project WHERE name = ?";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, project_name);
@@ -394,7 +399,7 @@ class Db {
 
   inline void rename_project_op(const std::string &old_project_name,
       const std::string &new_project_name) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "UPDATE Project SET name=? WHERE name=?";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, new_project_name);
@@ -411,7 +416,7 @@ class Db {
 
   //! database operation to add a photo file to a project.
   inline void add_photo_to_project_op(long project_id, long photo_file_id) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "INSERT INTO ProjectPhotoFile (projectId, photoFileId) VALUES(?,?)";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setInt64(1, project_id);
@@ -423,7 +428,7 @@ class Db {
   inline bool get_project_photo_files_op(
       const std::string &project_name, std::vector<std::string> &project_photo_files,
       std::vector<std::string> &project_adjusted_date_times) {
-    Db::enter_operation();
+    enter_operation();
 
     std::string sql =
         "SELECT DISTINCT filePath, Time.adjustedDateTime FROM Project "
@@ -457,7 +462,7 @@ class Db {
   //! adds a tag to a checksum given a tag_name and a file_name
   inline void add_tag_by_filename_op(const std::string &tag_name,
       const std::string &file_name) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "INSERT INTO TagChecksum (tagId, checksumId) "
         "SELECT DISTINCT Tag.id as tagId, Checksum.id as checksumId "
         "FROM Tag, Checksum, PhotoFile "
@@ -478,7 +483,7 @@ class Db {
   //! removes a tag to a checksum given a tag_name and a file_name
   inline void remove_tag_by_filename_op(const std::string &tag_name,
       const std::string &file_name) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "DELETE FROM TagChecksum "
         "USING Tag, Checksum, PhotoFile, TagChecksum "
         "WHERE Tag.name = ? AND PhotoFile.filePath = ? "
@@ -501,7 +506,7 @@ class Db {
   //! database operation to insert a record into the Time table
   inline void insert_into_time_op(long checksum_id, const std::string &original_date_time,
       const std::string &adjusted_date_time) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "INSERT IGNORE INTO Time(checksumId, originalDateTime, adjustedDateTime ) "
         "Values(?,?,?) "
         "ON DUPLICATE KEY UPDATE originalDateTime=?, adjustedDateTime=?";
@@ -516,7 +521,7 @@ class Db {
 
   inline void get_adjusted_date_time_op(const std::string &filename,
       std::string& adjusted_date_time, bool &ret) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "SELECT adjustedDateTime from PhotoFile "
         "INNER JOIN Time ON (PhotoFile.checksumId = Time.checksumId) WHERE PhotoFile.filePath = ?";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
@@ -543,7 +548,7 @@ class Db {
 
   //! database operation to insert an entry into the ExifBlob table.
   inline void insert_into_exifblob_op(long checksum_id, const std::string &xml_string) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "INSERT IGNORE INTO ExifBlob(checksumId, value) Values (?,?)";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setInt64(1, checksum_id);
@@ -553,7 +558,7 @@ class Db {
 
   inline void get_from_exifblob_by_filePath_op(
       const std::string &filePath, std::string &value) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "SELECT value from PhotoFile "
         "INNER JOIN ExifBlob ON (PhotoFile.checksumId = ExifBlob.checksumId) "
         "WHERE PhotoFile.filePath = ?";
@@ -588,17 +593,17 @@ class Db {
   //! database operation to insert a checksum into the Checksum table
   inline int64_t insert_into_Checksum_op(
       const std::string &checksum, int64_t &checksum_key) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "INSERT IGNORE INTO Checksum(checksum) Values (?)";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, checksum.c_str());
     int updateCount = prepared_statement->executeUpdate();
-    Db::get_id_from_Checksum_op(checksum, checksum_key);
+    get_id_from_Checksum_op(checksum, checksum_key);
   }
 
   inline void
   get_id_from_Checksum_op(const std::string &checksum, int64_t &checksum_key) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "SELECT id FROM Checksum where checksum = ?";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, checksum);
@@ -626,9 +631,9 @@ class Db {
   //! does not insert and just returns the PhotoFileId if duplicate
   inline void insert_into_PhotoFile_op(
       const std::string &filePath, const int64_t &checksum_key, int64_t &photoFile_key) {
-    Db::enter_operation();
+    enter_operation();
     // If it's already in the database, just return its id
-    Db::get_id_from_PhotoFile_op(filePath, checksum_key, photoFile_key);
+    get_id_from_PhotoFile_op(filePath, checksum_key, photoFile_key);
     if (photoFile_key != -1) {
       return;
     }
@@ -644,7 +649,7 @@ class Db {
 
   inline void get_id_from_PhotoFile_op(const std::string &filePath,
       int64_t checksum_key, int64_t &photoFile_key) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "SELECT id FROM PhotoFile where filePath = ? and checksumId = ?";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1, filePath.c_str());
@@ -688,7 +693,7 @@ class Db {
 
   //! database operation to remove a Photo from the database
   inline void remove_photo_from_project_op(long project_id, long photo_file_id) {
-    Db::enter_operation();
+    enter_operation();
     std::cout << "remove photo from project "<< project_id << " " << photo_file_id << std::endl;
     std::string sql = "DELETE FROM ProjectPhotoFile "
         "WHERE (ProjectPhotoFile.projectId = ?) "
@@ -700,7 +705,7 @@ class Db {
   }
 
   inline void delete_known_tag_op(const std::string &tag_name) {
-    Db::enter_operation();
+    enter_operation();
     std::string sql = "DELETE FROM Tag WHERE Tag.name=? ";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
     prepared_statement->setString(1,tag_name);
