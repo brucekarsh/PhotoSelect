@@ -1,6 +1,6 @@
 #ifndef UTILS_H__
 #define UTILS_H__
-
+#include <gtk/gtk.h>
 
 class Utils {
   public:
