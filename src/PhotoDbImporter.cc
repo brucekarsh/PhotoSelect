@@ -71,16 +71,16 @@ void PhotoDbImporter::go_through_files(ImportWindow *importWindow)
 
 bool PhotoDbImporter::insert_into_database_transaction() {
   boost::function<void (void)> f = boost::bind(&PhotoDbImporter::insert_into_database_op, this);
-  return Db::transaction(f);
+  return db.transaction(f);
 }
 
 void PhotoDbImporter::insert_into_database_op() {
-  Db::enter_operation();
+  db.enter_operation();
   BOOST_FOREACH(PhotoDbEntry photoDbEntry, photoDbEntries) {
     int64_t checksum_key;
-    Db::insert_into_Checksum_op(photoDbEntry.checksum, checksum_key);
+    db.insert_into_Checksum_op(photoDbEntry.checksum, checksum_key);
     int64_t photoFile_key;
-    Db::insert_into_PhotoFile_op(photoDbEntry.filePath, checksum_key, photoFile_key);
+    db.insert_into_PhotoFile_op(photoDbEntry.filePath, checksum_key, photoFile_key);
 
     insert_into_exif_tables(photoDbEntry.exifEntries, checksum_key);
     photoDbEntry.exifEntries.clear();
@@ -92,7 +92,7 @@ void PhotoDbImporter::insert_into_exif_tables(const map<string, ExifEntry> &exif
     int64_t checksum_key) {
   // insert into ExifBlob
   string xmlString = make_exif_xml_string(exifEntries);
-  Db::insert_into_exifblob_op(checksum_key, xmlString);
+  db.insert_into_exifblob_op(checksum_key, xmlString);
   // find a time from the exif data
   list<string> fields;
   fields.push_back(string("Exif.Image.DateTime"));
@@ -116,7 +116,7 @@ void PhotoDbImporter::insert_into_exif_tables(const map<string, ExifEntry> &exif
     camera_time = import_time;
   }
 
-  Db::insert_into_time_op(checksum_key, camera_time, camera_time);
+  db.insert_into_time_op(checksum_key, camera_time, camera_time);
 }
 
 string PhotoDbImporter::exif_datetime_to_mysql_datetime(const string exif_datetime) {

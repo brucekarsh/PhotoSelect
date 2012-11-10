@@ -69,7 +69,7 @@ AdjustTimeWindow::accept() {
 
 void AdjustTimeWindow::accept_op(const vector<string> &photoFilenameVector,
     const list<long> &photoFileIdList, long &project_id) {
-  Db::enter_operation();
+  db.enter_operation();
 
   // Do something.
   list<long>::const_iterator id_iter = photoFileIdList.begin();
@@ -88,7 +88,7 @@ bool AdjustTimeWindow::accept_transaction(const vector<string> &photoFilenameVec
     const list<long> &photoFileIdList, long &project_id) {
   boost::function<void (void)> f = boost::bind(&AdjustTimeWindow::accept_op, this,
       boost::cref(photoFilenameVector), boost::cref(photoFileIdList), boost::ref(project_id));
-  return Db::transaction(f);
+  return db.transaction(f);
 }
 
 // Static member functions

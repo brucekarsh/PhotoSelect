@@ -2,10 +2,12 @@
 #define ADDTOPROJECTWINDOW_H__
 #include <gtk/gtk.h>
 #include <vector>
+#include "Db.h"
 #include "QueryView.h"
 
 class AddToProjectWindow {
   public:
+    Db db;
     GtkWidget *window;
     GtkWidget *windowBox;
     GtkWidget *accept_button;

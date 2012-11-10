@@ -66,7 +66,7 @@ void OpenProjectWindow::run() {
   gtk_box_pack_end(GTK_BOX(button_hbox), quit_button, FALSE, FALSE, 0);
 
   list<string> project_names;
-  bool b = Db::get_project_names_transaction(project_names);
+  bool b = db.get_project_names_transaction(project_names);
   // TODO check and handle get_project_names failure.
   
   GtkWidget* radio_button;
@@ -135,7 +135,7 @@ void OpenProjectWindow::apply() {
   }
   vector<string> photoFilenameVector;
   vector<string> adjusted_date_time_vector;
-  bool b = Db::get_project_photo_files_transaction(project_name, photoFilenameVector,
+  bool b = db.get_project_photo_files_transaction(project_name, photoFilenameVector,
       adjusted_date_time_vector);
   if (!b) {
     // TODO handle get_project_photo_files_transaction failure

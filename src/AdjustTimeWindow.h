@@ -10,6 +10,7 @@ class AdjustTimeWindow {
   public:
     AdjustTimeWindow( Preferences *preferences_, BaseWindow* baseWindow_);
     ~AdjustTimeWindow();
+    Db db;
     void run();
     void quit();
     void accept();

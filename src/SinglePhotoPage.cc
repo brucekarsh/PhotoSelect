@@ -265,10 +265,10 @@ void SinglePhotoPage::rebuild_tag_view() {
 
   // Get all the tags for this photo
   string file_name = conversionEngine.getPhotoFilePath();
-  Db::get_photo_tags_transaction(project_name, file_name, photo_tags);
+  db.get_photo_tags_transaction(project_name, file_name, photo_tags);
 
   // Get all the tags for this project
-  Db::get_project_tags_transaction(project_name, project_tags);
+  db.get_project_tags_transaction(project_name, project_tags);
 
   // Don't do anything if the tag view is turned off
   if (tags_position == "none") {
@@ -419,7 +419,7 @@ map<string, string> SinglePhotoPage::get_exifs() {
 
   string file_name = conversionEngine.getPhotoFilePath();
   string exif_string;
-  Db::get_from_exifblob_by_filePath_transaction(file_name, exif_string);
+  db.get_from_exifblob_by_filePath_transaction(file_name, exif_string);
 
   unique_ptr<xercesc::XercesDOMParser> parser (new xercesc::XercesDOMParser());
   parser->setValidationScheme(xercesc::XercesDOMParser::Val_Never);
@@ -649,7 +649,7 @@ SinglePhotoPage::set_position(int val) {
     val = siz;
   }
   conversionEngine.go_to(val-1);   
-  Db::get_rotation_transaction(conversionEngine.getPhotoFilePath(), rotation);
+  db.get_rotation_transaction(conversionEngine.getPhotoFilePath(), rotation);
   calculated_initial_scaling = false;
   set_position_entry();
   gtk_widget_grab_focus(next_button);
@@ -770,7 +770,7 @@ void SinglePhotoPage::redraw_image() {
 
 void SinglePhotoPage::next() {
   conversionEngine.next();   
-  Db::get_rotation_transaction(conversionEngine.getPhotoFilePath(), rotation);
+  db.get_rotation_transaction(conversionEngine.getPhotoFilePath(), rotation);
   calculated_initial_scaling = false;
   set_position_entry();
   rebuild_tag_view();
@@ -783,7 +783,7 @@ void SinglePhotoPage::next() {
 
 void SinglePhotoPage::back() {
   conversionEngine.back();   
-  Db::get_rotation_transaction(conversionEngine.getPhotoFilePath(), rotation);
+  db.get_rotation_transaction(conversionEngine.getPhotoFilePath(), rotation);
   calculated_initial_scaling = false;
   set_position_entry();
   rebuild_tag_view();
@@ -798,7 +798,7 @@ void SinglePhotoPage::rotate() {
   if (rotation == 4) {
     rotation = 0;
   }
-  Db::set_rotation_transaction(conversionEngine.getPhotoFilePath(), rotation);
+  db.set_rotation_transaction(conversionEngine.getPhotoFilePath(), rotation);
   invalidate_image();
   // make sure that the drawing_area retains the keyboard focus (the rebuilds sometimes steal it)
   gtk_grab_add(drawing_area);
@@ -813,8 +813,8 @@ SinglePhotoPage::tag_button_clicked(GtkToggleButton *togglebutton, gpointer user
   string tag_name = gtk_button_get_label(GTK_BUTTON(togglebutton));
   bool active = gtk_toggle_button_get_active(togglebutton);
   string file_name = conversionEngine.getPhotoFilePath();
-  Db::get_project_tags_transaction(project_name, project_tags);
-  Db::get_photo_tags_transaction(project_name, file_name, photo_tags);
+  db.get_project_tags_transaction(project_name, project_tags);
+  db.get_photo_tags_transaction(project_name, file_name, photo_tags);
 
   // Ignore this click if it's for a tag that's not in our project
   if (0 == project_tags.count(tag_name)) {
@@ -822,14 +822,14 @@ SinglePhotoPage::tag_button_clicked(GtkToggleButton *togglebutton, gpointer user
   }
 
   if (active) {
-    bool b  = Db::add_tag_by_filename_transaction(tag_name, file_name);
+    bool b  = db.add_tag_by_filename_transaction(tag_name, file_name);
     if (!b) {
-      // TODO Handle Db::add_tag_by_filename_transaction failure
+      // TODO Handle db.add_tag_by_filename_transaction failure
     }
   } else {
-    bool b = Db::remove_tag_by_filename_transaction(tag_name, file_name);
+    bool b = db.remove_tag_by_filename_transaction(tag_name, file_name);
     if (!b) {
-      // TODO Handle Db::remove_tag_by_filename_transaction failure
+      // TODO Handle db.remove_tag_by_filename_transaction failure
     }
   }
 }

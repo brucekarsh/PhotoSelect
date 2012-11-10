@@ -1,6 +1,7 @@
 #ifndef NEWPROJECTWINDOW_H__
 #define NEWPROJECTWINDOW_H__
 #include <gtk/gtk.h>
+#include "Db.h"
 #include "QueryView.h"
 
 class BaseWindow;
@@ -17,6 +18,7 @@ class NewProjectWindow {
     const std::vector<std::string> &photoFilenameVector,
     const std::list<long> &photoFileIdList, long &project_id);
 
+  Db db;
   GtkWidget *window;
   GtkWidget *windowBox;
   GtkWidget *accept_button;

@@ -32,6 +32,7 @@ class SinglePhotoPage : public PhotoSelectPage {
     std::string project_name;
     PhotoFileCache *photoFileCache;
 
+    Db db;
     GtkWidget *page_hbox;
     GtkWidget *page_vbox;
     GtkWidget *page_left_vbox;

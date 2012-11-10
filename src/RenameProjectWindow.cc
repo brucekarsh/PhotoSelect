@@ -87,7 +87,7 @@ void RenameProjectWindow::run() {
   gtk_box_pack_end(GTK_BOX(button_hbox), quit_button, FALSE, FALSE, 0);
 
   list<string> project_names;
-  bool b = Db::get_project_names_transaction(project_names);
+  bool b = db.get_project_names_transaction(project_names);
   // TODO check and handle get_project_names failure.
   
   GtkWidget* radio_button;
@@ -196,7 +196,7 @@ void RenameProjectWindow::accept() {
     return;
   }
 
-  bool rename_was_successful = Db::rename_project_transaction(old_project_name, new_project_name);
+  bool rename_was_successful = db.rename_project_transaction(old_project_name, new_project_name);
   if (!rename_was_successful) {
     if (error_string.length() != 0) error_string += "\n";
     error_string += "Project name already used. Please pick a new name.";

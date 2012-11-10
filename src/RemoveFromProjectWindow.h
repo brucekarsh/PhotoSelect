@@ -7,6 +7,7 @@
 
 class RemoveFromProjectWindow {
   public:
+  Db db;
   GtkWidget *window;
   GtkWidget *windowBox;
   GtkWidget *accept_button;

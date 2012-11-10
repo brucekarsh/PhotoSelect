@@ -5,6 +5,7 @@
 #include <list>
 #include <queue>
 #include <string>
+#include "Db.h"
 #include "XStr.h"
 
 class ImportWindow;
@@ -35,6 +36,7 @@ class PhotoDbImporter {
     boost::regex re_for_jpg_suffix();
 
   public:
+    Db db;
     std::queue<std::string> dirs_to_process;
     std::list<PhotoDbEntry> photoDbEntries;
     std::list<std::string> errors;

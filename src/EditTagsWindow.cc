@@ -166,7 +166,7 @@ void EditTagsWindow::rebuild_left_scrolled_vbox() {
 
   // Put all known tags in the left_scrolled_vbox
   std::set<std::string> all_tags;
-  Db::get_all_tags_transaction(all_tags);
+  db.get_all_tags_transaction(all_tags);
   BOOST_FOREACH(std::string name, all_tags) {
     // Make a button, pack it, show it and connect it.
     GtkWidget *button = gtk_check_button_new_with_label(name.c_str());
@@ -189,7 +189,7 @@ void EditTagsWindow::rebuild_right_scrolled_vbox() {
 
   // Put the project tags in the right_scrolled_vbox
   std::set<std::string> project_tags;
-  Db::get_project_tags_transaction(project_name, project_tags);
+  db.get_project_tags_transaction(project_name, project_tags);
   BOOST_FOREACH(string tag_name, project_tags) {
     // Make a button, pack it, show it and connect it.
     GtkWidget *button = gtk_check_button_new_with_label(tag_name.c_str());
@@ -221,7 +221,7 @@ void EditTagsWindow::create_tag_button_clicked(std::string tag_name) {
   // TODO need to highlighted new tag
   if (valid_tag_name(tag_name)) {
     // Put the tag into the database
-    Db::insert_tag_transaction(tag_name);
+    db.insert_tag_transaction(tag_name);
     // Rebuild the all tags display in the UI
     rebuild_left_scrolled_vbox();
     // Rebuild the tag views on the notebook pages
@@ -237,7 +237,7 @@ void EditTagsWindow::add_tags_button_clicked() {
   std::list<std::string> activated_known_tags = get_activated_known_tags();
     BOOST_FOREACH(std::string tag_name, activated_known_tags) {
       // Put the project tag into the database
-      Db::insert_project_tag_transaction(tag_name, project_name);
+      db.insert_project_tag_transaction(tag_name, project_name);
     }
     // Rebuild the project tags display in the UI
     rebuild_right_scrolled_vbox();
@@ -264,23 +264,23 @@ void EditTagsWindow::really_delete_known_tags_button_clicked() {
 }
 
 void EditTagsWindow::delete_known_tags_op(const std::list<std::string> &activated_known_tags) {
-  Db::enter_operation();
+  db.enter_operation();
   BOOST_FOREACH(std::string tag_name, activated_known_tags) {
     std::cout << "Delete known tag " << tag_name << std::endl;
-    Db::delete_known_tag_op(tag_name);
+    db.delete_known_tag_op(tag_name);
   }
 }
 
 bool EditTagsWindow::delete_known_tags_transaction(const std::list<std::string> &activated_known_tags) {
   boost::function<void (void)> f = boost::bind(&EditTagsWindow::delete_known_tags_op,
       this, boost::cref(activated_known_tags));
-  return Db::transaction(f);
+  return db.transaction(f);
 }
 
 void EditTagsWindow::delete_project_tags_button_clicked() {
   std::list<std::string> activated_project_tags = get_activated_project_tags();
     BOOST_FOREACH(std::string tag_name, activated_project_tags) {
-      Db::delete_project_tag_transaction(tag_name, project_name);
+      db.delete_project_tag_transaction(tag_name, project_name);
       std::cout << "Delete project tag " << tag_name << " project " << project_name << std::endl;
     }
     // Rebuild the project tags display in the UI

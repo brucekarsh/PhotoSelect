@@ -74,11 +74,11 @@ void RemoveFromProjectWindow::accept() {
 void RemoveFromProjectWindow::accept_op(const string &project_name,
     const vector<string> &photoFilenameVector,
     const list<long> &photoFileIdList, long &project_id) {
-  Db::enter_operation();
+  db.enter_operation();
 
 
   // get the project_id for  project_name, give up if it's not there
-  Db::get_project_id_op(project_name, project_id);
+  db.get_project_id_op(project_name, project_id);
   if (project_id == -1) {
     return;
   }
@@ -92,7 +92,7 @@ void RemoveFromProjectWindow::accept_op(const string &project_name,
     long photo_file_id = *id_iter;
     string photo_file_name = *filename_iter;
     ++id_iter;
-    Db::remove_photo_from_project_op(project_id, photo_file_id);
+    db.remove_photo_from_project_op(project_id, photo_file_id);
   }
 }
 
@@ -102,7 +102,7 @@ bool RemoveFromProjectWindow::accept_transaction(const string &project_name,
   boost::function<void (void)> f = boost::bind(&RemoveFromProjectWindow::accept_op, this,
       boost::cref(project_name), boost::cref(photoFilenameVector),
       boost::cref(photoFileIdList), boost::ref(project_id));
-  return Db::transaction(f);
+  return db.transaction(f);
 }
 
 // Static member functions

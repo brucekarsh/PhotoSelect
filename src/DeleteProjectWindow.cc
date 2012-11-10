@@ -64,7 +64,7 @@ void DeleteProjectWindow::run() {
   gtk_box_pack_end(GTK_BOX(button_hbox), quit_button, FALSE, FALSE, 0);
 
   list<string>project_names;
-  bool b = Db::get_project_names_transaction(project_names);
+  bool b = db.get_project_names_transaction(project_names);
   // TODO check and handle get_project_names_transaction failure
   GtkWidget* radio_button;
   first_radio_button = NULL;
@@ -120,9 +120,9 @@ void DeleteProjectWindow::accept() {
   if (0 == project_name.size()) {
     return;
   }
-  bool b = Db::delete_project_transaction(project_name);
+  bool b = db.delete_project_transaction(project_name);
   if (!b) {
-    // TODO Handle Db::delete_project_transaction failure
+    // TODO Handle db.delete_project_transaction failure
   }
   quit();
 }

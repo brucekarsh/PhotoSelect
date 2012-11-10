@@ -54,7 +54,7 @@ void ExportProjectWindow::run() {
   gtk_box_pack_start(GTK_BOX(extra_widgets), export_labeled_button, FALSE, FALSE, 0);
 
   set<string> project_tags;
-  Db::get_project_tags_transaction(project_name, project_tags);
+  db.get_project_tags_transaction(project_name, project_tags);
   BOOST_FOREACH(string tag_name, project_tags) {
     GtkWidget *label_button = gtk_check_button_new_with_label(tag_name.c_str());
     gtk_widget_set_margin_left(label_button, 15);
@@ -88,7 +88,7 @@ void ExportProjectWindow::write_file(string out_filename) {
   // Make a list of all the files in the project
   vector<string> photoFilenameVector;
   vector<string> adjusted_date_time_vector;
-  bool b = Db::get_project_photo_files_transaction(project_name, photoFilenameVector,
+  bool b = db.get_project_photo_files_transaction(project_name, photoFilenameVector,
       adjusted_date_time_vector);
   if (!b) {
     // TODO handle get_project_photo_files_transaction failure
@@ -96,7 +96,7 @@ void ExportProjectWindow::write_file(string out_filename) {
 
   // Make a list of all the tags, keyed by filename
   Db::all_photo_tags_map_t all_photo_tags_map;
-  Db::get_all_photo_tags_for_project_transaction(project_name, all_photo_tags_map);
+  db.get_all_photo_tags_for_project_transaction(project_name, all_photo_tags_map);
 
   // Make a list of the selected tags
   set<string> selected_tags;

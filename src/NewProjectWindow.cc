@@ -88,7 +88,7 @@ void NewProjectWindow::accept() {
   } else {
     // Success
     vector<string> adjusted_date_time_vector;
-    bool b = Db::get_project_photo_files_transaction(project_name, photoFilenameVector,
+    bool b = db.get_project_photo_files_transaction(project_name, photoFilenameVector,
         adjusted_date_time_vector);
     if (!b) {
       // TODO handle get_project_photo_files_transaction failure
@@ -106,10 +106,10 @@ void NewProjectWindow::accept() {
 void NewProjectWindow::accept_op(const string &project_name,
     const vector<string> &photoFilenameVector,
     const list<long> &photoFileIdList, long &project_id) {
-  Db::enter_operation();
+  db.enter_operation();
 
 
-  Db::insert_into_project_op(project_name, project_id);
+  db.insert_into_project_op(project_name, project_id);
   if (project_id == -1) {
     return;
   }
@@ -119,7 +119,7 @@ void NewProjectWindow::accept_op(const string &project_name,
       ++filename_iter) {
     long photo_file_id = *id_iter;
     ++id_iter;
-    Db::add_photo_to_project_op(project_id, photo_file_id);
+    db.add_photo_to_project_op(project_id, photo_file_id);
   }
 }
 
@@ -129,7 +129,7 @@ bool NewProjectWindow::accept_transaction(const string &project_name,
   boost::function<void (void)> f = boost::bind(&NewProjectWindow::accept_op, this,
       boost::cref(project_name), boost::cref(photoFilenameVector),
       boost::cref(photoFileIdList), boost::ref(project_id));
-  return Db::transaction(f);
+  return db.transaction(f);
 }
 
 /* static */ void NewProjectWindow::accept_button_clicked_cb(GtkWidget *widget,

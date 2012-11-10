@@ -57,7 +57,7 @@ void MultiPhotoPage::rotate(int index) {
   if (rotation == 4) {
     rotation = 0;
   }
-  Db::set_rotation_transaction(file_path, rotation);
+  db.set_rotation_transaction(file_path, rotation);
   photo_state.clear_pixbuf();
 
   // Get a rotated thumbnail and put it tin the photo_state
@@ -292,7 +292,7 @@ MultiPhotoPage::build_page() {
   // the bottom.
   for (int i = num_photo_files - 1; i >= 0; i--) {
     int rotation;
-    Db::get_rotation_transaction(photoFilenameVector[i], rotation);
+    db.get_rotation_transaction(photoFilenameVector[i], rotation);
     WorkItem work_item(ticket_number, i,rotation, priority, this);
     work_list.add_work(work_item);
   }
@@ -449,7 +449,7 @@ void MultiPhotoPage::rebuild_tag_view() {
   }
 
   // Get all the tags for this project
-  Db::get_project_tags_transaction(project_name, project_tags);
+  db.get_project_tags_transaction(project_name, project_tags);
 
   // Don't do anything if the tag view is turned off
   if (tags_position == "none") {
@@ -535,7 +535,7 @@ void MultiPhotoPage::count_tags() {
   set_tag_counts.clear();
   clear_tag_counts.clear();
   // Get the tags for all the files in this project
-  Db::get_all_photo_tags_for_project_transaction(project_name, all_photo_tags_for_project);
+  db.get_all_photo_tags_for_project_transaction(project_name, all_photo_tags_for_project);
 
   // Count the tags
   BOOST_FOREACH(Db::all_photo_tags_map_entry_t map_entry, all_photo_tags_for_project) {
@@ -664,7 +664,7 @@ map<string, string> MultiPhotoPage::get_exifs() {
 
   string file_name = photoFilenameVector[current_index];
   string exif_string;
-  Db::get_from_exifblob_by_filePath_transaction(file_name, exif_string);
+  db.get_from_exifblob_by_filePath_transaction(file_name, exif_string);
 
   unique_ptr<xercesc::XercesDOMParser> parser (new xercesc::XercesDOMParser());
   parser->setValidationScheme(xercesc::XercesDOMParser::Val_Never);
@@ -815,7 +815,7 @@ void MultiPhotoPage::get_photo_thumbnail(PhotoState &photo_state, int surface_wi
   clock_gettime(CLOCK_MONOTONIC_RAW, &t1);
   string file_name = conversionEngine.getPhotoFilePath();
   int rotation;
-  Db::get_rotation_transaction(conversionEngine.getPhotoFilePath(), rotation);
+  db.get_rotation_transaction(conversionEngine.getPhotoFilePath(), rotation);
   ConvertedPhotoFile *convertedPhotoFile = conversionEngine.getConvertedPhotoFile(
       surface_width, surface_height, rotation); 
   struct timespec t2;
@@ -884,9 +884,9 @@ void MultiPhotoPage::clear_button_clicked(GtkWidget *widget, gpointer data) {
     PhotoState &photo_state = photo_state_map[index];
     if (photo_state.get_is_selected()) {
       if (0 != all_photo_tags_for_project[file_name].count(tag_name)) {
-        bool b = Db::remove_tag_by_filename_transaction(tag_name, file_name);
+        bool b = db.remove_tag_by_filename_transaction(tag_name, file_name);
         if (!b) {
-          // TODO Handle Db::remove_tag_by_filename_transaction failure
+          // TODO Handle db.remove_tag_by_filename_transaction failure
         }
       }
     }
@@ -911,9 +911,9 @@ void MultiPhotoPage::set_button_clicked(GtkWidget *widget, gpointer data) {
     PhotoState &photo_state = photo_state_map[index];
     if (photo_state.get_is_selected()) {
       if (0 == all_photo_tags_for_project[file_name].count(tag_name)) {
-        bool b = Db::add_tag_by_filename_transaction(tag_name, file_name);
+        bool b = db.add_tag_by_filename_transaction(tag_name, file_name);
         if (!b) {
-          // TODO Handle Db::add_tag_by_filename_transaction failure
+          // TODO Handle db.add_tag_by_filename_transaction failure
         }
       }
     }
@@ -1240,14 +1240,14 @@ void MultiPhotoPage::icon_view_popup_tag_toggled(GtkMenuItem *menu_item, gpointe
   GtkWidget *widget = (GtkWidget*) user_data;
   string file_name(*(string *)g_object_get_data(G_OBJECT(menu_item), "file_name"));
   if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(menu_item))) {
-    bool b = Db::add_tag_by_filename_transaction(tag_name, file_name);
+    bool b = db.add_tag_by_filename_transaction(tag_name, file_name);
     if (!b) {
-      // TODO Handle Db::add_tag_by_filename_transaction failure
+      // TODO Handle db.add_tag_by_filename_transaction failure
     }
   } else {
-    bool b = Db::remove_tag_by_filename_transaction(tag_name, file_name);
+    bool b = db.remove_tag_by_filename_transaction(tag_name, file_name);
     if (!b) {
-      // TODO Handle Db::remove_tag_by_filename_transaction failure
+      // TODO Handle db.remove_tag_by_filename_transaction failure
     }
   }
   count_tags();
@@ -1311,7 +1311,7 @@ cout << "visible " << i << " " << tree_model_index << endl;
 
     if (photo_state.get_pixbuf() == gtk_stock_missing_image) {
       int rotation;
-      Db::get_rotation_transaction(photoFilenameVector[tree_model_index], rotation);
+      db.get_rotation_transaction(photoFilenameVector[tree_model_index], rotation);
       WorkItem work_item(ticket_number, tree_model_index, rotation, priority, this);
       work_list.add_work(work_item);
     }

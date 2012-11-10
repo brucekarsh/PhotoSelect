@@ -134,12 +134,12 @@ QueryView::makeQueryJSON() {
       const std::vector<std::string> &value_vector) {
     boost::function<void (void)> f = boost::bind(&QueryView::query_op, this,
         boost::cref(sql_query_string), boost::cref(value_vector));
-    return Db::transaction(f);
+    return db.transaction(f);
   }
 
   void QueryView::query_op(const std::string &sql_query_string, const std::vector<std::string> &value_vector) {
-    Db::enter_operation();
-    sql::Connection *connection = Db::get_connection();
+    db.enter_operation();
+    sql::Connection *connection = db.get_connection();
 
     gtk_widget_show(scrollBox);
     GtkTextBuffer *scrollTextBuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(scrollTextView));

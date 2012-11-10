@@ -1,5 +1,6 @@
 #ifndef EDITTAGSWINDOW_H__
 #define EDITTAGSWINDOW_H__
+#include "Db.h"
 #include <gtk/gtk.h>
 #include <string>
 #include <list>
@@ -10,6 +11,7 @@ class BaseWindow;
 class EditTagsWindow {
   public:
 
+  Db db;
   GtkWidget *window;
   GtkWidget *windowBox;
   GtkWidget *first_radio_button;

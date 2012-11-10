@@ -1,5 +1,6 @@
 #ifndef EXPORTPROJECTWINDOW_H__
 #define EXPORTPROJECTWINDOW_H__
+#include "Db.h"
 #include <gtk/gtk.h>
 #include <list>
 #include <string>
@@ -9,6 +10,7 @@ class BaseWindow;
 
 class ExportProjectWindow {
   public:
+  Db db;
   GtkWidget *extra_widgets;
   GtkWidget *file_chooser;
   GtkWidget *export_all_button;

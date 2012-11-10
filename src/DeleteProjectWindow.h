@@ -1,5 +1,6 @@
 #ifndef DELETEPROJECTWINDOW_H__
 #define DELETEPROJECTWINDOW_H__
+#include "Db.h"
 #include <gtk/gtk.h>
 #include <string>
 
@@ -8,6 +9,7 @@ class BaseWindow;
 
 class DeleteProjectWindow {
   public:
+  Db db;
   GtkWidget *window;
   GtkWidget *windowBox;
   GtkWidget *first_radio_button;

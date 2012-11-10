@@ -25,22 +25,24 @@
 class Db {
   public:
     static const int NRETRIES = 4;
-    static sql::Connection *connection;
-    static bool transaction_is_running;
+    sql::Connection *connection;
+    bool transaction_is_running;
     static std::string dbhost;
     static std::string user;
     static std::string password;
     static std::string database;
 
-  static inline void close_connection() {
+  inline void close_connection() {
     BOOST_ASSERT(NULL != Db::connection);
     delete Db::connection;
     Db::connection = NULL;
   }
 
+  Db() : transaction_is_running(false), connection(NULL) {}
+
   //! this method is called before every _op procedure. It exits if the procedure was called
   //! from outside of a transaction.
-  static inline void enter_operation() {
+  inline void enter_operation() {
     if (!transaction_is_running) {
       std::cout << "Operation was called from outside a transaction, exiting." << std::endl;
       abort();
@@ -53,7 +55,7 @@ class Db {
     //! succeeds. On each failure, it reopens the connection. If after retrying NRETRIES times
     //! it still has failed, it returns false. Otherwise it returns true.
     //! \param f a function that issues the database operations of the trasaction.
-    static bool transaction(const boost::function<void(void)> &f) {
+    bool transaction(const boost::function<void(void)> &f) {
       // First make sure that we are not already in a transaction. We don't allow nested
       // transactions
       if (transaction_is_running) {
@@ -101,7 +103,7 @@ class Db {
       return succeed;
     }
 
-  static inline sql::Connection *get_connection() {
+  inline sql::Connection *get_connection() {
     if (Db::connection) {
       return Db::connection;
     }
@@ -124,7 +126,7 @@ class Db {
     return connection;
   }
 
-  static inline void get_photo_tags_op(const std::string &project_name,
+  inline void get_photo_tags_op(const std::string &project_name,
       const std::string &file_name, std::set<std::string> &tags) {
     Db::enter_operation();
     tags.clear();
@@ -144,16 +146,16 @@ class Db {
     }
   };
 
-  static inline bool get_photo_tags_transaction(const std::string &project_name,
+  inline bool get_photo_tags_transaction(const std::string &project_name,
       const std::string &file_name, std::set<std::string> &result) {
-    boost::function<void (void)> f = boost::bind(&get_photo_tags_op, boost::cref(project_name),
-        boost::cref(file_name), boost::ref(result));
+    boost::function<void (void)> f = boost::bind(&Db::get_photo_tags_op, this,
+        boost::cref(project_name), boost::cref(file_name), boost::ref(result));
     return transaction(f);
   }
 
   typedef std::map<std::string, std::set<std::string> > all_photo_tags_map_t;
   typedef std::pair<std::string, std::set<std::string> > all_photo_tags_map_entry_t;
-  static inline void get_all_photo_tags_for_project_op(const std::string &project_name,
+  inline void get_all_photo_tags_for_project_op(const std::string &project_name,
       all_photo_tags_map_t &result) {
     Db::enter_operation();
     result.clear();
@@ -176,15 +178,15 @@ class Db {
     return;
   }
 
-  static inline bool get_all_photo_tags_for_project_transaction(const std::string &project_name,
+  inline bool get_all_photo_tags_for_project_transaction(const std::string &project_name,
       all_photo_tags_map_t &result) {
-    boost::function<void (void)> f = boost::bind(&get_all_photo_tags_for_project_op,
-        boost::cref(project_name), boost::ref(result));
+    boost::function<void (void)> f = boost::bind(&Db::get_all_photo_tags_for_project_op,
+        this, boost::cref(project_name), boost::ref(result));
     bool b = transaction(f);
     return b;
   }
   
-  static inline void get_project_tags_op(const std::string &project_name,
+  inline void get_project_tags_op(const std::string &project_name,
       std::set<std::string> &tags) {
     Db::enter_operation();
     tags.clear();
@@ -201,15 +203,15 @@ class Db {
     } 
   }
 
-  static inline bool get_project_tags_transaction(const std::string &project_name,
+  inline bool get_project_tags_transaction(const std::string &project_name,
       std::set<std::string> &tags) {
-    boost::function<void (void)> f = boost::bind(&get_project_tags_op,
+    boost::function<void (void)> f = boost::bind(&Db::get_project_tags_op, this,
         boost::cref(project_name), boost::ref(tags));
     bool b = transaction(f);
     return b;
   }
 
-  static inline void get_all_tags_op(std::set<std::string> &tags) {
+  inline void get_all_tags_op(std::set<std::string> &tags) {
     Db::enter_operation();
     tags.clear();
     std::string sql = "SELECT DISTINCT Tag.name FROM Tag";
@@ -221,13 +223,13 @@ class Db {
     }
   }
 
-  static inline bool get_all_tags_transaction(std::set<std::string>& tags) {
-    boost::function<void (void)> f = boost::bind(&get_all_tags_op, boost::ref(tags));
+  inline bool get_all_tags_transaction(std::set<std::string>& tags) {
+    boost::function<void (void)> f = boost::bind(&Db::get_all_tags_op, this, boost::ref(tags));
     bool b = transaction(f);
     return b;
   }
 
-  static inline void insert_tag_op(const std::string &tag_name) {
+  inline void insert_tag_op(const std::string &tag_name) {
     Db::enter_operation();
     std::string sql = "INSERT INTO Tag(name) VALUE(?)";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
@@ -235,13 +237,13 @@ class Db {
     prepared_statement->execute();
   }
 
-  static inline bool insert_tag_transaction(const std::string &tag_name) {
-    boost::function<void (void)> f = boost::bind(&insert_tag_op, boost::cref(tag_name));
+  inline bool insert_tag_transaction(const std::string &tag_name) {
+    boost::function<void (void)> f = boost::bind(&Db::insert_tag_op, this, boost::cref(tag_name));
     bool b = transaction(f);
     return b;
   }
 
-  static inline void delete_project_tag_op(const std::string &tag_name,
+  inline void delete_project_tag_op(const std::string &tag_name,
       const std::string &project_name) {
     Db::enter_operation();
     std::string sql = "DELETE FROM ProjectTag USING Tag, Project, ProjectTag "
@@ -255,15 +257,15 @@ class Db {
     prepared_statement->execute();
   }
 
-  static inline bool delete_project_tag_transaction(const std::string &tag_name,
+  inline bool delete_project_tag_transaction(const std::string &tag_name,
       const std::string &project_name) {
-    boost::function<void (void)> f = boost::bind(&delete_project_tag_op, boost::cref(tag_name),
-        boost::cref(project_name));
+    boost::function<void (void)> f = boost::bind(&Db::delete_project_tag_op, this,
+        boost::cref(tag_name), boost::cref(project_name));
     bool b = transaction(f);
     return b;
   }
 
-  static inline void insert_project_tag_op(const std::string &tag_name,
+  inline void insert_project_tag_op(const std::string &tag_name,
       const std::string &project_name) {
     Db::enter_operation();
     std::string sql = "INSERT INTO ProjectTag(tagId, projectId) "
@@ -274,15 +276,15 @@ class Db {
     prepared_statement->execute();
   }
 
-  static inline bool insert_project_tag_transaction(const std::string &tag_name,
+  inline bool insert_project_tag_transaction(const std::string &tag_name,
       const std::string &project_name) {
-    boost::function<void (void)> f = boost::bind(&insert_project_tag_op, boost::cref(tag_name),
-        boost::cref(project_name));
+    boost::function<void (void)> f = boost::bind(&Db::insert_project_tag_op, this,
+        boost::cref(tag_name), boost::cref(project_name));
     bool b = transaction(f);
     return b;
   }
 
-  static inline void get_rotation_op(const std::string &photoFileName, int &angle) {
+  inline void get_rotation_op(const std::string &photoFileName, int &angle) {
     Db::enter_operation();
     angle = 0;
     std::string sql = 
@@ -298,14 +300,14 @@ class Db {
     }
   }
 
-  static inline bool get_rotation_transaction(const std::string &photoFileName, int &angle) {
-    boost::function<void (void)> f = boost::bind(&get_rotation_op, boost::cref(photoFileName),
-        boost::ref(angle));
+  inline bool get_rotation_transaction(const std::string &photoFileName, int &angle) {
+    boost::function<void (void)> f = boost::bind(&Db::get_rotation_op, this,
+        boost::cref(photoFileName), boost::ref(angle));
     bool b = transaction(f);
     return b;
   }
 
-  static inline void set_rotation_op(const std::string &photoFileName, int rotation) {
+  inline void set_rotation_op(const std::string &photoFileName, int rotation) {
     Db::enter_operation();
     std::string sql = "INSERT INTO Rotation (checksumId, angle) "
         "SELECT Checksum.id, ? "
@@ -319,14 +321,14 @@ class Db {
       prepared_statement->execute();
   }
 
-  static inline bool set_rotation_transaction(const std::string &photoFileName, int rotation) {
-    boost::function<void (void)> f = boost::bind(&set_rotation_op, boost::cref(photoFileName),
-        rotation);
+  inline bool set_rotation_transaction(const std::string &photoFileName, int rotation) {
+    boost::function<void (void)> f = boost::bind(&Db::set_rotation_op, this,
+        boost::cref(photoFileName), rotation);
     return transaction(f);
   }
 
   //! database operation to insert a record into the Project table
-  static inline void insert_into_project_op(const std::string &project_name, long &project_id) {
+  inline void insert_into_project_op(const std::string &project_name, long &project_id) {
     Db::enter_operation();
     std::string project_insert_sql = "INSERT INTO Project (name) VALUES(?)";
     std::unique_ptr<sql::PreparedStatement> project_insert_prepared_statement(
@@ -345,7 +347,7 @@ class Db {
     }
   }
 
-  static inline long get_project_id_op(const std::string &project_name, long &project_id) {
+  inline long get_project_id_op(const std::string &project_name, long &project_id) {
     Db::enter_operation();
     std::string sql = "SELECT id from Project where name = ?";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
@@ -358,7 +360,7 @@ class Db {
     }
   }
 
-  static inline void get_project_names_op(std::list<std::string> &project_names) {
+  inline void get_project_names_op(std::list<std::string> &project_names) {
     Db::enter_operation();
     std::string sql = "SELECT DISTINCT name FROM Project ";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
@@ -370,13 +372,13 @@ class Db {
     }
   }
 
-  static inline bool get_project_names_transaction(std::list<std::string> &project_names) {
-    boost::function<void (void)> f = boost::bind(&get_project_names_op,
+  inline bool get_project_names_transaction(std::list<std::string> &project_names) {
+    boost::function<void (void)> f = boost::bind(&Db::get_project_names_op, this,
         boost::ref(project_names));
     return transaction(f);
   }
 
-  static inline void delete_project_op(const std::string &project_name) {
+  inline void delete_project_op(const std::string &project_name) {
     Db::enter_operation();
     std::string sql = "DELETE FROM Project WHERE name = ?";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
@@ -384,12 +386,13 @@ class Db {
     prepared_statement->execute();
   }
 
-  static inline bool delete_project_transaction(const std::string &project_name) {
-    boost::function<void (void)> f = boost::bind(&delete_project_op, boost::cref(project_name));
+  inline bool delete_project_transaction(const std::string &project_name) {
+    boost::function<void (void)> f = boost::bind(&Db::delete_project_op, this,
+        boost::cref(project_name));
     return transaction(f);
   }
 
-  static inline void rename_project_op(const std::string &old_project_name,
+  inline void rename_project_op(const std::string &old_project_name,
       const std::string &new_project_name) {
     Db::enter_operation();
     std::string sql = "UPDATE Project SET name=? WHERE name=?";
@@ -399,15 +402,15 @@ class Db {
     prepared_statement->execute();
   }
 
-  static inline bool rename_project_transaction(const std::string &old_project_name,
+  inline bool rename_project_transaction(const std::string &old_project_name,
       const std::string &new_project_name) {
-    boost::function<void (void)> f = boost::bind(&rename_project_op, boost::cref(old_project_name),
-        boost::cref(new_project_name));
+    boost::function<void (void)> f = boost::bind(&Db::rename_project_op, this,
+        boost::cref(old_project_name), boost::cref(new_project_name));
     return transaction(f);
   }
 
   //! database operation to add a photo file to a project.
-  static inline void add_photo_to_project_op(long project_id, long photo_file_id) {
+  inline void add_photo_to_project_op(long project_id, long photo_file_id) {
     Db::enter_operation();
     std::string sql = "INSERT INTO ProjectPhotoFile (projectId, photoFileId) VALUES(?,?)";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
@@ -417,7 +420,7 @@ class Db {
   }
 
   //! Get all photo files for a project
-  static inline bool get_project_photo_files_op(
+  inline bool get_project_photo_files_op(
       const std::string &project_name, std::vector<std::string> &project_photo_files,
       std::vector<std::string> &project_adjusted_date_times) {
     Db::enter_operation();
@@ -442,17 +445,17 @@ class Db {
     }
   }
 
-  static inline bool get_project_photo_files_transaction(
+  inline bool get_project_photo_files_transaction(
       const std::string &project_name, std::vector<std::string> &project_photo_files,
       std::vector<std::string> &project_adjusted_date_times) {
-    boost::function<void (void)> f = boost::bind(&get_project_photo_files_op,
+    boost::function<void (void)> f = boost::bind(&Db::get_project_photo_files_op, this,
         boost::cref(project_name),
         boost::ref(project_photo_files),
         boost::ref(project_adjusted_date_times));
     return transaction(f);
   }
   //! adds a tag to a checksum given a tag_name and a file_name
-  static inline void add_tag_by_filename_op(const std::string &tag_name,
+  inline void add_tag_by_filename_op(const std::string &tag_name,
       const std::string &file_name) {
     Db::enter_operation();
     std::string sql = "INSERT INTO TagChecksum (tagId, checksumId) "
@@ -465,15 +468,15 @@ class Db {
     prepared_statement->execute();
   }
 
-  static inline bool add_tag_by_filename_transaction(const std::string &tag_name,
+  inline bool add_tag_by_filename_transaction(const std::string &tag_name,
       const std::string &file_name) {
-    boost::function<void (void)> f = boost::bind(&add_tag_by_filename_op,
+    boost::function<void (void)> f = boost::bind(&Db::add_tag_by_filename_op, this,
         boost::cref(tag_name), boost::cref(file_name));
     return transaction(f);
   }
 
   //! removes a tag to a checksum given a tag_name and a file_name
-  static inline void remove_tag_by_filename_op(const std::string &tag_name,
+  inline void remove_tag_by_filename_op(const std::string &tag_name,
       const std::string &file_name) {
     Db::enter_operation();
     std::string sql = "DELETE FROM TagChecksum "
@@ -487,16 +490,16 @@ class Db {
     prepared_statement->execute();
   }
 
-  static inline bool remove_tag_by_filename_transaction(const std::string &tag_name,
+  inline bool remove_tag_by_filename_transaction(const std::string &tag_name,
       const std::string &file_name) {
-    boost::function<void (void)> f = boost::bind(&remove_tag_by_filename_op,
+    boost::function<void (void)> f = boost::bind(&Db::remove_tag_by_filename_op, this,
         boost::cref(tag_name), boost::cref(file_name));
     return transaction(f);
   }
 
 
   //! database operation to insert a record into the Time table
-  static inline void insert_into_time_op(long checksum_id, const std::string &original_date_time,
+  inline void insert_into_time_op(long checksum_id, const std::string &original_date_time,
       const std::string &adjusted_date_time) {
     Db::enter_operation();
     std::string sql = "INSERT IGNORE INTO Time(checksumId, originalDateTime, adjustedDateTime ) "
@@ -511,7 +514,7 @@ class Db {
     prepared_statement->executeUpdate();
   }
 
-  static inline void get_adjusted_date_time_op(const std::string &filename,
+  inline void get_adjusted_date_time_op(const std::string &filename,
       std::string& adjusted_date_time, bool &ret) {
     Db::enter_operation();
     std::string sql = "SELECT adjustedDateTime from PhotoFile "
@@ -539,7 +542,7 @@ class Db {
   }
 
   //! database operation to insert an entry into the ExifBlob table.
-  static inline void insert_into_exifblob_op(long checksum_id, const std::string &xml_string) {
+  inline void insert_into_exifblob_op(long checksum_id, const std::string &xml_string) {
     Db::enter_operation();
     std::string sql = "INSERT IGNORE INTO ExifBlob(checksumId, value) Values (?,?)";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
@@ -548,7 +551,7 @@ class Db {
     prepared_statement->executeUpdate();
   }
 
-  static inline void get_from_exifblob_by_filePath_op(
+  inline void get_from_exifblob_by_filePath_op(
       const std::string &filePath, std::string &value) {
     Db::enter_operation();
     std::string sql = "SELECT value from PhotoFile "
@@ -575,15 +578,15 @@ class Db {
     value = rs->getString(1);
   }
 
-  static inline bool get_from_exifblob_by_filePath_transaction(
+  inline bool get_from_exifblob_by_filePath_transaction(
       const std::string &filePath, std::string &value) {
-    boost::function<void (void)> f = boost::bind(&get_from_exifblob_by_filePath_op,
+    boost::function<void (void)> f = boost::bind(&Db::get_from_exifblob_by_filePath_op, this,
         boost::cref(filePath), boost::ref(value));
     return transaction(f);
   }
 
   //! database operation to insert a checksum into the Checksum table
-  static inline int64_t insert_into_Checksum_op(
+  inline int64_t insert_into_Checksum_op(
       const std::string &checksum, int64_t &checksum_key) {
     Db::enter_operation();
     std::string sql = "INSERT IGNORE INTO Checksum(checksum) Values (?)";
@@ -593,7 +596,7 @@ class Db {
     Db::get_id_from_Checksum_op(checksum, checksum_key);
   }
 
-  static inline void
+  inline void
   get_id_from_Checksum_op(const std::string &checksum, int64_t &checksum_key) {
     Db::enter_operation();
     std::string sql = "SELECT id FROM Checksum where checksum = ?";
@@ -621,7 +624,7 @@ class Db {
 
   //! database operation to insert a record into the PhotoFile table
   //! does not insert and just returns the PhotoFileId if duplicate
-  static inline void insert_into_PhotoFile_op(
+  inline void insert_into_PhotoFile_op(
       const std::string &filePath, const int64_t &checksum_key, int64_t &photoFile_key) {
     Db::enter_operation();
     // If it's already in the database, just return its id
@@ -639,7 +642,7 @@ class Db {
     get_id_from_PhotoFile_op(filePath, checksum_key, photoFile_key);
   }
 
-  static inline void get_id_from_PhotoFile_op(const std::string &filePath,
+  inline void get_id_from_PhotoFile_op(const std::string &filePath,
       int64_t checksum_key, int64_t &photoFile_key) {
     Db::enter_operation();
     std::string sql = "SELECT id FROM PhotoFile where filePath = ? and checksumId = ?";
@@ -664,13 +667,13 @@ class Db {
     }
   }
 
-  static inline sql::Driver *get_driver_instance() {
+  inline sql::Driver *get_driver_instance() {
     return ::get_driver_instance();
   }
 
   //!
   //! Returns a connection to the database, or NULL if it can't get a connection
-  static inline sql::Connection *get_connection(
+  inline sql::Connection *get_connection(
       sql::Driver *driver, const std::string &url, const std::string &user,
       const std::string &password) {
     sql::Connection *connection;
@@ -684,7 +687,7 @@ class Db {
   }
 
   //! database operation to remove a Photo from the database
-  static inline void remove_photo_from_project_op(long project_id, long photo_file_id) {
+  inline void remove_photo_from_project_op(long project_id, long photo_file_id) {
     Db::enter_operation();
     std::cout << "remove photo from project "<< project_id << " " << photo_file_id << std::endl;
     std::string sql = "DELETE FROM ProjectPhotoFile "
@@ -696,7 +699,7 @@ class Db {
       prepared_statement->execute();
   }
 
-  static inline void delete_known_tag_op(const std::string &tag_name) {
+  inline void delete_known_tag_op(const std::string &tag_name) {
     Db::enter_operation();
     std::string sql = "DELETE FROM Tag WHERE Tag.name=? ";
     std::unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));

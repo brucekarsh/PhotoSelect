@@ -14,6 +14,7 @@ class QueryView {
         GtkWidget *addButton;
         GtkWidget *removeButton;
     };
+    Db db;
     std::map<GtkWidget *, QueryViewRow*> queryViewRows; // map from hbox to QueryViewRow
     GtkWidget *queryViewBox;
     GtkWidget *error_label;

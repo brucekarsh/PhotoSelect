@@ -81,8 +81,8 @@ void AddToProjectWindow::accept() {
 void AddToProjectWindow::accept_op(const string &project_name,
     const vector<string> &photoFilenameVector,
     const list<long> &photoFileIdList, long &project_id) {
-  Db::enter_operation();
-  Db::get_project_id_op(project_name, project_id);
+  db.enter_operation();
+  db.get_project_id_op(project_name, project_id);
   if (project_id == -1) {
     return;
   }
@@ -95,7 +95,7 @@ void AddToProjectWindow::accept_op(const string &project_name,
     long photo_file_id = *id_iter;
     string photo_file_name = *filename_iter;
     ++id_iter;
-    Db::add_photo_to_project_op(project_id, photo_file_id);
+    db.add_photo_to_project_op(project_id, photo_file_id);
   }
 }
 
@@ -105,5 +105,5 @@ bool AddToProjectWindow::accept_transaction(const string &project_name,
   boost::function<void (void)> f = boost::bind(&AddToProjectWindow::accept_op, this,
       boost::cref(project_name), boost::cref(photoFilenameVector),
       boost::cref(photoFileIdList), boost::ref(project_id));
-  return Db::transaction(f);
+  return db.transaction(f);
 }

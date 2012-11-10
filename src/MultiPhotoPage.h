@@ -84,6 +84,7 @@ class MultiPhotoPage : public PhotoSelectPage {
     static const int ICON_HEIGHT = 285;
     static const int ICON_STRIDE = ICON_WIDTH * 3;
 
+    Db db;
     Preferences *thePreferences;
     ConversionEngine conversionEngine;
     std::vector<std::string> photoFilenameVector;

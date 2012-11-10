@@ -3,6 +3,7 @@
 #include <gtk/gtk.h>
 #include <list>
 #include <string>
+#include "Db.h"
 
 class BaseWindow;
 class PhotoFileCache;
@@ -10,6 +11,7 @@ class Preferences;
 
 class OpenProjectWindow {
   public:
+  Db db;
   GtkWidget *window;
   GtkWidget *windowBox;
   GtkWidget *first_radio_button;

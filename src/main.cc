@@ -8,6 +8,7 @@
 #include <sstream>
 
 
+#include "Db.h"
 #include "BaseWindow.h"
 #include "SinglePhotoPage.h"
 #include "MultiPhotoPage.h"
@@ -35,6 +36,7 @@ using namespace std;
 WorkList work_list;
 StockThumbnails *stock_thumbnails;
 TicketRegistry ticket_registry;
+Db db;
 
 main(int argc, char **argv)
 {
@@ -93,7 +95,7 @@ open_initial_project(BaseWindow *base_window,
   }
   std::vector<std::string> photoFilenameVector;
   std::vector<std::string> adjusted_date_time_vector;
-  bool b = Db::get_project_photo_files_transaction(project_name, photoFilenameVector,
+  bool b = db.get_project_photo_files_transaction(project_name, photoFilenameVector,
       adjusted_date_time_vector);
   if (!b) {
     // TODO handle get_project_photo_files_transaction failure
@@ -131,5 +133,3 @@ std::string Db::dbhost;
 std::string Db::user;
 std::string Db::password;
 std::string Db::database;
-bool Db::transaction_is_running = false;
-sql::Connection *Db::connection = 0;

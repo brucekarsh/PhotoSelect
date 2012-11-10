@@ -1,5 +1,6 @@
 #ifndef RENAMEPROJECTWINDOW_H__
 #define RENAMEPROJECTWINDOW_H__
+#include "Db.h"
 #include <gtk/gtk.h>
 #include <string>
 
@@ -8,6 +9,7 @@ class BaseWindow;
 
 class RenameProjectWindow {
   public:
+  Db db;
   GtkWidget *window;
   GtkWidget *windowBox;
   GtkWidget *error_label;
