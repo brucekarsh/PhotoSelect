@@ -20,6 +20,7 @@ PhotoSelect_SOURCES = main.cc \
     RemoveFromProjectWindow.cc \
     RenameProjectWindow.cc \
     SinglePhotoPage.cc \
+    StockThumbnails.cc \
     WidgetRegistry.cc \
     Worker.cc \
     WorkList.cc
