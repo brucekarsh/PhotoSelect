@@ -10,6 +10,7 @@ PhotoSelect_SOURCES = main.cc \
     MultiPhotoPage.cc \
     NewProjectWindow.cc \
     OpenProjectWindow.cc \
+    PhotoDbImporter.cc \
     Preferences.cc \
     PreferencesWindow.cc \
     QueryView.cc \
