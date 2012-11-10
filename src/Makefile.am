@@ -10,6 +10,7 @@ PhotoSelect_SOURCES = main.cc \
     NewProjectWindow.cc \
     OpenProjectWindow.cc \
     Preferences.cc \
+    PreferencesWindow.cc \
     QueryView.cc \
     SinglePhotoPage.cc \
     WidgetRegistry.cc
