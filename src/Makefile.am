@@ -5,6 +5,7 @@ PhotoSelect_SOURCES = main.cc \
     BaseWindow.cc \
     ConversionEngine.cc \
     ConvertedPhotoFile.cc \
+    Db.cc \
     DeleteProjectWindow.cc \
     EditTagsWindow.cc \
     ExportProjectWindow.cc \

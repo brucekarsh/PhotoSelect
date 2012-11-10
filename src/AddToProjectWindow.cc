@@ -1,8 +1,9 @@
 #include <iostream>
 #include <fstream>
-#include "WidgetRegistry.h"
 #include "AddToProjectWindow.h"
 #include "Db.h"
+#include "WidgetRegistry.h"
+#include <boost/bind.hpp>
 
 using namespace std;
 

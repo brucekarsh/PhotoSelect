@@ -3,6 +3,7 @@
 #include <gtk/gtk.h>
 #include <iostream>
 #include <fstream>
+#include <boost/bind.hpp>
 #include <boost/foreach.hpp>
 #include <vector>
 

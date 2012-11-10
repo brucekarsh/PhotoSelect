@@ -1,6 +1,7 @@
 #include "AdjustTimeWindow.h"
 
 #include "WidgetRegistry.h"
+#include <boost/bind.hpp>
 #include <iostream>
 
 

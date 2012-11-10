@@ -1,5 +1,6 @@
 #include "EditTagsWindow.h"
 
+#include <boost/bind.hpp>
 #include <boost/foreach.hpp>
 #include <fstream>
 #include <gtk/gtk.h>

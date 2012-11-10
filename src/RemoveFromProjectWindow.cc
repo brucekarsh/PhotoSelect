@@ -1,5 +1,6 @@
 #include "RemoveFromProjectWindow.h"
 
+#include <boost/bind.hpp>
 #include <gtk/gtk.h>
 #include <iostream>
 

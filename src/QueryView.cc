@@ -1,9 +1,21 @@
 #include "QueryView.h"
 
-#include <iostream>
-#include <fstream>
-#include <vector>
+/* MySQL Connector/C++ specific headers */
+#include <driver.h>
+#include <connection.h>
+#include <statement.h>
+#include <prepared_statement.h>
+#include <resultset.h>
+#include <metadata.h>
+#include <resultset_metadata.h>
+#include <exception.h>
+#include <warning.h>
+
+#include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
+#include <fstream>
+#include <iostream>
+#include <vector>
 #include "WidgetRegistry.h"
 //TODO Don't forget a WidgetRegistry set_object
 

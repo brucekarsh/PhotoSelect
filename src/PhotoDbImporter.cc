@@ -1,5 +1,6 @@
 #include "PhotoDbImporter.h"
 
+#include <boost/bind.hpp>
 #include <boost/foreach.hpp>
 #include <cryptopp/cryptlib.h>
 #include <cryptopp/hex.h>
