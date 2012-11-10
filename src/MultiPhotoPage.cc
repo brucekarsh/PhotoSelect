@@ -1,6 +1,7 @@
 #include "MultiPhotoPage.h"
 
 #include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
 #include "BaseWindow.h"
 #include "ConvertedPhotoFile.h"
 #include "Preferences.h"
