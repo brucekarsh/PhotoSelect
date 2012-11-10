@@ -1,6 +1,7 @@
 bin_PROGRAMS = PhotoSelect
 PhotoSelect_SOURCES = main.cc \
     AddToProjectWindow.cc \
+    AdjustTimeWindow.cc \
     BaseWindow.cc \
     ConversionEngine.cc \
     ConvertedPhotoFile.cc \
