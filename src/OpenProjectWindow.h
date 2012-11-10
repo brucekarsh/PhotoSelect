@@ -11,29 +11,29 @@ class Preferences;
 
 class OpenProjectWindow {
   public:
-  Db db;
-  GtkWidget *window;
-  GtkWidget *windowBox;
-  GtkWidget *first_radio_button;
-  Preferences *preferences;
-  BaseWindow *baseWindow;
-  PhotoFileCache *photoFileCache;
-  std::list<long> photoFileIdList;
+    Db db;
+    GtkWidget *window;
+    GtkWidget *windowBox;
+    GtkWidget *first_radio_button;
+    Preferences *preferences;
+    BaseWindow *baseWindow;
+    PhotoFileCache *photoFileCache;
+    std::list<long> photoFileIdList;
 
-  OpenProjectWindow(Preferences *preferences_,
-      PhotoFileCache *photoFileCache_, BaseWindow* baseWindow_);
-  ~OpenProjectWindow();
-  void apply();
-  void quit();
-  void run();
-  std::string get_project_name();
-  void accept_button_clicked();
-  void apply_button_clicked();
+    OpenProjectWindow(Preferences *preferences_,
+        PhotoFileCache *photoFileCache_, BaseWindow* baseWindow_);
+    ~OpenProjectWindow();
+    void apply();
+    void quit();
+    void run();
+    std::string get_project_name();
+    void accept_button_clicked();
+    void apply_button_clicked();
 
-  // Static member functions
+    // Static member functions
 
-  static void accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data);
-  static void quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data);
-  static void apply_button_clicked_cb(GtkWidget *widget, gpointer callback_data);
+    static void accept_button_clicked_cb(GtkWidget *widget, gpointer callback_data);
+    static void quit_button_clicked_cb(GtkWidget *widget, gpointer callback_data);
+    static void apply_button_clicked_cb(GtkWidget *widget, gpointer callback_data);
 };
 #endif // OPENPROJECTWINDOW_H__
