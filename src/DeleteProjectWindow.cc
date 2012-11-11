@@ -65,7 +65,9 @@ void DeleteProjectWindow::run() {
 
   list<string>project_names;
   bool b = db.get_project_names_transaction(project_names);
-  // TODO check and handle get_project_names_transaction failure
+  if (!b) {
+    // TODO handle get_project_names_transaction failure
+  }
   GtkWidget* radio_button;
   first_radio_button = NULL;
   BOOST_FOREACH(string project_name, project_names) {

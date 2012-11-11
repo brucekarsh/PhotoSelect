@@ -15,9 +15,7 @@ using namespace std;
 
 NewProjectWindow::NewProjectWindow(Preferences *preferences_,
     PhotoFileCache *photoFileCache_, BaseWindow* baseWindow_) :
-    preferences(preferences_),  photoFileCache(photoFileCache_),
-    baseWindow(baseWindow_) {
-}
+    preferences(preferences_), baseWindow(baseWindow_), photoFileCache(photoFileCache_) {}
 
 NewProjectWindow::~NewProjectWindow() {
   WidgetRegistry<NewProjectWindow>::forget_widget(window);

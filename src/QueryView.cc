@@ -162,7 +162,7 @@ QueryView::makeQueryJSON() {
     runUI(100);
     sql::PreparedStatement *queryPreparedStatement = connection->prepareStatement(sql_query_string);
     int i;
-    for (i=0; i<value_vector.size(); i++) {
+    for (i=0; i < static_cast<int>(value_vector.size()); i++) {
       queryPreparedStatement->setString(i+1,value_vector[i]);
     }
     if (is_limited_to_a_project) {
@@ -284,16 +284,6 @@ QueryView::makeQueryJSON() {
     }
   }
 
-  void
-  QueryView::print_child_properties(QueryViewRow *queryViewRow)  {
-    guint n_properties;
-    GParamSpec ** params = gtk_container_class_list_child_properties(
-        G_OBJECT_GET_CLASS(queryViewRow->hbox), &n_properties);
-    for (GParamSpec **pp = params; *pp != NULL; pp++) {
-      GParamSpec *p = *pp;
-    }
-  }
-
   int
   QueryView::get_queryViewRowi(QueryViewRow * queryViewRow) {
     
@@ -412,4 +402,7 @@ QueryView::makeQueryJSON() {
     std::string queryJSON = makeQueryJSON();
     std::string sql_query_string = queryJSONToSqlQueryString(queryJSON, value_vector);
     bool b = query_transaction(sql_query_string, value_vector);
+    if (!b) {
+      // TODO handle query_transaction failure
+    }
   }

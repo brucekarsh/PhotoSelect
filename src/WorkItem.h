@@ -8,13 +8,12 @@ class MultiPhotoPage;
 class WorkItem {
   public:
     WorkItem(long ticket_number = 0, int index = 0, int rotation = 0, long priority = 0,
-        MultiPhotoPage *multiPhotoPage = NULL) : rotation(rotation), priority(priority),
-        ticket_number(ticket_number), index(index), multiPhotoPage(multiPhotoPage) {
-    };
-    long ticket_number;
+        MultiPhotoPage *multiPhotoPage = NULL) : index(index), priority(priority),
+        rotation(rotation), ticket_number(ticket_number), multiPhotoPage(multiPhotoPage) { };
     int index;
-    int rotation;
     long priority;
+    int rotation;
+    long ticket_number;
     MultiPhotoPage *multiPhotoPage;
     
     // Note thate operator == does not need to check rhs.multiPhotoPage == multiPhotoPage

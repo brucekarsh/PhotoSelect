@@ -25,7 +25,6 @@ template <class C> class WidgetRegistry {
     };
 
     static void forget_widget(GtkWidget *widget) {
-      C *x;
       widget_map.erase(widget);
     };
 
@@ -45,8 +44,6 @@ template <class C> class WidgetRegistry {
     // Other registry methods
 
    static GtkWidget *get_toplevel_widget (GtkWidget *widget) {
-      GtkWidget *parent;
-
       const int maxLevels = 10000; // Don't try forever
       int i;
       GtkWidget *candidate_widget = widget;

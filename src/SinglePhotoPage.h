@@ -31,27 +31,26 @@ class SinglePhotoPage : public PhotoSelectPage {
     std::vector<std::string> adjusted_date_time_vector;
     std::string project_name;
     PhotoFileCache *photoFileCache;
-
     Db db;
+    GtkWidget *back_button;
+    GtkWidget *button_hbox;
+    GtkWidget *button_separator;
+    GtkWidget *drawing_area;
+    GtkWidget *exif_view_box;
+    GtkWidget *filename_entry;
+    GtkWidget *gimp_button;
+    GtkWidget *next_button;
+    GtkWidget *of_label;
     GtkWidget *page_hbox;
-    GtkWidget *page_vbox;
     GtkWidget *page_left_vbox;
     GtkWidget *page_right_vbox;
-    GtkWidget *drawing_area;
-    GtkWidget *button_hbox;
-    GtkWidget *next_button;
-    GtkWidget *back_button;
-    GtkWidget *rotate_button;
-    GtkWidget *gimp_button;
-    GtkWidget *button_separator;
-    GtkWidget *of_label;
-    GtkWidget *filename_entry;
+    GtkWidget *page_vbox;
     GtkWidget *position_entry;
+    GtkWidget *rotate_button;
+    GtkWidget *tab_label_button;
     GtkWidget *tab_label_hbox;
     GtkWidget *tab_label_label;
-    GtkWidget *tab_label_button;
     GtkWidget *tag_view_box;
-    GtkWidget *exif_view_box;
     float Dx, Dy; // displacement of the current image in screen coordinates
     float M;      // magnification of the current image (screen_size = m * image_size)
     bool drag_is_active;

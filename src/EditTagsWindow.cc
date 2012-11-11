@@ -18,10 +18,8 @@ using namespace std;
 
 EditTagsWindow::EditTagsWindow(Preferences *preferences_,
     BaseWindow* baseWindow_, std::string project_name_) :
-    preferences(preferences_),
-    baseWindow(baseWindow_), project_name(project_name_),
-    left_scrolled_vbox(NULL), right_scrolled_vbox(NULL) {
-}
+    left_scrolled_vbox(NULL), right_scrolled_vbox(NULL), preferences(preferences_),
+    baseWindow(baseWindow_), project_name(project_name_) {}
 
 EditTagsWindow::~EditTagsWindow() {
   WidgetRegistry<EditTagsWindow>::forget_widget(window);

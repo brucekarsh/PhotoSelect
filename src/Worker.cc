@@ -21,7 +21,6 @@ void Worker::operator()() {
 void Worker::do_work() {
   while(1) {
     WorkItem work_item;
-    bool b = false;
     try {
       bool blocking = true;
       bool b = work_list.get_next_work_item(work_item, blocking);

@@ -6,11 +6,11 @@
 using namespace std;
 
 ConversionEngine::ConversionEngine(PhotoFileCache *photoFileCache_) :
-    photoFilenameVectorPosition(-1), photoFileCache(photoFileCache_) {};
+    photoFileCache(photoFileCache_), photoFilenameVectorPosition(-1) {};
 
 ConvertedPhotoFile * ConversionEngine::getConvertedPhotoFile() {
   if (photoFilenameVectorPosition <0
-      || photoFilenameVectorPosition >= photoFilenameVector.size()) {
+      || photoFilenameVectorPosition >= static_cast<int>(photoFilenameVector.size())) {
     return NULL;
   }
   string photoFilename = photoFilenameVector[photoFilenameVectorPosition];
@@ -24,7 +24,7 @@ ConvertedPhotoFile * ConversionEngine::getConvertedPhotoFile() {
 ConvertedPhotoFile *ConversionEngine::getConvertedPhotoFile(int display_width,
     int display_height, int rotation) const {
   if (photoFilenameVectorPosition <0
-      || photoFilenameVectorPosition >= photoFilenameVector.size()) {
+      || photoFilenameVectorPosition >= static_cast<int>(photoFilenameVector.size())) {
     return NULL;
   }
   string photoFilename = photoFilenameVector[photoFilenameVectorPosition];
@@ -33,7 +33,7 @@ ConvertedPhotoFile *ConversionEngine::getConvertedPhotoFile(int display_width,
 
 string ConversionEngine::getPhotoFilePath() {
   if (photoFilenameVectorPosition <0
-      || photoFilenameVectorPosition >= photoFilenameVector.size()) {
+      || photoFilenameVectorPosition >= static_cast<int>(photoFilenameVector.size())) {
     return "";
   }
   string photoFilename = photoFilenameVector[photoFilenameVectorPosition];
@@ -43,7 +43,7 @@ string ConversionEngine::getPhotoFilePath() {
 void ConversionEngine::setPhotoFileVector(vector<string> *photoFilenameVector_) {
   int i;
   vector<string>::iterator photoFilenameVectorIterator = photoFilenameVector_->begin();
-  for (i=0; i<photoFilenameVector_->size(); i++) {
+  for (i=0; i < static_cast<int>(photoFilenameVector_->size()); i++) {
     photoFilenameVector.push_back(photoFilenameVectorIterator->c_str());
     photoFilenameVectorIterator++;
   }
@@ -55,7 +55,7 @@ void ConversionEngine::clip_position() {
   if (photoFilenameVectorPosition < 0) {
     photoFilenameVectorPosition = 0;
   }
-  if (photoFilenameVectorPosition >= photoFilenameVector.size()) {
+  if (photoFilenameVectorPosition >= static_cast<int>(photoFilenameVector.size())) {
     photoFilenameVectorPosition = photoFilenameVector.size() -1;
   }
   if (0 == photoFilenameVector.size()) {

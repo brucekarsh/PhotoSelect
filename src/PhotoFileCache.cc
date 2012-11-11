@@ -27,7 +27,7 @@ ConvertedPhotoFile * PhotoFileCache::get(std::string photoFilePath) {
     map_path_to_sequence_number[photoFilePath] = sequence_number;
     map_sequence_number_to_path[sequence_number] = photoFilePath;
     // If the cache is full, remove the LRU entries
-    while (map_sequence_number_to_path.size() >= CACHESIZE) {
+    while (static_cast<int>(map_sequence_number_to_path.size()) >= CACHESIZE) {
       std::map<long, std::string>::iterator it = map_sequence_number_to_path.begin();
       long lru_sequence_number = it->first;
       std::string lru_path = it->second;
