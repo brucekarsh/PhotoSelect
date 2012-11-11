@@ -51,7 +51,6 @@ class QueryView {
     static void query_add_button_clicked_cb(GtkWidget *widget, gpointer callback_data);
     static void empty_row_add_button_clicked_cb(GtkWidget *widget, gpointer callback_data);
     static void query_remove_button_clicked_cb(GtkWidget *widget, gpointer callback_data);
-    void print_child_properties(QueryViewRow *queryViewRow);
     int get_queryViewRowi(QueryViewRow * queryViewRow);
     void runUI(int maxtimes);
     void run();

@@ -72,7 +72,7 @@ class Db {
 
   //! database operation to insert a record into the Project table
   void insert_into_project_op(const std::string &project_name, long &project_id);
-  long get_project_id_op(const std::string &project_name, long &project_id);
+  void get_project_id_op(const std::string &project_name, long &project_id);
   void get_project_names_op(std::list<std::string> &project_names);
   bool get_project_names_transaction(std::list<std::string> &project_names);
   void delete_project_op(const std::string &project_name);
@@ -85,7 +85,7 @@ class Db {
     void add_photo_to_project_op(long project_id, long photo_file_id);
 
     //! Get all photo files for a project
-    bool get_project_photo_files_op(
+    void get_project_photo_files_op(
         const std::string &project_name, std::vector<std::string> &project_photo_files,
         std::vector<std::string> &project_adjusted_date_times);
     bool get_project_photo_files_transaction(

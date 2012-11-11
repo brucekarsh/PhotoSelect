@@ -184,7 +184,7 @@ unsigned char * ConvertedPhotoFile::scale_and_pan_and_rotate(int sw, int sh,
 
   // Iterate through each screen column and compute its coordinate
   for (sx = 0; sx < sw; sx++) {
-    float sx0 = sx - sw/2.0 ;
+    sx0 = sx - sw/2.0 ;
 
     // Iterate through each screen row and compute its coordinate
     for (sy = 0; sy < sh; sy++) {

@@ -14,14 +14,20 @@
 using namespace std;
 
 MultiPhotoPage::MultiPhotoPage(PhotoFileCache *photoFileCache_) :
-    conversionEngine(photoFileCache_), 
     thePreferences((Preferences*)0),
+    conversionEngine(photoFileCache_), 
     photoFileCache(photoFileCache_),
-    tag_view_box(0), current_index(0),
-    exif_view_box(0), tags_position("right"), exifs_position("right"),
-    view_filter_show_all(true), view_filter_show(false), view_filter_dont_show(false) {
-  ticket_number = ticket_registry.new_ticket();
-}
+    current_index(0),
+    exif_view_box(0),
+    tag_view_box(0),
+    tags_position("right"),
+    exifs_position("right"),
+    view_filter_show_all(true),
+    view_filter_show(false),
+    view_filter_dont_show(false)
+  {
+    ticket_number = ticket_registry.new_ticket();
+  }
 
 MultiPhotoPage::~MultiPhotoPage() {
   // Get rid of all our work on the WorkList. (There still may be some work in progress)
@@ -359,7 +365,6 @@ void MultiPhotoPage::scroll_view_value_changed(GtkAdjustment *adjustment, gpoint
 gboolean MultiPhotoPage::idle() {
   int index;
   int rotation;
-  bool is_now_empty;
   GdkPixbuf *pixbuf;
   {
     boost::lock_guard<boost::mutex> member_lock(class_mutex); 
@@ -369,14 +374,12 @@ gboolean MultiPhotoPage::idle() {
     map<int, PixbufMapEntry>::iterator it;
     map<int, PixbufMapEntry>::iterator largest_priority_it = pixbuf_map.begin();
     long largest_priority = 0;
-    int largest_priority_n = 0;
     int n = 0;
     for (it = pixbuf_map.begin(); it != pixbuf_map.end(); ++it) {
       long priority = (it->second).priority;
       if (priority > largest_priority) {
         largest_priority = priority;
         largest_priority_it = it;
-        largest_priority_n = n;
       }
       n++;
     }
@@ -440,7 +443,6 @@ void MultiPhotoPage::apply_thumbnail(int index, GdkPixbuf *pixbuf, int rotation)
 // set (project_tags) of tags for the current project.
 void MultiPhotoPage::rebuild_tag_view() {
   GtkWidget *tag_view_scrolled_window = NULL;
-  GtkWidget *tag_view_tags_box = NULL;
 
   // Destroy any existing tag_view_box
   if (NULL != tag_view_box) {
@@ -476,7 +478,7 @@ void MultiPhotoPage::rebuild_tag_view() {
   GtkWidget* tag_view_tags_grid = gtk_grid_new();
   gtk_widget_show(tag_view_tags_grid);
 
-  // Put check buttons in tag_view_tags_box, one for each tag in the project
+  // Put check buttons in tag_view_tags_grid, one for each tag in the project
   int row_num = 0;
   tag_button_map.clear();
   string file_name = photoFilenameVector[current_index];
@@ -729,7 +731,7 @@ void MultiPhotoPage::print_node(xercesc::DOMNode *node) {
       << " " << num_attributes
       << endl;
   xercesc::XMLString::release(&name);
-  for (int i = 0; i < num_attributes; i++) {
+  for (int i = 0; i < static_cast<int>(num_attributes); i++) {
     cout << "  ";
     print_node(attributes->item(i));
   }
@@ -925,9 +927,8 @@ void MultiPhotoPage::set_button_clicked(GtkWidget *widget, gpointer data) {
 
 //! A hack to force the GtkIconView to re-layout. It sets it to 1 column then immediately
 //! sets it back to it's correct number of columns.
-/* static */ void MultiPhotoPage::icon_view_size_allocate_cb(GtkWidget *widget, GdkRectangle *allocation,
-    gpointer user_data) {
-  GtkIconView *icon_view = GTK_ICON_VIEW(widget);
+/* static */ void MultiPhotoPage::icon_view_size_allocate_cb(GtkWidget *widget,
+    GdkRectangle *allocation, gpointer user_data) {
 
   gint num_cols = gtk_icon_view_get_columns(GTK_ICON_VIEW(widget));
   gtk_icon_view_set_columns(GTK_ICON_VIEW(widget), 1);
@@ -971,7 +972,6 @@ gboolean MultiPhotoPage::icon_view_key_press(GtkWidget *widget, GdkEvent *event,
     // If we got the unfiltered path, handle the key press
     if (path) {
       guint keyval = ((GdkEventKey *)event)->keyval;
-      guint state = ((GdkEventKey *)event)->state;
       switch (keyval) {
         case 'r':
           index = gtk_tree_path_get_indices(path)[0];
@@ -1002,6 +1002,7 @@ gboolean /* static */ MultiPhotoPage::icon_view_button_press_cb(GtkWidget *widge
   if (0 != photoSelectPage) {
     return photoSelectPage->icon_view_button_press(widget, event, user_data);
   }
+  return false;
 }
 
 //! Object callback for a mouse button press
@@ -1080,6 +1081,7 @@ int MultiPhotoPage::find_photo_index(GtkWidget *widget) {
   if (0 != photoSelectPage) {
     return photoSelectPage-> icon_view_popup_menu(widget, user_data);
   }
+  return false;
 }
 
 gboolean MultiPhotoPage::icon_view_popup_menu(GtkWidget *widget, gpointer user_data) {
@@ -1237,7 +1239,6 @@ void MultiPhotoPage::icon_view_popup_open_image_viewer_activate(GtkMenuItem *men
 
 void MultiPhotoPage::icon_view_popup_tag_toggled(GtkMenuItem *menu_item, gpointer user_data) {
   string tag_name = gtk_menu_item_get_label(menu_item);
-  GtkWidget *widget = (GtkWidget*) user_data;
   string file_name(*(string *)g_object_get_data(G_OBJECT(menu_item), "file_name"));
   if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(menu_item))) {
     bool b = db.add_tag_by_filename_transaction(tag_name, file_name);
@@ -1267,12 +1268,14 @@ MultiPhotoPage::icon_view_enter_cb(GtkWidget *widget, GdkEvent *event, gpointer 
   if (0 != photoSelectPage) {
     return photoSelectPage-> icon_view_enter(widget, event, user_data);
   }
+  return false;
 } 
 
 //! grab the focus when the GtkIconView is entered. This lets it get keyboard events.
 //! The grab is removed in icon_view_leave()
 gboolean MultiPhotoPage::icon_view_enter(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
   gtk_grab_add(widget);
+  return true;
 }
 
 /* static */ gboolean
@@ -1282,12 +1285,14 @@ MultiPhotoPage::icon_view_leave_cb(GtkWidget *widget, GdkEvent *event, gpointer 
   if (0 != photoSelectPage) {
     return photoSelectPage-> icon_view_leave(widget, event, user_data);
   }
+  return false;
 } 
 
 //! un-grab the focus when the GtkIconView is left. This lets it get keyboard events.
 //! Focus is  grabbed in icon_view_enter()
 gboolean MultiPhotoPage::icon_view_leave(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
   gtk_grab_remove(widget);
+  return true;
 } 
 
 string MultiPhotoPage::get_photofile_name(int index) const {
@@ -1444,7 +1449,7 @@ void MultiPhotoPage::change_view_filtering() {
 #include "SinglePhotoPage.h"
 
 //! Called by BaseWindow when this page is switched to. It's job is to load the menu items
-//! that this page needs into the base window. It creates a vector of ExtraMenuItems\
+//! that this page needs into the base window. It creates a vector of ExtraMenuItems
 //! and calls BaseWindow::add_extra_menu_items with them.
 void MultiPhotoPage::load_extra_menu_items() {
   vector<BaseWindow::ExtraMenuItem> extra_menu_items;

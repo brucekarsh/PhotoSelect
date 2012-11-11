@@ -57,8 +57,7 @@ class MultiPhotoPage : public PhotoSelectPage {
         GdkPixbuf *pixbuf;
       public:
         PhotoState(bool is_selected = false, int index = 0) :
-            is_selected(is_selected), index(index), pixbuf(NULL)
-            {};
+            index(index), is_selected(is_selected), pixbuf(NULL) {};
         ~PhotoState() { clear_pixbuf(); };
         int get_index() { return index; };
         int get_is_selected() { return is_selected; };
@@ -100,26 +99,26 @@ class MultiPhotoPage : public PhotoSelectPage {
     long ticket_number; // TicketRegistry ticket number
     gint idle_id;
 
-
-    GtkWidget *page_hbox;
-    GtkWidget *page_vbox;
-    GtkWidget *page_left_vbox;
-    GtkWidget *page_right_vbox;
-    GtkWidget *tags_left_hbox;
-    GtkWidget *tags_right_hbox;
+    GtkWidget *central_hbox;
+    GtkWidget *dont_show_these_tags_menu_item;
     GtkWidget *exif_left_hbox;
     GtkWidget *exif_right_hbox;
-    GtkWidget *central_hbox;
-    GtkWidget *tab_label_hbox;
-    GtkWidget *tab_label_label;
-    GtkWidget *tab_label_button;
-    GtkWidget *tag_view_box;
     GtkWidget *exif_view_box;
     GtkWidget *icon_view;
+    GtkWidget *page_hbox;
+    GtkWidget *page_left_vbox;
+    GtkWidget *page_right_vbox;
+    GtkWidget *page_vbox;
     GtkWidget *scrolled_window;
     GtkWidget *show_all_menu_item;
     GtkWidget *show_these_tags_menu_item;
-    GtkWidget *dont_show_these_tags_menu_item;
+    GtkWidget *tab_label_button;
+    GtkWidget *tab_label_hbox;
+    GtkWidget *tab_label_label;
+    GtkWidget *tags_left_hbox;
+    GtkWidget *tags_right_hbox;
+    GtkWidget *tag_view_box;
+
     std::string tags_position;
     std::string exifs_position;
     std::set<std::string> photo_tags;

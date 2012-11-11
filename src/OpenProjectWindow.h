@@ -11,14 +11,14 @@ class Preferences;
 
 class OpenProjectWindow {
   public:
-    Db db;
-    GtkWidget *window;
-    GtkWidget *windowBox;
-    GtkWidget *first_radio_button;
-    Preferences *preferences;
     BaseWindow *baseWindow;
+    Db db;
+    GtkWidget *first_radio_button;
     PhotoFileCache *photoFileCache;
     std::list<long> photoFileIdList;
+    Preferences *preferences;
+    GtkWidget *window;
+    GtkWidget *windowBox;
 
     OpenProjectWindow(Preferences *preferences_,
         PhotoFileCache *photoFileCache_, BaseWindow* baseWindow_);

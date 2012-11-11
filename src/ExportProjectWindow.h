@@ -10,16 +10,15 @@ class BaseWindow;
 
 class ExportProjectWindow {
   public:
+    BaseWindow *baseWindow;
     Db db;
-    GtkWidget *extra_widgets;
-    GtkWidget *file_chooser;
     GtkWidget *export_all_button;
     GtkWidget *export_labeled_button;
-
-    Preferences *preferences;
-    BaseWindow *baseWindow;
-    std::string project_name;
+    GtkWidget *extra_widgets;
+    GtkWidget *file_chooser;
     std::list<GtkWidget *> label_buttons;
+    Preferences *preferences;
+    std::string project_name;
 
     ExportProjectWindow( std::string project_name_, Preferences *preferences_,
         BaseWindow* baseWindow_);

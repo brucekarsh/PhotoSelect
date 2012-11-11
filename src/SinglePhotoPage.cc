@@ -20,12 +20,21 @@ using namespace std;
 #define ZOOMRATIO 1.18920711500272106671
 
 SinglePhotoPage::SinglePhotoPage(PhotoFileCache *photoFileCache_) :
+    thePreferences((Preferences*)0),
+    rotation(0),
     conversionEngine(photoFileCache_), 
-    rotation(0), drawing_area(0), thePreferences((Preferences*)0),
-    photoFileCache(photoFileCache_), M(1.0), Dx(0),
-    Dy(0), drag_is_active(false), calculated_initial_scaling(false), tag_view_box(0),
-    exif_view_box(0), tags_position("right"), exifs_position("right") {
-}
+    photoFileCache(photoFileCache_),
+    drawing_area(0),
+    exif_view_box(0),
+    tag_view_box(0),
+    Dx(0),
+    Dy(0),
+    M(1.0),
+    drag_is_active(false),
+    calculated_initial_scaling(false),
+    tags_position("right"),
+    exifs_position("right")
+  {}
 
 SinglePhotoPage::~SinglePhotoPage() {
   if (page_hbox) {
@@ -238,14 +247,18 @@ gboolean SinglePhotoPage::drawing_area_key_press(GtkWidget *widget, GdkEvent *ev
 
 //! grab the focus when the GtkDrawingArea is entered. This lets it get keyboard events.
 //! The grab is removed in drawing_area_leave()
-gboolean SinglePhotoPage::drawing_area_enter(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+gboolean SinglePhotoPage::drawing_area_enter(GtkWidget *widget, GdkEvent *event,
+    gpointer user_data) {
   gtk_grab_add(widget);
+  return true;
 }
 
 //! un-grab the focus when the GtkDrawingArea is left. This lets it get keyboard events.
 //! Focus is  grabbed in drawing_area_enter()
-gboolean SinglePhotoPage::drawing_area_leave(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+gboolean SinglePhotoPage::drawing_area_leave(GtkWidget *widget, GdkEvent *event,
+    gpointer user_data) {
   gtk_grab_remove(widget);
+  return true;
 }
 
 // Adds a tag view to the SinglePhotoPage. The tag view (tag_view_box) is put into
@@ -484,7 +497,7 @@ void SinglePhotoPage::print_node(xercesc::DOMNode *node) {
       << " " << num_attributes
       << endl;
   xercesc::XMLString::release(&name);
-  for (int i = 0; i < num_attributes; i++) {
+  for (int i = 0; i < static_cast<int>(num_attributes); i++) {
     cout << "  ";
     print_node(attributes->item(i));
   }
@@ -876,6 +889,7 @@ SinglePhotoPage::drawing_area_enter_cb(GtkWidget *widget, GdkEvent *event, gpoin
   if (0 != photoSelectPage) {
     return photoSelectPage-> drawing_area_enter(widget, event, user_data);
   }
+  return false;
 }
 
 /* static */ gboolean
@@ -885,6 +899,7 @@ SinglePhotoPage::drawing_area_leave_cb(GtkWidget *widget, GdkEvent *event, gpoin
   if (0 != photoSelectPage) {
     return photoSelectPage-> drawing_area_leave(widget, event, user_data);
   }
+  return false;
 }
 
 /* static */ void SinglePhotoPage::tab_label_button_clicked_cb(GtkWidget *widget, gpointer data) {

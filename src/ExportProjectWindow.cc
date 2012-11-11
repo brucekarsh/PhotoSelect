@@ -16,11 +16,8 @@ class Preferences;
 class BaseWindow;
 
 ExportProjectWindow::ExportProjectWindow(string project_name_,
-    Preferences *preferences_,
-    BaseWindow* baseWindow_) :
-    project_name(project_name_), preferences(preferences_),
-    baseWindow(baseWindow_) {
-}
+    Preferences *preferences_, BaseWindow* baseWindow_) :
+    baseWindow(baseWindow_), preferences(preferences_), project_name(project_name_) {}
 
 ExportProjectWindow::~ExportProjectWindow() {
   WidgetRegistry<ExportProjectWindow>::forget_widget(file_chooser);
@@ -120,7 +117,6 @@ void ExportProjectWindow::write_file(string out_filename) {
   // Open the output file
   ofstream outfile(out_filename, ios::trunc | ios::out);
 
-  int index = 0;
   BOOST_FOREACH(string filename, photoFilenameVector) {
     bool want_this_one = true;
     if (!want_all_files) {

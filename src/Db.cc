@@ -15,7 +15,7 @@
 
 using namespace std;
 
-Db::Db() : transaction_is_running(false), connection(NULL) {}
+Db::Db() : connection(NULL), transaction_is_running(false) {}
 
 Db::~Db() {
   if (NULL != connection) {
@@ -324,7 +324,7 @@ void Db::insert_into_project_op(const string &project_name, long &project_id) {
   }
 }
 
-long Db::get_project_id_op(const string &project_name, long &project_id) {
+void Db::get_project_id_op(const string &project_name, long &project_id) {
   enter_operation();
   string sql = "SELECT id from Project where name = ?";
   unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
@@ -394,7 +394,7 @@ void Db::add_photo_to_project_op(long project_id, long photo_file_id) {
   prepared_statement->execute();
 }
 
-bool Db::get_project_photo_files_op(const string &project_name,
+void Db::get_project_photo_files_op(const string &project_name,
     vector<string> &project_photo_files, vector<string> &project_adjusted_date_times) {
   enter_operation();
   if (NULL == connection) {
@@ -556,8 +556,9 @@ int64_t Db::insert_into_Checksum_op(const string &checksum, int64_t &checksum_ke
   string sql = "INSERT IGNORE INTO Checksum(checksum) Values (?)";
   unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
   prepared_statement->setString(1, checksum.c_str());
-  int updateCount = prepared_statement->executeUpdate();
+  prepared_statement->executeUpdate();
   get_id_from_Checksum_op(checksum, checksum_key);
+  return checksum_key;
 }
 
 void Db::get_id_from_Checksum_op(const string &checksum, int64_t &checksum_key) {
@@ -598,8 +599,7 @@ void Db::insert_into_PhotoFile_op(
   unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
   prepared_statement->setString(1, filePath.c_str());
   prepared_statement->setInt64(2, checksum_key);
-  int updateCount = prepared_statement->executeUpdate();
-
+  prepared_statement->executeUpdate();
   get_id_from_PhotoFile_op(filePath, checksum_key, photoFile_key);
 }
 

@@ -72,7 +72,8 @@ void AdjustTimeWindow::accept_op(const vector<string> &photoFilenameVector,
     const list<long> &photoFileIdList, long &project_id) {
   db.enter_operation();
 
-  // Do something.
+#ifdef LATER
+  // TODO Do something.
   list<long>::const_iterator id_iter = photoFileIdList.begin();
   for (vector<string>::const_iterator filename_iter = photoFilenameVector.begin();
       filename_iter != photoFilenameVector.end();
@@ -83,6 +84,7 @@ void AdjustTimeWindow::accept_op(const vector<string> &photoFilenameVector,
     // Db::add_photo_to_project_op(project_id, photo_file_id);
     // TODO WRITEME
   }
+#endif
 } 
 
 bool AdjustTimeWindow::accept_transaction(const vector<string> &photoFilenameVector,

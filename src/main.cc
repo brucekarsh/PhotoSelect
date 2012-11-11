@@ -38,6 +38,7 @@ StockThumbnails *stock_thumbnails;
 TicketRegistry ticket_registry;
 Db db;
 
+int
 main(int argc, char **argv)
 {
   Preferences preferences;
@@ -83,6 +84,7 @@ main(int argc, char **argv)
     worker->join();
   }
   delete stock_thumbnails;
+  return 0;
 }
 
 void

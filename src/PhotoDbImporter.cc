@@ -38,8 +38,8 @@ PhotoDbImporter::PhotoDbImporter() {
   time_t now_time_t = now_timeb.time;
   struct tm now_tm;
   gmtime_r(&now_time_t, &now_tm);
-  char buf[20];
-  snprintf(buf, 20, "%04d-%02d-%02d %02d:%02d:%02d",
+  char buf[25];
+  snprintf(buf, 25, "%04d-%02d-%02d %02d:%02d:%02d %1d",
       1900+now_tm.tm_year,
       now_tm.tm_mon,
       now_tm.tm_mday,
@@ -264,7 +264,7 @@ int PhotoDbImporter::PhotoDbImporter::count_files_to_process(ImportWindow* impor
     FTS *ftsp = fts_open(fts_path_argv, FTS_LOGICAL | FTS_NOCHDIR, 0);
     free(c_dir);
     FTSENT * ftsentp = 0;
-    while (ftsentp = fts_read(ftsp) ) {
+    while ( NULL != (ftsentp = fts_read(ftsp)) ) {
       if (FTS_F == ftsentp->fts_info && is_photo_file(ftsentp->fts_name)) {
 	  process_count++;
 	  total_process_count++;
@@ -297,7 +297,7 @@ int PhotoDbImporter::process_files(ImportWindow* importWindow, int file_count) {
     FTS *ftsp = fts_open(fts_path_argv, FTS_LOGICAL | FTS_NOCHDIR, 0);
     free(c_dir);
     FTSENT * ftsentp = 0;
-    while (ftsentp = fts_read(ftsp) ) {
+    while (NULL != (ftsentp = fts_read(ftsp)) ) {
       if (FTS_F == ftsentp->fts_info && is_photo_file(ftsentp->fts_name)) {
 	  importWindow -> display_on_UI(ftsentp->fts_path);
         process_photo_file(string(ftsentp->fts_path));
