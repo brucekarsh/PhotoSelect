@@ -9,7 +9,7 @@
 #include "Utils.h"
 #include "WidgetRegistry.h"
 #include "XStr.h"
-
+#include "time.h"
 
 using namespace std;
 

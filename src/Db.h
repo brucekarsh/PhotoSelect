@@ -14,7 +14,6 @@
 //! Most of the methods are either database transactions (method name ends in _transaction) or
 //! database operations (method name ends in _op). A transaction executes a sequence of database
 //! operations as an SQL transaction with retry and reacquistion of the connection.
-
 class Db {
   public:
     static const int NRETRIES = 4;
