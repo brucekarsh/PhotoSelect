@@ -140,7 +140,7 @@ class MultiPhotoPage : public PhotoSelectPage {
 
 
     MultiPhotoPage(PhotoFileCache *photoFileCache_);
-    ~MultiPhotoPage();
+    virtual ~MultiPhotoPage();
     const std::string &get_project_name();
     virtual void rotate(int index);
     void announce_row_change(int index);
