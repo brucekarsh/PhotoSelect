@@ -1464,47 +1464,41 @@ void MultiPhotoPage::load_extra_menu_items() {
 
   GtkWidget *view_limit_menu = gtk_menu_new();
   gtk_menu_item_set_submenu(GTK_MENU_ITEM(view_limit_menu_item), view_limit_menu);
-  gtk_widget_show(view_limit_menu);
 
   // Make the Show all menu item
-  show_all_menu_item = gtk_radio_menu_item_new_with_label(NULL, "Show all");
+  show_all_menu_item =
+    gtk_radio_menu_item_new_with_label_from_widget(NULL, "Show all");
   gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(show_all_menu_item), view_filter_show_all);
   g_signal_connect(show_all_menu_item, "activate",
       G_CALLBACK(show_menu_item_activate_cb), gpointer(this));
   gtk_widget_show(show_all_menu_item);
   gtk_container_add(GTK_CONTAINER(view_limit_menu), show_all_menu_item);
 
-  // Make the Show these tags menu item and menu
-  show_these_tags_menu_item =
+  // Make the Show selected tags menu item
+    show_these_tags_menu_item =
       gtk_radio_menu_item_new_with_label_from_widget(GTK_RADIO_MENU_ITEM(show_all_menu_item),
-      "Show these tags");
-  gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(show_these_tags_menu_item),
-      view_filter_show);
+      "Show selected tags");
   g_signal_connect(show_these_tags_menu_item, "activate",
       G_CALLBACK(show_menu_item_activate_cb), gpointer(this));
   gtk_widget_show(show_these_tags_menu_item);
   gtk_container_add(GTK_CONTAINER(view_limit_menu), show_these_tags_menu_item);
-  GtkWidget *show_these_tags_menu = gtk_menu_new();
-  gtk_widget_show(show_these_tags_menu);
-  gtk_menu_item_set_submenu(GTK_MENU_ITEM(show_these_tags_menu_item), show_these_tags_menu);
 
-  // Make the Don't show these tags menu item and menu
+  // Make the Don't show selected tags menu item
   dont_show_these_tags_menu_item =
       gtk_radio_menu_item_new_with_label_from_widget(GTK_RADIO_MENU_ITEM(show_all_menu_item),
       "Don't show these tags");
-  gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(dont_show_these_tags_menu_item),
-      view_filter_dont_show);
   g_signal_connect(dont_show_these_tags_menu_item, "activate",
       G_CALLBACK(show_menu_item_activate_cb), gpointer(this));
   gtk_widget_show(dont_show_these_tags_menu_item);
   gtk_container_add(GTK_CONTAINER(view_limit_menu), dont_show_these_tags_menu_item);
-  GtkWidget *dont_show_these_tags_menu = gtk_menu_new();
-  gtk_widget_show(show_these_tags_menu);
-  gtk_menu_item_set_submenu(GTK_MENU_ITEM(dont_show_these_tags_menu_item),
-      dont_show_these_tags_menu);
 
-  // Get all the tags for this project
-  // (project_tags[tag_name]
+  // Make the Selected tags menu item and menu
+  selected_tags_menu_item = gtk_menu_item_new_with_label("Selected tags");
+  gtk_widget_show(selected_tags_menu_item);
+  gtk_container_add(GTK_CONTAINER(view_limit_menu), selected_tags_menu_item);
+  selected_tags_menu = gtk_menu_new();
+  gtk_menu_item_set_submenu(GTK_MENU_ITEM(selected_tags_menu_item), selected_tags_menu);
+
   view_filter_show_menu_items.clear();
   view_filter_dont_show_menu_items.clear();
   BOOST_FOREACH(string tag_name, project_tags) {
@@ -1512,15 +1506,8 @@ void MultiPhotoPage::load_extra_menu_items() {
     g_signal_connect(show_tag_menu_item, "activate",
         G_CALLBACK(show_tag_menu_item_activate_cb), gpointer(this));
     gtk_widget_show(show_tag_menu_item);
-    gtk_container_add(GTK_CONTAINER(show_these_tags_menu), show_tag_menu_item);
+    gtk_container_add(GTK_CONTAINER(selected_tags_menu), show_tag_menu_item);
     view_filter_show_menu_items.push_back(show_tag_menu_item);
-
-    GtkWidget *dont_show_tag_menu_item = gtk_check_menu_item_new_with_label(tag_name.c_str());
-    g_signal_connect(dont_show_tag_menu_item, "activate",
-        G_CALLBACK(show_tag_menu_item_activate_cb), gpointer(this));
-    gtk_widget_show(dont_show_tag_menu_item);
-    gtk_container_add(GTK_CONTAINER(dont_show_these_tags_menu), dont_show_tag_menu_item);
-    view_filter_dont_show_menu_items.push_back(dont_show_tag_menu_item);
   }
 
   extra_menu_items.push_back(extra_menu_item);

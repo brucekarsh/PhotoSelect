@@ -247,11 +247,12 @@ bool Db::delete_project_tag_transaction(const string &tag_name, const string &pr
 
 void Db::insert_project_tag_op(const string &tag_name, const string &project_name) {
   enter_operation();
-  string sql = "INSERT INTO ProjectTag(tagId, projectId) "
-      "SELECT Tag.id, Project.id FROM Tag, Project WHERE Tag.name=? AND Project.name=?";
+  string sql = "INSERT INTO ProjectTag(tagId, projectId, hasValue) "
+      "SELECT Tag.id, Project.id, ? FROM Tag, Project WHERE Tag.name=? AND Project.name=?";
   unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
-  prepared_statement->setString(1,tag_name);
-  prepared_statement->setString(2,project_name);
+  prepared_statement->setBoolean(1, false);
+  prepared_statement->setString(2,tag_name);
+  prepared_statement->setString(3,project_name);
   prepared_statement->execute();
 }
 
@@ -411,6 +412,7 @@ void Db::get_project_photo_files_op(const string &project_name,
       "ORDER by Time.adjustedDateTime, filePath ";
   unique_ptr<sql::PreparedStatement> prepared_statement(connection->prepareStatement(sql));
   prepared_statement->setString(1, project_name);
+  cout << "executing statement " << sql << endl;
   unique_ptr<sql::ResultSet> rs(prepared_statement->executeQuery());
   project_photo_files.clear();
   project_adjusted_date_times.clear();

@@ -110,6 +110,8 @@ class MultiPhotoPage : public PhotoSelectPage {
     GtkWidget *page_right_vbox;
     GtkWidget *page_vbox;
     GtkWidget *scrolled_window;
+    GtkWidget *selected_tags_menu;
+    GtkWidget *selected_tags_menu_item;
     GtkWidget *show_all_menu_item;
     GtkWidget *show_these_tags_menu_item;
     GtkWidget *tab_label_button;

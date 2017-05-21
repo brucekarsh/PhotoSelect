@@ -62,7 +62,7 @@ string QueryView::queryJSONToSqlQueryString(
   last_part.append("ORDER BY t.adjustedDateTime, filePath ");
 
   string first_part =
-    "SELECT DISTINCT filePath, p.id FROM PhotoFile p "
+    "SELECT DISTINCT filePath, p.id, t.adjustedDateTime FROM PhotoFile p "
     "INNER JOIN Checksum c ON p.checksumId = c.id "
     "INNER JOIN Time t ON t.checksumId = c.id ";
 
@@ -73,6 +73,7 @@ string QueryView::queryJSONToSqlQueryString(
   }
 
   string sql_statement = first_part + last_part;
+  cout << "SQL Statement is: " << sql_statement << endl;
   return sql_statement;
 }
 
