@@ -8,6 +8,7 @@
 #include <list>
 #include <map>
 #include <set>
+#include <vector>
 #include <boost/function.hpp>
 
 //! A class to hold database access procedures.

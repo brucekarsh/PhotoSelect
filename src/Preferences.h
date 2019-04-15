@@ -2,7 +2,7 @@
 #define PREFERENCES_H__
 
 #include <string>
-#include <json/json.h>
+#include <json-c/json.h>
 #include <list>
 
 class Preferences {

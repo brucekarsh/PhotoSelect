@@ -20,32 +20,36 @@
 //TODO Don't forget a WidgetRegistry set_object
 
 
-#include <json_spirit.h>
-#include <json_spirit_reader_template.h>
-#include <json_spirit_writer_template.h>
+#include <jsoncpp/json/json.h>
 
 using namespace std;
 
 string QueryView::queryJSONToSqlQueryString(
     const string &queryJson, vector<string> &value_vector) {
-  json_spirit::mValue value;
-  json_spirit::read(queryJson, value);
-  json_spirit::mArray array;
-  array = value.get_array();
   string last_part = "";
-  for (json_spirit::mArray::iterator it = array.begin();
-       it != array.end(); ++it) {
-    json_spirit::mObject object = it->get_obj();
-    if ( 0 != object.count("value") && 0 != object.count("relation")
-        && 0 != object.count("fieldName")) {
-      string fieldName_value = object["fieldName"].get_str();
-      string relation_symbol = object["relation"].get_str();
-      string value_value = object["value"].get_str();
+  cout << "Parsing " << queryJson << endl;
+  Json::Value root;
+  Json::Reader reader;
+  bool parsingSuccessful = reader.parse(queryJson, root);
+  if (!parsingSuccessful) {
+    cout << "Failed to parse" << reader.getFormattedErrorMessages();
+    return string("");
+  }
+  cout << "root " << root << endl;
+  for (int i = 0; i < root.size(); ++i) {
+    Json::Value object = root[i];
+    cout << " element " << i << " " << object << endl;
+    if (object.isMember("value") && object.isMember("relation") &&
+        object.isMember("fieldName")) {
+      cout << " element " << i << " " << object << endl;
+      string fieldName_value = object["fieldName"].asString();
+      string relation_symbol = object["relation"].asString();
+      string value_value = object["value"].asString();
       value_vector.push_back(value_value);
 
       // TODO This is susceptible to an sql injection. Fix before releasing.
-      if (it != array.begin()) last_part.append(" AND ");
-      if (it == array.begin()) last_part.append(" WHERE ");
+      if (i != root.size()) last_part.append(" AND ");
+      if (i == root.size()) last_part.append(" WHERE ");
       last_part.append(" (");
       last_part.append(translate_field_name(fieldName_value));
       last_part.append(" ");
@@ -79,8 +83,8 @@ string QueryView::queryJSONToSqlQueryString(
 
 string
 QueryView::makeQueryJSON() {
-  json_spirit::Array query_rows;
   GList *rows = gtk_container_get_children(GTK_CONTAINER(verticalBox));
+  Json::Value query_rows(Json::arrayValue);
 
   for (GList *row = rows; row != NULL; row = row ->next) {
     if (queryViewRows.count(GTK_WIDGET(row->data))) {
@@ -93,22 +97,25 @@ QueryView::makeQueryJSON() {
 
       gchar *fieldName = gtk_combo_box_text_get_active_text(
           GTK_COMBO_BOX_TEXT(queryViewRow->fieldNameComboBox));
-
-      json_spirit::Object query_row;
+      // ...
+     Json::Value query_row(Json::objectValue);
       if (fieldName) {
-        query_row.push_back( json_spirit::Pair( "fieldName", fieldName));
+        query_row["fieldName"] =  fieldName;
         g_free(fieldName);
       }
       if (relation) {
-        query_row.push_back( json_spirit::Pair( "relation", relation));
+        query_row["relation"] = relation;
         g_free(relation);
       }
-      query_row.push_back( json_spirit::Pair( "value", value));
-      query_rows.push_back(query_row);
+      query_row["value"] = value;
+      query_rows.append(query_row);
     }
   }
-  string result = json_spirit::write( query_rows, json_spirit::pretty_print );
-  return result;
+  Json::FastWriter fastWriter;
+  std::string output = fastWriter.write(query_rows);
+
+  cout << "Returning " << output << endl;
+  return output;
 }
 
 
